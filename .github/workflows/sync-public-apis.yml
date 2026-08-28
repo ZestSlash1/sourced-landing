@@ -1,0 +1,43 @@
+name: Sync public-apis
+
+# Weekly full-replace snapshot of the public-apis directory into
+# data/public-apis.json. A GitHub Action rather than a Vercel Cron because the
+# output is a file committed to the repo — Vercel's serverless filesystem is
+# read-only, so a cron route there could not persist the snapshot.
+on:
+  schedule:
+    - cron: "0 4 * * 1" # Mondays, 04:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      # Exits non-zero and leaves the existing snapshot untouched if the fetch
+      # fails or the parse result looks broken, so the job goes red rather than
+      # silently committing a bad file.
+      - run: npm run sync:apis
+
+      - name: Commit the refreshed snapshot
+        run: |
+          if git diff --quiet -- data/public-apis.json; then
+            echo "No change in the API directory this week."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/public-apis.json
+          git commit -m "chore: sync public-apis snapshot"
+          git push
