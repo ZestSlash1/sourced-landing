@@ -1,12 +1,7 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth/current-user";
-import {
-  listFeaturedIdeas,
-  listPublishedIdeas,
-} from "@/lib/idea-drops/repository";
-import { resolveUserTier } from "@/lib/idea-drops/resolve-user-tier";
-import { scopeToTier } from "@/lib/idea-drops/scope-to-tier";
-import { getSubscriberByUserId } from "@/lib/subscriptions/store";
+import { listFeaturedIdeas, listPublishedIdeas } from "@/lib/idea-drops/repository";
+import { unlockedIdeaIds } from "@/lib/idea-drops/quota";
+import { previewAccess, resolveViewerContext } from "@/lib/idea-drops/resolve-access";
 import { getSubscriberTopics } from "@/lib/subscriptions/subscriber-topics";
 
 // Reads the session (cookies) and hits Supabase on every request — never
@@ -16,22 +11,23 @@ import { getSubscriberTopics } from "@/lib/subscriptions/subscriber-topics";
 export const dynamic = "force-dynamic";
 
 /**
- * GET /api/ideas — the personalized, tier-gated feed (Phase 4 Part C).
+ * GET /api/ideas — the personalized, tier-and-quota-gated feed (Phase 4 Part C/D).
  * Signed-in users with topics selected get those topics only; everyone
  * else (logged out, or signed in with no topics picked yet) gets the
- * admin-curated "featured" set.
+ * admin-curated "featured" set. A read-only pass — never spends anyone's
+ * monthly full-idea quota (lib/idea-drops/resolve-access.ts's previewAccess).
  */
 export async function GET() {
-  const userTier = await resolveUserTier();
+  const viewer = await resolveViewerContext();
 
-  const user = await getCurrentUser();
   let topics: string[] = [];
-  if (user) {
-    const subscriber = await getSubscriberByUserId(user.id);
-    if (subscriber) topics = await getSubscriberTopics(subscriber.id);
+  if (viewer.subscriberId) {
+    topics = await getSubscriberTopics(viewer.subscriberId);
   }
 
   const ideas = topics.length > 0 ? await listPublishedIdeas(topics) : await listFeaturedIdeas();
-  const scoped = ideas.map((idea) => scopeToTier(idea, userTier));
-  return NextResponse.json(scoped);
+  const alreadyUnlocked = viewer.subscriberId ? await unlockedIdeaIds(viewer.subscriberId) : new Set<string>();
+  const access = await Promise.all(ideas.map((idea) => previewAccess(idea, viewer, alreadyUnlocked)));
+
+  return NextResponse.json(access.map((a) => a.idea));
 }

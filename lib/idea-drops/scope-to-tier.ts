@@ -19,6 +19,11 @@ export function scopeToTier(
   const canViewFull = TIER_RANK[userTier] >= TIER_RANK[idea.tier];
   if (canViewFull) return idea;
 
+  return toTeaser(idea);
+}
+
+/** The always-visible slice of an idea, used both for tier gating above and for quota gating (lib/idea-drops/quota.ts) — a tier-eligible idea a subscriber is out of quota for still only shows this much. */
+export function toTeaser(idea: IdeaDrop): IdeaDropTeaser {
   return {
     id: idea.id,
     slug: idea.slug,

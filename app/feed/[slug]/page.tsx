@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getPublishedIdeaByIdOrSlug } from "@/lib/idea-drops/repository";
-import { resolveUserTier } from "@/lib/idea-drops/resolve-user-tier";
-import { scopeToTier } from "@/lib/idea-drops/scope-to-tier";
+import { nextQuotaResetIso } from "@/lib/idea-drops/quota";
+import { resolveAndRecordAccess, resolveViewerContext } from "@/lib/idea-drops/resolve-access";
 import type { IdeaDrop } from "@/types/idea-drop";
 import CopyPromptButton from "./copy-prompt-button";
 
@@ -17,14 +17,30 @@ const labelStyle: React.CSSProperties = {
   letterSpacing: "0.04em",
   marginBottom: 8,
 };
+const lockedBoxStyle: React.CSSProperties = {
+  border: "1px solid var(--line)",
+  borderRadius: "var(--r-sm)",
+  padding: "24px 20px",
+  textAlign: "center",
+};
+const upgradeButtonStyle: React.CSSProperties = {
+  display: "inline-block",
+  padding: "10px 20px",
+  background: "var(--violet)",
+  color: "#fff",
+  borderRadius: "var(--r-sm)",
+  fontWeight: 600,
+  fontSize: 14,
+  textDecoration: "none",
+};
 
 export default async function IdeaDetailPage({ params }: { params: { slug: string } }) {
   const idea = await getPublishedIdeaByIdOrSlug(params.slug);
   if (!idea) notFound();
 
-  const userTier = await resolveUserTier();
-  const scoped = scopeToTier(idea, userTier);
-  const locked = "locked" in scoped && scoped.locked;
+  const viewer = await resolveViewerContext();
+  const access = await resolveAndRecordAccess(idea, viewer);
+  const scoped = access.idea;
 
   return (
     <main style={{ maxWidth: 720, margin: "0 auto", padding: "40px 24px" }}>
@@ -62,32 +78,24 @@ export default async function IdeaDetailPage({ params }: { params: { slug: strin
         </ul>
       </div>
 
-      {locked ? (
-        <div
-          style={{
-            border: "1px solid var(--line)",
-            borderRadius: "var(--r-sm)",
-            padding: "24px 20px",
-            textAlign: "center",
-          }}
-        >
+      {access.kind === "quota-locked" ? (
+        <div style={lockedBoxStyle}>
+          <p style={{ margin: "0 0 12px", fontSize: 14, color: "var(--ink-soft)" }}>
+            You&apos;ve used all {access.quota.quota} of your full idea{access.quota.quota === 1 ? "" : "s"} this
+            month. Resets {new Date(nextQuotaResetIso()).toLocaleDateString("en-US", { month: "long", day: "numeric" })}
+            .
+          </p>
+          <Link href="/#pricing" style={upgradeButtonStyle}>
+            Upgrade for more
+          </Link>
+        </div>
+      ) : access.kind === "tier-locked" ? (
+        <div style={lockedBoxStyle}>
           <p style={{ margin: "0 0 12px", fontSize: 14, color: "var(--ink-soft)" }}>
             The full build brief, matched APIs, launch stack, and ready-to-paste agent prompts
             unlock on {scoped.tier === "builder" ? "Builder" : "Studio"}.
           </p>
-          <Link
-            href="/#pricing"
-            style={{
-              display: "inline-block",
-              padding: "10px 20px",
-              background: "var(--violet)",
-              color: "#fff",
-              borderRadius: "var(--r-sm)",
-              fontWeight: 600,
-              fontSize: 14,
-              textDecoration: "none",
-            }}
-          >
+          <Link href="/#pricing" style={upgradeButtonStyle}>
             See plans
           </Link>
         </div>
