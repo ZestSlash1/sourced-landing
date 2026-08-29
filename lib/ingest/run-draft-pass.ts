@@ -1,7 +1,7 @@
 import "server-only";
 import { upsertIdeaDrop } from "@/lib/idea-drops/repository";
 import { clusterSignals } from "./clustering";
-import { draftIdeaFromCluster } from "./claude-draft";
+import { draftIdeaFromCluster } from "./draft-model";
 import { DAILY_DRAFT_CAP, draftsCreatedToday } from "./daily-cap";
 import { listUndraftedSignals, markSignalsDrafted } from "./raw-signals-repository";
 

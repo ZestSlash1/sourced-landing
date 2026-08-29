@@ -4,6 +4,7 @@ import { insertRawSignals } from "@/lib/ingest/raw-signals-repository";
 import { isAuthorizedCronRequest } from "@/lib/ingest/require-cron";
 
 export const maxDuration = 60;
+export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   if (!isAuthorizedCronRequest(request)) {

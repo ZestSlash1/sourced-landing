@@ -1,12 +1,16 @@
 import "server-only";
-import Anthropic from "@anthropic-ai/sdk";
 import publicApisData from "@/data/public-apis.json";
 import { TOPICS } from "@/lib/topics";
 import type { DataEntity, Evidence, IdeaDrop, MatchedApi, StackItem } from "@/types/idea-drop";
 import type { SignalCluster } from "./clustering";
 import type { SignalSource } from "./types";
 
-const MODEL = process.env.ANTHROPIC_DRAFT_MODEL ?? "claude-sonnet-5";
+// OpenRouter, not Anthropic directly — draft generation runs on a free
+// OpenRouter model so the ingest pipeline costs $0 to operate. Anthropic-
+// grade models are reserved for a future Studio-tier feature, not spent
+// here. Override via env if the default free model gets deprecated.
+const MODEL = process.env.OPENROUTER_DRAFT_MODEL ?? "meta-llama/llama-3.3-70b-instruct:free";
+const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 
 const SOURCE_TO_PLATFORM: Record<SignalSource, Evidence["platform"]> = {
   reddit: "reddit",
@@ -41,98 +45,6 @@ interface DraftedFields {
   agentPrompts: IdeaDrop["agentPrompts"];
   difficulty: IdeaDrop["difficulty"];
 }
-
-const DRAFT_TOOL: Anthropic.Tool = {
-  name: "submit_idea_draft",
-  description: "Submit a structured Sourced idea drop draft from the given evidence.",
-  input_schema: {
-    type: "object",
-    properties: {
-      title: { type: "string" },
-      category: { type: "string" },
-      topicTags: {
-        type: "array",
-        items: { type: "string", enum: [...TOPICS] },
-        description: "1-2 topics from the fixed list that best fit this idea.",
-      },
-      demandScore: { type: "integer", minimum: 0, maximum: 100 },
-      tier: { type: "string", enum: ["free", "builder", "studio"] },
-      problem: {
-        type: "object",
-        properties: {
-          summary: { type: "string" },
-          whoFeelsIt: { type: "string" },
-        },
-        required: ["summary", "whoFeelsIt"],
-      },
-      whyNow: { type: "string" },
-      buildBrief: {
-        type: "object",
-        properties: {
-          coreLoop: { type: "array", items: { type: "string" } },
-          mvpScope: { type: "array", items: { type: "string" } },
-          explicitlyCut: { type: "array", items: { type: "string" } },
-          dataModel: {
-            type: "array",
-            items: {
-              type: "object",
-              properties: { name: { type: "string" }, fields: { type: "string" } },
-              required: ["name", "fields"],
-            },
-          },
-        },
-        required: ["coreLoop", "mvpScope", "explicitlyCut", "dataModel"],
-      },
-      matchedApiNames: {
-        type: "array",
-        description:
-          "Names of well-known free/public APIs this idea would use — exact names only, no URLs (those are looked up separately).",
-        items: {
-          type: "object",
-          properties: { name: { type: "string" }, purpose: { type: "string" } },
-          required: ["name", "purpose"],
-        },
-      },
-      launchStack: {
-        type: "array",
-        items: {
-          type: "object",
-          properties: {
-            layer: {
-              type: "string",
-              enum: ["hosting", "auth", "database", "payments", "storage", "email", "other"],
-            },
-            tool: { type: "string" },
-            freeTierNote: { type: "string" },
-          },
-          required: ["layer", "tool", "freeTierNote"],
-        },
-      },
-      agentPrompts: {
-        type: "object",
-        properties: {
-          claudeCode: { type: "string" },
-          cursorWindsurf: { type: "string" },
-          v0Bolt: { type: "string" },
-        },
-        required: ["claudeCode", "cursorWindsurf", "v0Bolt"],
-      },
-      difficulty: {
-        type: "object",
-        properties: {
-          soloWeekendProject: { type: "boolean" },
-          estimatedHours: { type: "integer" },
-          skillFloor: { type: "string", enum: ["beginner", "intermediate", "advanced"] },
-        },
-        required: ["soloWeekendProject", "estimatedHours", "skillFloor"],
-      },
-    },
-    required: [
-      "title", "category", "topicTags", "demandScore", "tier", "problem", "whyNow",
-      "buildBrief", "matchedApiNames", "launchStack", "agentPrompts", "difficulty",
-    ],
-  },
-};
 
 function truncate(text: string, max = 600): string {
   return text.length > max ? `${text.slice(0, max)}...` : text;
@@ -173,6 +85,26 @@ function resolveMatchedApis(names: { name: string; purpose: string }[]): Matched
   return resolved;
 }
 
+const JSON_SCHEMA_SPEC = `{
+  "title": string,
+  "category": string,
+  "topicTags": string[] (1-2 values, ONLY from: ${TOPICS.map((t) => `"${t}"`).join(", ")}),
+  "demandScore": integer 0-100,
+  "tier": "free" | "builder" | "studio",
+  "problem": { "summary": string, "whoFeelsIt": string },
+  "whyNow": string,
+  "buildBrief": {
+    "coreLoop": string[] (3-5 ordered steps),
+    "mvpScope": string[],
+    "explicitlyCut": string[],
+    "dataModel": [{ "name": string, "fields": string }]
+  },
+  "matchedApiNames": [{ "name": string, "purpose": string }] (real, well-known free/public APIs only — no URLs, those are looked up separately),
+  "launchStack": [{ "layer": "hosting"|"auth"|"database"|"payments"|"storage"|"email"|"other", "tool": string, "freeTierNote": string }],
+  "agentPrompts": { "claudeCode": string, "cursorWindsurf": string, "v0Bolt": string },
+  "difficulty": { "soloWeekendProject": boolean, "estimatedHours": integer, "skillFloor": "beginner"|"intermediate"|"advanced" }
+}`;
+
 function buildPrompt(cluster: SignalCluster): string {
   const evidenceBlock = cluster.signals
     .map(
@@ -191,33 +123,57 @@ Signals (same underlying complaint, from ${new Set(cluster.signals.map((s) => s.
 
 ${evidenceBlock}
 
-Call submit_idea_draft with your structured draft.`;
+Respond with ONLY a single JSON object matching this exact shape, no markdown fences, no commentary before or after:
+
+${JSON_SCHEMA_SPEC}`;
+}
+
+/** Pulls the first top-level JSON object out of a model response, tolerating markdown fences or stray text around it. */
+function extractJson(text: string): DraftedFields {
+  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  const candidate = fenced ? fenced[1] : text;
+  const start = candidate.indexOf("{");
+  const end = candidate.lastIndexOf("}");
+  if (start === -1 || end === -1 || end < start) {
+    throw new Error("Model response did not contain a JSON object.");
+  }
+  return JSON.parse(candidate.slice(start, end + 1)) as DraftedFields;
 }
 
 /**
- * Draft generation (Part A3): one Claude call per cluster, producing a
- * pending_review IdeaDrop. Evidence and matchedApis.sourceUrl are never
+ * Draft generation (Part A3): one OpenRouter call per cluster, producing a
+ * pending_review IdeaDrop. Runs on a free model so ingest costs $0 — see
+ * Decision #3 and MODEL above. Evidence and matchedApis.sourceUrl are never
  * taken from the model directly — see clusterToEvidence/resolveMatchedApis.
  */
 export async function draftIdeaFromCluster(cluster: SignalCluster): Promise<IdeaDrop> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) throw new Error("Missing ANTHROPIC_API_KEY environment variable.");
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) throw new Error("Missing OPENROUTER_API_KEY environment variable.");
 
-  const client = new Anthropic({ apiKey });
-  const message = await client.messages.create({
-    model: MODEL,
-    max_tokens: 4096,
-    tools: [DRAFT_TOOL],
-    tool_choice: { type: "tool", name: "submit_idea_draft" },
-    messages: [{ role: "user", content: buildPrompt(cluster) }],
+  const res = await fetch(OPENROUTER_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+      "HTTP-Referer": "https://sourced.app",
+      "X-Title": "Sourced ingest",
+    },
+    body: JSON.stringify({
+      model: MODEL,
+      messages: [{ role: "user", content: buildPrompt(cluster) }],
+      temperature: 0.4,
+    }),
   });
 
-  const toolUse = message.content.find(
-    (block): block is Anthropic.ToolUseBlock => block.type === "tool_use",
-  );
-  if (!toolUse) throw new Error("Claude did not return a submit_idea_draft tool call.");
+  if (!res.ok) {
+    throw new Error(`OpenRouter request failed: ${res.status} ${await res.text()}`);
+  }
 
-  const fields = toolUse.input as DraftedFields;
+  const body = (await res.json()) as { choices: { message: { content: string } }[] };
+  const content = body.choices[0]?.message?.content;
+  if (!content) throw new Error("OpenRouter returned no message content.");
+
+  const fields = extractJson(content);
   const evidence = clusterToEvidence(cluster);
   const now = new Date();
   const slug = fields.title

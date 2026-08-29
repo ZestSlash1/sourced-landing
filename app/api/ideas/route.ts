@@ -9,6 +9,12 @@ import { scopeToTier } from "@/lib/idea-drops/scope-to-tier";
 import { getSubscriberByUserId } from "@/lib/subscriptions/store";
 import { getSubscriberTopics } from "@/lib/subscriptions/subscriber-topics";
 
+// Reads the session (cookies) and hits Supabase on every request — never
+// static. Without this, `next build` tries to prerender it at build time
+// and fails hard if Supabase env vars aren't present in that environment
+// (see the Vercel preview build failure this fixed).
+export const dynamic = "force-dynamic";
+
 /**
  * GET /api/ideas — the personalized, tier-gated feed (Phase 4 Part C).
  * Signed-in users with topics selected get those topics only; everyone
