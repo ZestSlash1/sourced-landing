@@ -46,7 +46,7 @@ export default function CustomerLoginPage() {
     setLoading(true);
 
     const supabase = getSupabaseBrowserClient();
-    const { error: authError } =
+    const { data, error: authError } =
       mode === "sign-in"
         ? await supabase.auth.signInWithPassword({ email, password })
         : await supabase.auth.signUp({ email, password });
@@ -58,7 +58,10 @@ export default function CustomerLoginPage() {
       return;
     }
 
-    if (mode === "sign-up") {
+    // signUp only returns a session immediately when email autoconfirm is
+    // on (no confirmation email needed); otherwise data.session is null and
+    // the account genuinely needs the email step before it can sign in.
+    if (mode === "sign-up" && !data.session) {
       setNotice("Check your email to confirm your account, then sign in.");
       setMode("sign-in");
       return;
