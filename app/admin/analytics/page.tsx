@@ -1,10 +1,11 @@
 import { redirect } from "next/navigation";
 import { Users, UserPlus, CreditCard, TrendingUp } from "lucide";
 import { requireAdmin } from "@/lib/auth/require-admin";
-import { getAnalyticsSummary, type Breakdown } from "@/lib/analytics/queries";
+import { getAnalyticsSummary, getRecentViewerLocations, type Breakdown } from "@/lib/analytics/queries";
 import AdminShell from "../admin-shell";
 import { ACCENTS } from "./accents";
 import { StatCard } from "./stat-card";
+import { ViewerGlobe } from "./viewer-globe";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +24,7 @@ export default async function AnalyticsPage() {
   }
 
   const summary = await getAnalyticsSummary();
+  const viewerLocations = await getRecentViewerLocations();
   const conversionLabel = summary.conversionRate === null ? "—" : `${summary.conversionRate.toFixed(1)}%`;
 
   return (
@@ -48,6 +50,10 @@ export default async function AnalyticsPage() {
         <StatCard icon={UserPlus} accent="sky" label="Signups" value={summary.signups.toLocaleString()} />
         <StatCard icon={CreditCard} accent="sun" label="Checkouts completed" value={summary.checkoutsCompleted.toLocaleString()} />
         <StatCard icon={TrendingUp} accent="coral" label="Signup → paid" value={conversionLabel} />
+      </div>
+
+      <div style={{ marginBottom: 16 }}>
+        <ViewerGlobe locations={viewerLocations} />
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))", gap: 16 }}>

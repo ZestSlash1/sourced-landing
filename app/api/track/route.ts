@@ -37,6 +37,10 @@ export async function POST(request: Request) {
     utmSource: typeof body?.utmSource === "string" ? body.utmSource : null,
     utmMedium: typeof body?.utmMedium === "string" ? body.utmMedium : null,
     utmCampaign: typeof body?.utmCampaign === "string" ? body.utmCampaign : null,
+    country: typeof body?.country === "string" ? body.country : null,
+    city: typeof body?.city === "string" ? body.city : null,
+    latitude: typeof body?.latitude === "number" ? body.latitude : null,
+    longitude: typeof body?.longitude === "number" ? body.longitude : null,
     metadata: (body?.metadata as Record<string, unknown> | undefined) ?? {},
   });
 

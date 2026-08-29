@@ -22,6 +22,12 @@ export interface TrackInput {
   utmSource?: string | null;
   utmMedium?: string | null;
   utmCampaign?: string | null;
+  // Coarse geolocation from Vercel's edge (x-vercel-ip-* headers, read in
+  // middleware.ts) — present in production, absent locally/other hosts.
+  country?: string | null;
+  city?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   metadata?: Record<string, unknown>;
 }
 
@@ -45,6 +51,10 @@ export async function track(input: TrackInput): Promise<void> {
       utm_source: input.utmSource ?? null,
       utm_medium: input.utmMedium ?? null,
       utm_campaign: input.utmCampaign ?? null,
+      country: input.country ?? null,
+      city: input.city ?? null,
+      latitude: input.latitude ?? null,
+      longitude: input.longitude ?? null,
       metadata: input.metadata ?? {},
     });
 

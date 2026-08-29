@@ -58,10 +58,11 @@ describe("previewAccess", () => {
     expect(getQuotaStatus).not.toHaveBeenCalled();
   });
 
-  it("returns full for an anonymous visitor on a tier-eligible idea, unmetered", async () => {
+  it("returns signed-out (as a teaser) for an anonymous visitor, even on a tier-eligible idea", async () => {
     const idea = makeIdea({ tier: "free" });
     const result = await previewAccess(idea, { subscriberId: null, userId: null, tier: "free" }, new Set());
-    expect(result.kind).toBe("full");
+    expect(result.kind).toBe("signed-out");
+    expect("locked" in result.idea && result.idea.locked).toBe(true);
     expect(getQuotaStatus).not.toHaveBeenCalled();
   });
 
@@ -110,10 +111,10 @@ describe("resolveAndRecordAccess", () => {
     expect(canUnlockIdea).not.toHaveBeenCalled();
   });
 
-  it("grants full access without recording for an anonymous visitor", async () => {
+  it("returns signed-out without recording for an anonymous visitor", async () => {
     const idea = makeIdea({ tier: "free" });
     const result = await resolveAndRecordAccess(idea, { subscriberId: null, userId: null, tier: "free" });
-    expect(result.kind).toBe("full");
+    expect(result.kind).toBe("signed-out");
     expect(recordUnlock).not.toHaveBeenCalled();
   });
 

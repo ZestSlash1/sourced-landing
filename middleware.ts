@@ -49,6 +49,12 @@ export function middleware(request: NextRequest, event: NextFetchEvent) {
     !STATIC_FILE.test(pathname);
 
   if (shouldTrack) {
+    // Vercel's edge network sets these on every request in production; all
+    // absent locally and on any other host, which the null fallbacks handle.
+    const latitude = parseFloat(request.headers.get("x-vercel-ip-latitude") ?? "");
+    const longitude = parseFloat(request.headers.get("x-vercel-ip-longitude") ?? "");
+    const city = request.headers.get("x-vercel-ip-city");
+
     const payload = {
       eventType: "page_view",
       sessionId,
@@ -57,6 +63,10 @@ export function middleware(request: NextRequest, event: NextFetchEvent) {
       utmSource: searchParams.get("utm_source"),
       utmMedium: searchParams.get("utm_medium"),
       utmCampaign: searchParams.get("utm_campaign"),
+      country: request.headers.get("x-vercel-ip-country"),
+      city: city ? decodeURIComponent(city) : null,
+      latitude: Number.isFinite(latitude) ? latitude : null,
+      longitude: Number.isFinite(longitude) ? longitude : null,
     };
 
     event.waitUntil(

@@ -24,6 +24,7 @@ export async function resolveViewerContext(): Promise<ViewerContext> {
 
 export type IdeaAccess =
   | { kind: "full"; idea: IdeaDrop }
+  | { kind: "signed-out"; idea: IdeaDropTeaser }
   | { kind: "tier-locked"; idea: IdeaDropTeaser }
   | { kind: "quota-locked"; idea: IdeaDropTeaser; quota: QuotaStatus };
 
@@ -37,14 +38,17 @@ export async function previewAccess(
   viewer: ViewerContext,
   alreadyUnlocked: Set<string>,
 ): Promise<IdeaAccess> {
+  // Anonymous visitors never get full content, even for free-tier ideas —
+  // there's no identity to track quota against, and full content (matched
+  // APIs, launch stack, agent prompts) is meant for accounts, not crawlers
+  // or drive-by traffic. They get the same public teaser as a locked idea.
+  if (!viewer.subscriberId) {
+    return { kind: "signed-out", idea: toTeaser(idea) };
+  }
+
   const scoped = scopeToTier(idea, viewer.tier);
   if ("locked" in scoped && scoped.locked) {
     return { kind: "tier-locked", idea: scoped };
-  }
-
-  // Anonymous visitors are never metered — there's no identity to track quota against.
-  if (!viewer.subscriberId) {
-    return { kind: "full", idea: scoped as IdeaDrop };
   }
 
   if (alreadyUnlocked.has(idea.id)) {
@@ -66,13 +70,13 @@ export async function previewAccess(
  * teaser without touching the quota.
  */
 export async function resolveAndRecordAccess(idea: IdeaDrop, viewer: ViewerContext): Promise<IdeaAccess> {
+  if (!viewer.subscriberId) {
+    return { kind: "signed-out", idea: toTeaser(idea) };
+  }
+
   const scoped = scopeToTier(idea, viewer.tier);
   if ("locked" in scoped && scoped.locked) {
     return { kind: "tier-locked", idea: scoped };
-  }
-
-  if (!viewer.subscriberId) {
-    return { kind: "full", idea: scoped as IdeaDrop };
   }
 
   const { allowed, status } = await canUnlockIdea(viewer.subscriberId, idea.id, viewer.tier);

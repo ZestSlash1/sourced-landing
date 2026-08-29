@@ -1,12 +1,34 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { listFeaturedIdeas, listPublishedIdeas } from "@/lib/idea-drops/repository";
 import { unlockedIdeaIds } from "@/lib/idea-drops/quota";
 import { previewAccess, resolveViewerContext } from "@/lib/idea-drops/resolve-access";
 import { getSubscriberByUserId } from "@/lib/subscriptions/store";
 import { getSubscriberTopics } from "@/lib/subscriptions/subscriber-topics";
+import { absoluteUrl } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
+
+const FEED_DESCRIPTION =
+  "Browse Sourced's feed of validated startup ideas — real problems people already complain about, backed by evidence, ready to build.";
+
+export const metadata: Metadata = {
+  title: "Feed",
+  description: FEED_DESCRIPTION,
+  alternates: { canonical: "/feed" },
+  openGraph: {
+    type: "website",
+    title: "Feed | Sourced",
+    description: FEED_DESCRIPTION,
+    url: absoluteUrl("/feed"),
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Feed | Sourced",
+    description: FEED_DESCRIPTION,
+  },
+};
 
 const COVERS = ["cover-1", "cover-2", "cover-3", "cover-4", "cover-5", "cover-6"];
 
@@ -49,6 +71,8 @@ export default async function FeedPage() {
                 <span className="feed-badge">🔒 {idea.tier}+</span>
               ) : result.kind === "quota-locked" ? (
                 <span className="feed-badge">⏳ Limit reached</span>
+              ) : result.kind === "signed-out" ? (
+                <span className="feed-badge">🔒 Sign in</span>
               ) : null;
 
             const href =

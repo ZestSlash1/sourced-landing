@@ -76,6 +76,18 @@ export async function getPublishedIdeaByIdOrSlug(idOrSlug: string): Promise<Idea
   return rowToIdeaDrop(data as IdeaDropRow);
 }
 
+/** Slug + last-updated timestamp for every published idea, for app/sitemap.ts. */
+export async function listPublishedSlugsForSitemap(): Promise<{ slug: string; updatedAt: string }[]> {
+  const supabase = getSupabaseServerClient();
+  const { data, error } = await supabase
+    .from(TABLE)
+    .select("slug, updated_at")
+    .eq("status", "published");
+
+  if (error) throw new Error(`listPublishedSlugsForSitemap: ${error.message}`);
+  return (data ?? []).map((row) => ({ slug: row.slug as string, updatedAt: row.updated_at as string }));
+}
+
 /** Every idea regardless of status, for the admin dashboard. Most recently updated first. */
 export async function listAllIdeas(): Promise<IdeaDrop[]> {
   const supabase = getSupabaseServerClient();

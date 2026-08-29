@@ -60,6 +60,7 @@ const idea: IdeaDrop = {
   },
   status: "published",
   featured: false,
+  updatedAt: "2026-08-29T00:00:00.000Z",
 };
 
 const row: IdeaDropRow = {
@@ -84,7 +85,7 @@ const row: IdeaDropRow = {
   featured: false,
   source_signal_ids: null,
   created_at: "2026-08-29T00:00:00.000Z",
-  updated_at: "2026-08-29T00:00:00.000Z",
+  updated_at: idea.updatedAt as string,
 };
 
 describe("rowToIdeaDrop", () => {
@@ -102,10 +103,10 @@ describe("rowToIdeaDrop", () => {
     expect(mapped.validationErrors).toEqual(["bad evidence"]);
   });
 
-  it("drops created_at/updated_at — they are not part of the IdeaDrop contract", () => {
+  it("drops created_at but carries updated_at through as updatedAt", () => {
     const mapped = rowToIdeaDrop(row);
     expect(Object.keys(mapped)).not.toContain("createdAt");
-    expect(Object.keys(mapped)).not.toContain("updatedAt");
+    expect(mapped.updatedAt).toBe(row.updated_at);
   });
 });
 
@@ -140,7 +141,9 @@ describe("ideaDropToRow", () => {
     expect(ideaDropToRow(withErrors).validation_errors).toEqual(["only 2 evidence items"]);
   });
 
-  it("round-trips through row and back to an identical IdeaDrop", () => {
-    expect(rowToIdeaDrop(ideaDropToRow(idea) as IdeaDropRow)).toEqual(idea);
+  it("round-trips through row and back to an identical IdeaDrop, minus the DB-managed updatedAt", () => {
+    // ideaDropToRow omits updated_at (the DB trigger sets it on write), so a
+    // round trip through it can't reproduce the original updatedAt.
+    expect(rowToIdeaDrop(ideaDropToRow(idea) as IdeaDropRow)).toEqual({ ...idea, updatedAt: undefined });
   });
 });

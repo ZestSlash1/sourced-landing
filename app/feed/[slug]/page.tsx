@@ -1,12 +1,43 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { getPublishedIdeaByIdOrSlug } from "@/lib/idea-drops/repository";
 import { nextQuotaResetIso } from "@/lib/idea-drops/quota";
 import { resolveAndRecordAccess, resolveViewerContext } from "@/lib/idea-drops/resolve-access";
+import type { IdeaAccess } from "@/lib/idea-drops/resolve-access";
 import type { IdeaDrop } from "@/types/idea-drop";
+import { absoluteUrl, truncate } from "@/lib/seo";
 import CopyPromptButton from "./copy-prompt-button";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+  const idea = await getPublishedIdeaByIdOrSlug(params.slug);
+  if (!idea) {
+    return { title: "Brief not found", robots: { index: false, follow: false } };
+  }
+
+  const description = truncate(idea.problem.summary, 155);
+  const url = absoluteUrl(`/feed/${idea.slug}`);
+
+  return {
+    title: idea.title,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      type: "article",
+      title: idea.title,
+      description,
+      url,
+      publishedTime: idea.publishedAt,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: idea.title,
+      description,
+    },
+  };
+}
 
 export default async function IdeaDetailPage({ params }: { params: { slug: string } }) {
   const idea = await getPublishedIdeaByIdOrSlug(params.slug);
@@ -18,6 +49,8 @@ export default async function IdeaDetailPage({ params }: { params: { slug: strin
 
   return (
     <main className="app-shell">
+      <BriefJsonLd idea={idea} access={access.kind} />
+
       <Link href="/feed" className="back-link">
         ← Back to feed
       </Link>
@@ -37,7 +70,9 @@ export default async function IdeaDetailPage({ params }: { params: { slug: strin
           </div>
 
           <div className="brief-section">
-            <div className="eyebrow">Evidence</div>
+            <div className="eyebrow">
+              Evidence{access.kind !== "full" ? ` · ${idea.evidence.length} source${idea.evidence.length === 1 ? "" : "s"}` : ""}
+            </div>
             <ul className="evidence-list">
               {scoped.evidence.map((e, i) => (
                 <li key={i} className="evidence-item">
@@ -51,7 +86,17 @@ export default async function IdeaDetailPage({ params }: { params: { slug: strin
             </ul>
           </div>
 
-          {access.kind === "quota-locked" ? (
+          {access.kind === "signed-out" ? (
+            <div className="locked-callout">
+              <p style={{ margin: "0 0 14px", fontSize: 14, color: "var(--ink-soft)" }}>
+                Sign in for free to view the full build brief, matched APIs, launch stack, and ready-to-paste agent
+                prompts.
+              </p>
+              <Link href={`/login?next=${encodeURIComponent(`/feed/${scoped.slug}`)}`} className="btn btn-primary">
+                Sign in to unlock
+              </Link>
+            </div>
+          ) : access.kind === "quota-locked" ? (
             <div className="locked-callout">
               <p style={{ margin: "0 0 14px", fontSize: 14, color: "var(--ink-soft)" }}>
                 You&apos;ve used all {access.quota.quota} of your full idea{access.quota.quota === 1 ? "" : "s"} this
@@ -79,6 +124,41 @@ export default async function IdeaDetailPage({ params }: { params: { slug: strin
       </div>
     </main>
   );
+}
+
+/**
+ * HowTo only when the viewer's rendered HTML actually contains the steps
+ * (kind === "full") — structured data must match what's visible on the page.
+ * Locked viewers get Article instead, since coreLoop stays gated.
+ */
+function BriefJsonLd({ idea, access }: { idea: IdeaDrop; access: IdeaAccess["kind"] }) {
+  const url = absoluteUrl(`/feed/${idea.slug}`);
+  const base = {
+    "@context": "https://schema.org",
+    headline: idea.title,
+    description: idea.problem.summary,
+    datePublished: idea.publishedAt,
+    ...(idea.updatedAt ? { dateModified: idea.updatedAt } : {}),
+    url,
+    author: { "@type": "Organization", name: "Sourced", url: "https://www.getsourced.dev" },
+    publisher: { "@type": "Organization", name: "Sourced", url: "https://www.getsourced.dev" },
+  };
+
+  const json =
+    access === "full"
+      ? {
+          ...base,
+          "@type": "HowTo",
+          name: idea.title,
+          step: idea.buildBrief.coreLoop.map((text, i) => ({
+            "@type": "HowToStep",
+            position: i + 1,
+            text,
+          })),
+        }
+      : { ...base, "@type": "Article" };
+
+  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(json) }} />;
 }
 
 function FullBrief({ idea }: { idea: IdeaDrop }) {

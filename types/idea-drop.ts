@@ -43,6 +43,8 @@ export interface IdeaDrop {
   status: "draft" | "needs_evidence" | "published" | "pending_review";
   validationErrors?: string[]; // populated when status = "needs_evidence"
 
+  updatedAt?: string; // ISO timestamp, DB-managed — absent on ideas not yet round-tripped through the DB
+
   featured?: boolean; // admin-curated, shown to logged-out/no-topic feed visitors
   sourceSignalIds?: string[]; // raw_signals this draft came from, for the admin review queue
 }

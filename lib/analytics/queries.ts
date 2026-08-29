@@ -53,6 +53,54 @@ function referrerLabel(referrer: string | null): string {
   }
 }
 
+export interface ViewerLocation {
+  city: string | null;
+  country: string | null;
+  latitude: number;
+  longitude: number;
+  count: number;
+}
+
+const LOCATIONS_WINDOW_HOURS = 24;
+
+/**
+ * Recent page views with a resolved lat/lng, collapsed to one point per
+ * ~11km cell (1 decimal degree) so repeat visits from the same city don't
+ * draw a separate dot each time. Powers the globe on /admin/analytics.
+ * Geolocation only exists on Vercel in production (see middleware.ts), so
+ * this is empty in local dev.
+ */
+export async function getRecentViewerLocations(limit = 500): Promise<ViewerLocation[]> {
+  const supabase = getSupabaseServerClient();
+  const since = new Date(Date.now() - LOCATIONS_WINDOW_HOURS * 60 * 60 * 1000).toISOString();
+
+  const { data, error } = await supabase
+    .from("events")
+    .select("city, country, latitude, longitude")
+    .eq("event_type", "page_view")
+    .not("latitude", "is", null)
+    .not("longitude", "is", null)
+    .gte("created_at", since)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) throw new Error(`getRecentViewerLocations: ${error.message}`);
+  const rows = (data ?? []) as { city: string | null; country: string | null; latitude: number; longitude: number }[];
+
+  const byCell = new Map<string, ViewerLocation>();
+  for (const row of rows) {
+    const key = `${row.latitude.toFixed(1)},${row.longitude.toFixed(1)}`;
+    const existing = byCell.get(key);
+    if (existing) {
+      existing.count += 1;
+    } else {
+      byCell.set(key, { city: row.city, country: row.country, latitude: row.latitude, longitude: row.longitude, count: 1 });
+    }
+  }
+
+  return Array.from(byCell.values()).sort((a, b) => b.count - a.count);
+}
+
 /**
  * Aggregates the events table for /admin/analytics — a fixed 30-day window,
  * fetched in one query and summarized in memory. Fine at this app's current

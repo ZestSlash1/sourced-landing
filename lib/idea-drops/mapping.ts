@@ -58,6 +58,7 @@ export function rowToIdeaDrop(row: IdeaDropRow): IdeaDrop {
     difficulty: row.difficulty,
     status: row.status,
     featured: row.featured,
+    updatedAt: row.updated_at,
   };
 
   if (row.validation_errors !== null) {
