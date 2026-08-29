@@ -2,15 +2,15 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { listAllIdeas } from "@/lib/idea-drops/repository";
-import SignOutButton from "./sign-out-button";
+import AdminShell from "./admin-shell";
 
 export const dynamic = "force-dynamic";
 
-const STATUS_COLOR: Record<string, string> = {
-  draft: "var(--ink-soft)",
-  needs_evidence: "var(--coral)",
-  pending_review: "var(--amber, #b8860b)",
-  published: "var(--violet)",
+const STATUS_STYLE: Record<string, { fg: string; bg: string }> = {
+  draft: { fg: "var(--ink-soft)", bg: "var(--bg)" },
+  needs_evidence: { fg: "#C4432F", bg: "rgba(255,111,94,0.14)" },
+  pending_review: { fg: "#8A5A00", bg: "rgba(255,184,77,0.18)" },
+  published: { fg: "var(--violet-deep)", bg: "rgba(91,79,247,0.12)" },
 };
 
 export default async function AdminDashboard() {
@@ -22,74 +22,91 @@ export default async function AdminDashboard() {
 
   if (check.ok === false) {
     return (
-      <main style={{ maxWidth: 480, margin: "80px auto", padding: "0 24px" }}>
+      <AdminShell active="/admin">
         <p>Signed in, but this account isn&apos;t an admin.</p>
-        <SignOutButton />
-      </main>
+      </AdminShell>
     );
   }
 
   const ideas = await listAllIdeas();
 
   return (
-    <main style={{ maxWidth: 960, margin: "0 auto", padding: "40px 24px" }}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 28,
-        }}
-      >
-        <h1 className="display" style={{ fontSize: 24, margin: 0 }}>
+    <AdminShell active="/admin">
+      <div style={{ marginBottom: 24 }}>
+        <h1 className="display" style={{ fontSize: 28, margin: "0 0 6px", letterSpacing: "-0.015em" }}>
           Idea drops
         </h1>
-        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-          <Link href="/admin/pending" style={{ fontSize: 13 }}>
-            Pending review
-          </Link>
-          <Link href="/admin/analytics" style={{ fontSize: 13 }}>
-            Analytics
-          </Link>
-          <SignOutButton />
-        </div>
+        <p className="mono" style={{ fontSize: 12.5, color: "var(--ink-soft)", margin: 0 }}>
+          {ideas.length} idea{ideas.length === 1 ? "" : "s"} total
+        </p>
       </div>
 
-      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
-        <thead>
-          <tr style={{ textAlign: "left", borderBottom: "1px solid var(--line)" }}>
-            <th style={{ padding: "8px 6px" }}>Title</th>
-            <th style={{ padding: "8px 6px" }}>Status</th>
-            <th style={{ padding: "8px 6px" }}>Tier</th>
-            <th style={{ padding: "8px 6px" }}>Demand</th>
-            <th style={{ padding: "8px 6px" }} />
-          </tr>
-        </thead>
-        <tbody>
-          {ideas.map((idea) => (
-            <tr key={idea.id} style={{ borderBottom: "1px solid var(--line)" }}>
-              <td style={{ padding: "10px 6px" }}>{idea.title}</td>
-              <td style={{ padding: "10px 6px" }}>
-                <span style={{ color: STATUS_COLOR[idea.status] ?? "inherit" }}>
-                  {idea.status}
+      <div
+        style={{
+          background: "var(--surface)",
+          border: "1px solid var(--line)",
+          borderRadius: "var(--r-xl)",
+          boxShadow: "var(--shadow)",
+          overflow: "hidden",
+        }}
+      >
+        {ideas.length === 0 ? (
+          <p style={{ padding: "24px 22px", color: "var(--ink-soft)", margin: 0, fontSize: 14 }}>No ideas yet.</p>
+        ) : (
+          ideas.map((idea, i) => {
+            const status = STATUS_STYLE[idea.status] ?? STATUS_STYLE.draft;
+            return (
+              <Link
+                key={idea.id}
+                href={`/admin/ideas/${idea.id}`}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 16,
+                  padding: "16px 22px",
+                  borderTop: i === 0 ? "none" : "1px solid var(--line)",
+                  textDecoration: "none",
+                  color: "inherit",
+                }}
+              >
+                <div style={{ minWidth: 0 }}>
+                  <div
+                    style={{
+                      fontWeight: 600,
+                      fontSize: 14.5,
+                      marginBottom: 5,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {idea.title}
+                  </div>
+                  <div style={{ fontSize: 12.5, color: "var(--ink-soft)" }}>
+                    {idea.category} · demand {idea.demandScore} · {idea.tier} tier
+                  </div>
+                </div>
+
+                <span
+                  style={{
+                    flexShrink: 0,
+                    fontSize: 11.5,
+                    fontWeight: 600,
+                    padding: "5px 11px",
+                    borderRadius: "var(--r-chip)",
+                    color: status.fg,
+                    background: status.bg,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {idea.status.replace("_", " ")}
                 </span>
-              </td>
-              <td style={{ padding: "10px 6px" }}>{idea.tier}</td>
-              <td style={{ padding: "10px 6px" }}>{idea.demandScore}</td>
-              <td style={{ padding: "10px 6px", textAlign: "right" }}>
-                <Link href={`/admin/ideas/${idea.id}`}>Edit</Link>
-              </td>
-            </tr>
-          ))}
-          {ideas.length === 0 && (
-            <tr>
-              <td colSpan={5} style={{ padding: "20px 6px", color: "var(--ink-soft)" }}>
-                No ideas yet.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-    </main>
+              </Link>
+            );
+          })
+        )}
+      </div>
+    </AdminShell>
   );
 }

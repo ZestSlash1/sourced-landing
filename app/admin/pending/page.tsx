@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { listPendingReviewIdeas } from "@/lib/idea-drops/repository";
+import AdminShell from "../admin-shell";
 import ReviewActions from "./review-actions";
 
 export const dynamic = "force-dynamic";
@@ -12,36 +13,48 @@ export default async function PendingReviewPage() {
   if (check.ok === false && check.status === 401) redirect("/admin/login");
   if (check.ok === false) {
     return (
-      <main style={{ maxWidth: 480, margin: "80px auto", padding: "0 24px" }}>
+      <AdminShell active="/admin/pending">
         <p>Signed in, but this account isn&apos;t an admin.</p>
-      </main>
+      </AdminShell>
     );
   }
 
   const ideas = await listPendingReviewIdeas();
 
   return (
-    <main style={{ maxWidth: 800, margin: "0 auto", padding: "40px 24px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 24 }}>
-        <h1 className="display" style={{ fontSize: 24, margin: 0 }}>
+    <AdminShell active="/admin/pending">
+      <div style={{ marginBottom: 24 }}>
+        <h1 className="display" style={{ fontSize: 28, margin: "0 0 6px", letterSpacing: "-0.015em" }}>
           Pending review
         </h1>
-        <Link href="/admin" style={{ fontSize: 13, color: "var(--ink-soft)" }}>
-          Back to all ideas
-        </Link>
+        <p className="mono" style={{ fontSize: 12.5, color: "var(--ink-soft)", margin: 0 }}>
+          {ideas.length} waiting on you
+        </p>
       </div>
 
       {ideas.length === 0 && (
-        <p style={{ color: "var(--ink-soft)" }}>Nothing waiting on review.</p>
+        <div
+          style={{
+            background: "var(--surface)",
+            border: "1px solid var(--line)",
+            borderRadius: "var(--r-xl)",
+            padding: "24px 22px",
+            boxShadow: "var(--shadow)",
+          }}
+        >
+          <p style={{ color: "var(--ink-soft)", margin: 0, fontSize: 14 }}>Nothing waiting on review.</p>
+        </div>
       )}
 
       {ideas.map((idea) => (
         <div
           key={idea.id}
           style={{
+            background: "var(--surface)",
             border: "1px solid var(--line)",
-            borderRadius: "var(--r-lg)",
-            padding: 20,
+            borderRadius: "var(--r-xl)",
+            boxShadow: "var(--shadow)",
+            padding: 22,
             marginBottom: 16,
           }}
         >
@@ -52,7 +65,19 @@ export default async function PendingReviewPage() {
                 {idea.category} · demand {idea.demandScore} · {idea.tier} tier · tags: {idea.tags.join(", ")}
               </p>
             </div>
-            <Link href={`/admin/ideas/${idea.id}`} style={{ fontSize: 13 }}>
+            <Link
+              href={`/admin/ideas/${idea.id}`}
+              style={{
+                flexShrink: 0,
+                fontSize: 12.5,
+                fontWeight: 600,
+                padding: "6px 14px",
+                borderRadius: "var(--r-chip)",
+                border: "1px solid var(--line)",
+                color: "var(--ink)",
+                textDecoration: "none",
+              }}
+            >
               Edit
             </Link>
           </div>
@@ -80,6 +105,6 @@ export default async function PendingReviewPage() {
           <ReviewActions ideaId={idea.id} />
         </div>
       ))}
-    </main>
+    </AdminShell>
   );
 }

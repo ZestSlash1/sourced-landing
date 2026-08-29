@@ -25,13 +25,15 @@ export default function ReviewActions({ ideaId }: { ideaId: string }) {
         disabled={busy}
         onClick={() => setStatus("published")}
         style={{
-          padding: "6px 12px",
+          padding: "7px 16px",
           background: "var(--violet)",
           color: "#fff",
           border: "none",
-          borderRadius: "var(--r-sm)",
+          borderRadius: "var(--r-chip)",
           fontSize: 13,
+          fontWeight: 600,
           cursor: busy ? "default" : "pointer",
+          opacity: busy ? 0.7 : 1,
         }}
       >
         Approve
@@ -41,13 +43,15 @@ export default function ReviewActions({ ideaId }: { ideaId: string }) {
         disabled={busy}
         onClick={() => setStatus("draft")}
         style={{
-          padding: "6px 12px",
-          background: "transparent",
-          color: "var(--coral)",
-          border: "1px solid var(--coral)",
-          borderRadius: "var(--r-sm)",
+          padding: "7px 16px",
+          background: "rgba(255,111,94,0.12)",
+          color: "#C4432F",
+          border: "none",
+          borderRadius: "var(--r-chip)",
           fontSize: 13,
+          fontWeight: 600,
           cursor: busy ? "default" : "pointer",
+          opacity: busy ? 0.7 : 1,
         }}
       >
         Reject

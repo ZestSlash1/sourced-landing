@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { getIdeaById } from "@/lib/idea-drops/repository";
+import AdminShell from "../../admin-shell";
 import IdeaEditForm from "./idea-edit-form";
 
 export const dynamic = "force-dynamic";
@@ -13,9 +14,9 @@ export default async function EditIdeaPage({ params }: { params: { id: string } 
   }
   if (check.ok === false) {
     return (
-      <main style={{ maxWidth: 480, margin: "80px auto", padding: "0 24px" }}>
+      <AdminShell active="/admin">
         <p>Signed in, but this account isn&apos;t an admin.</p>
-      </main>
+      </AdminShell>
     );
   }
 
@@ -23,8 +24,8 @@ export default async function EditIdeaPage({ params }: { params: { id: string } 
   if (!idea) notFound();
 
   return (
-    <main style={{ maxWidth: 720, margin: "0 auto", padding: "40px 24px" }}>
+    <AdminShell active="/admin">
       <IdeaEditForm idea={idea} />
-    </main>
+    </AdminShell>
   );
 }

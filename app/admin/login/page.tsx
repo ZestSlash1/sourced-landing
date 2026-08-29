@@ -46,7 +46,8 @@ export default function AdminLoginPage() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "var(--bg)",
+        background:
+          "radial-gradient(900px 420px at 15% 0%, rgba(91,79,247,0.16), transparent 60%), radial-gradient(700px 360px at 100% 100%, rgba(255,111,94,0.12), transparent 55%), var(--bg)",
       }}
     >
       <form
@@ -56,14 +57,24 @@ export default function AdminLoginPage() {
           maxWidth: 360,
           background: "var(--surface)",
           border: "1px solid var(--line)",
-          borderRadius: "var(--r-lg)",
-          boxShadow: "var(--shadow)",
+          borderRadius: "var(--r-xl)",
+          boxShadow: "var(--shadow-hover)",
           padding: 32,
         }}
       >
-        <h1 className="display" style={{ fontSize: 20, margin: "0 0 24px" }}>
+        <div
+          style={{
+            width: 34,
+            height: 34,
+            borderRadius: "var(--r-sm)",
+            background: "var(--ink)",
+            marginBottom: 18,
+          }}
+        />
+        <h1 className="display" style={{ fontSize: 22, margin: "0 0 4px", letterSpacing: "-0.01em" }}>
           Admin sign in
         </h1>
+        <p style={{ fontSize: 13, color: "var(--ink-soft)", margin: "0 0 24px" }}>Sourced operations</p>
 
         <label style={{ display: "block", fontSize: 13, marginBottom: 6 }}>
           Email
