@@ -3,14 +3,15 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { AppleIcon, GitHubIcon, GoogleIcon } from "./oauth-icons";
 
 type Mode = "sign-in" | "sign-up";
 type OAuthProvider = "github" | "google" | "apple";
 
-const OAUTH_PROVIDERS: { id: OAuthProvider; label: string }[] = [
-  { id: "github", label: "Continue with GitHub" },
-  { id: "google", label: "Continue with Google" },
-  { id: "apple", label: "Continue with Apple" },
+const OAUTH_PROVIDERS: { id: OAuthProvider; label: string; icon: React.ReactNode }[] = [
+  { id: "github", label: "Continue with GitHub", icon: <GitHubIcon /> },
+  { id: "google", label: "Continue with Google", icon: <GoogleIcon /> },
+  { id: "apple", label: "Continue with Apple", icon: <AppleIcon /> },
 ];
 
 const inputStyle: React.CSSProperties = {
@@ -113,6 +114,10 @@ export default function CustomerLoginPage() {
               type="button"
               onClick={() => handleOAuth(p.id)}
               style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 10,
                 padding: "10px 12px",
                 background: "var(--bg)",
                 color: "inherit",
@@ -122,6 +127,7 @@ export default function CustomerLoginPage() {
                 cursor: "pointer",
               }}
             >
+              {p.icon}
               {p.label}
             </button>
           ))}
