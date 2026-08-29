@@ -36,7 +36,7 @@ export default async function TopicsPage() {
       <TopicPickerForm initialTopics={topics} />
 
       <a
-        href="/"
+        href="/account"
         style={{
           display: "inline-block",
           marginTop: 28,
@@ -45,7 +45,7 @@ export default async function TopicsPage() {
           textDecoration: "none",
         }}
       >
-        ← Back to Sourced
+        ← Back to Account
       </a>
     </main>
   );

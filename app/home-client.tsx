@@ -196,7 +196,8 @@ export default function HomeClient({ userEmail }: { userEmail: string | null }) 
           <a href="#apis">API match</a>
           <a href="#sample">Sample idea</a>
           <a href="#pricing">Pricing</a>
-          {userEmail ? <a href="/account/topics">Account</a> : <a href="/login">Log in</a>}
+          <a href="/feed">Feed</a>
+          {userEmail ? <a href="/account">Account</a> : <a href="/login">Log in</a>}
         </div>
         <a className="nav-cta" href="#pricing">Get started</a>
         <button
@@ -216,8 +217,9 @@ export default function HomeClient({ userEmail }: { userEmail: string | null }) 
           <a href="#apis" onClick={() => setMobileNavOpen(false)}>API match</a>
           <a href="#sample" onClick={() => setMobileNavOpen(false)}>Sample idea</a>
           <a href="#pricing" onClick={() => setMobileNavOpen(false)}>Pricing</a>
+          <a href="/feed" onClick={() => setMobileNavOpen(false)}>Feed</a>
           {userEmail ? (
-            <a href="/account/topics" onClick={() => setMobileNavOpen(false)}>Account</a>
+            <a href="/account" onClick={() => setMobileNavOpen(false)}>Account</a>
           ) : (
             <a href="/login" onClick={() => setMobileNavOpen(false)}>Log in</a>
           )}
