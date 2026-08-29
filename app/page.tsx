@@ -2,6 +2,25 @@
 
 import { useEffect, useRef, useState, ReactNode } from "react";
 
+type PlanKey = "builder-monthly" | "builder-yearly" | "studio-monthly";
+
+declare global {
+  interface Window {
+    Razorpay?: new (options: Record<string, unknown>) => { open: () => void };
+  }
+}
+
+function loadRazorpayScript(): Promise<void> {
+  if (window.Razorpay) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error("Failed to load Razorpay checkout"));
+    document.body.appendChild(script);
+  });
+}
+
 const ideaCards = [
   { cover: "cover-1", tag: "Micro-SaaS", h: 56, title: "Client-ready P&L exports for solo bookkeepers", apis: "3 APIs matched", signals: "41 signals found", pct: 88, d: 0 },
   { cover: "cover-2", tag: "Chrome Ext", h: 80, title: "Auto-flag duplicate line items in shared Figma comment threads", apis: "1 API matched", signals: "19 signals", pct: 64, d: 0.08 },
@@ -53,6 +72,66 @@ export default function Home() {
   const navRef = useRef<HTMLElement | null>(null);
   const [agentId, setAgentId] = useState("claude");
   const agent = agents.find((a) => a.id === agentId)!;
+  const [checkoutPending, setCheckoutPending] = useState<PlanKey | null>(null);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+
+  async function startCheckout(plan: PlanKey) {
+    setCheckoutError(null);
+    setCheckoutPending(plan);
+
+    try {
+      const res = await fetch("/api/razorpay/create-subscription", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan }),
+      });
+
+      if (res.status === 401) {
+        const next = `/?checkout=${plan}#pricing`;
+        window.location.href = `/login?next=${encodeURIComponent(next)}`;
+        return;
+      }
+
+      if (!res.ok) {
+        setCheckoutError("Couldn't start checkout — please try again.");
+        return;
+      }
+
+      const { subscriptionId, keyId, email } = (await res.json()) as {
+        subscriptionId: string;
+        keyId: string;
+        email: string;
+      };
+
+      await loadRazorpayScript();
+      const razorpay = new window.Razorpay!({
+        key: keyId,
+        subscription_id: subscriptionId,
+        name: "Sourced",
+        description: plan.replace("-", " "),
+        prefill: { email },
+        theme: { color: "#6d5ef8" },
+        handler: () => {
+          window.location.href = "/account/topics?upgraded=1";
+        },
+      });
+      razorpay.open();
+    } catch {
+      setCheckoutError("Couldn't start checkout — please try again.");
+    } finally {
+      setCheckoutPending(null);
+    }
+  }
+
+  // Resumes checkout after a login redirect round-trip (?checkout=<plan>).
+  useEffect(() => {
+    const plan = new URLSearchParams(window.location.search).get("checkout");
+    if (plan === "builder-monthly" || plan === "builder-yearly" || plan === "studio-monthly") {
+      window.history.replaceState(null, "", window.location.pathname + window.location.hash);
+      startCheckout(plan);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     const nav = navRef.current;
@@ -299,20 +378,43 @@ export default function Home() {
                 <li>API match: name only, no docs</li>
                 <li>No card required</li>
               </ul>
-              <button type="button" className="plan-btn">Start free</button>
+              <button
+                type="button"
+                className="plan-btn"
+                onClick={() => {
+                  window.location.href = "/login";
+                }}
+              >
+                Start free
+              </button>
             </Reveal>
             <Reveal delay={0.08} className="plan featured">
               <div className="plan-name">Builder</div>
               <div className="plan-tag">The full weekly feed · most common pick</div>
               <div className="plan-price">₹399<span>/mo</span></div>
-              <div className="plan-old">or ₹3,499/yr — save ₹1,289</div>
+              <button
+                type="button"
+                className="plan-old"
+                style={{ background: "none", border: "none", cursor: "pointer", padding: 0, font: "inherit" }}
+                onClick={() => startCheckout("builder-yearly")}
+                disabled={checkoutPending !== null}
+              >
+                or ₹3,499/yr — save ₹1,289
+              </button>
               <ul className="plan-features">
                 <li>4 full idea cards every month</li>
                 <li>Full searchable archive</li>
                 <li>Buyer profile + build brief on every card</li>
                 <li>Full API match — auth type, free-tier limits, docs links</li>
               </ul>
-              <button type="button" className="plan-btn">Get Builder</button>
+              <button
+                type="button"
+                className="plan-btn"
+                onClick={() => startCheckout("builder-monthly")}
+                disabled={checkoutPending !== null}
+              >
+                {checkoutPending === "builder-monthly" ? "Starting..." : "Get Builder"}
+              </button>
             </Reveal>
             <Reveal delay={0.16} className="plan">
               <div className="plan-name">Studio</div>
@@ -324,9 +426,21 @@ export default function Home() {
                 <li>$0 launch stack — free-tier hosting, auth &amp; email picks per idea</li>
                 <li>48-hour early access to new cards</li>
               </ul>
-              <button type="button" className="plan-btn">Get Studio</button>
+              <button
+                type="button"
+                className="plan-btn"
+                onClick={() => startCheckout("studio-monthly")}
+                disabled={checkoutPending !== null}
+              >
+                {checkoutPending === "studio-monthly" ? "Starting..." : "Get Studio"}
+              </button>
             </Reveal>
           </div>
+          {checkoutError && (
+            <p style={{ textAlign: "center", color: "var(--coral, #e5533d)", marginTop: 16 }}>
+              {checkoutError}
+            </p>
+          )}
           <Reveal className="founding">
             <span className="founding-label">Founding rate</span>
             <span>The first 100 subscribers keep <b>₹299/mo</b> on Builder for life. No expiry games, just first 100.</span>

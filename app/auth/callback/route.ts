@@ -11,6 +11,7 @@ import { getOrCreateSubscriberForUser } from "@/lib/subscriptions/store";
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
+  const next = url.searchParams.get("next") || "/account/topics";
 
   if (code) {
     const supabase = getSupabaseAuthServerClient();
@@ -21,5 +22,5 @@ export async function GET(request: Request) {
     }
   }
 
-  return NextResponse.redirect(new URL("/account/topics", url.origin));
+  return NextResponse.redirect(new URL(next, url.origin));
 }

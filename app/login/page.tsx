@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { AppleIcon, GitHubIcon, GoogleIcon } from "./oauth-icons";
 
@@ -32,7 +32,17 @@ const inputStyle: React.CSSProperties = {
  * the buttons work — see .env.example).
  */
 export default function CustomerLoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const next = searchParams.get("next") || "/account/topics";
   const [mode, setMode] = useState<Mode>("sign-in");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -68,7 +78,7 @@ export default function CustomerLoginPage() {
       return;
     }
 
-    router.push("/account/topics");
+    router.push(next);
     router.refresh();
   }
 
@@ -77,7 +87,9 @@ export default function CustomerLoginPage() {
     const supabase = getSupabaseBrowserClient();
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+      },
     });
     if (oauthError) setError(oauthError.message);
   }

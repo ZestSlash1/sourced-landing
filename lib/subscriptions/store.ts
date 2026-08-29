@@ -72,6 +72,53 @@ export async function getOrCreateSubscriberForUser(
   return rowToSubscriber(data as SubscriberRow);
 }
 
+/** A subscriber by their Razorpay subscription id, or null. Used by the webhook to find who to update. */
+export async function getSubscriberByRazorpaySubscriptionId(
+  subscriptionId: string,
+): Promise<Subscriber | null> {
+  const supabase = getSupabaseServerClient();
+  const { data, error } = await supabase
+    .from(TABLE)
+    .select("*")
+    .eq("razorpay_subscription_id", subscriptionId)
+    .maybeSingle();
+
+  if (error) throw new Error(`getSubscriberByRazorpaySubscriptionId: ${error.message}`);
+  if (!data) return null;
+  return rowToSubscriber(data as SubscriberRow);
+}
+
+/**
+ * Links a newly-created Razorpay subscription to a subscriber, ahead of
+ * payment confirmation — tier stays untouched (still whatever it was) until
+ * the webhook confirms the first charge, so a checkout that's opened but
+ * abandoned never grants access.
+ */
+export async function setSubscriberRazorpaySubscription(
+  subscriberId: string,
+  razorpaySubscriptionId: string,
+): Promise<void> {
+  const supabase = getSupabaseServerClient();
+  const { error } = await supabase
+    .from(TABLE)
+    .update({ razorpay_subscription_id: razorpaySubscriptionId })
+    .eq("id", subscriberId);
+
+  if (error) throw new Error(`setSubscriberRazorpaySubscription: ${error.message}`);
+}
+
+/** Sets a subscriber's tier/status directly — the webhook's write path on payment events. */
+export async function updateSubscriberTier(
+  subscriberId: string,
+  tier: Subscriber["tier"],
+  status: Subscriber["status"],
+): Promise<void> {
+  const supabase = getSupabaseServerClient();
+  const { error } = await supabase.from(TABLE).update({ tier, status }).eq("id", subscriberId);
+
+  if (error) throw new Error(`updateSubscriberTier: ${error.message}`);
+}
+
 /** Creates or updates a subscriber by email. */
 export async function upsertSubscriber(
   subscriber: Partial<Subscriber> & Pick<Subscriber, "email">,
