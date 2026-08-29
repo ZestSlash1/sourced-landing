@@ -4,9 +4,29 @@ import { useState } from "react";
 
 export default function CopyPromptButton({ label, prompt }: { label: string; prompt: string }) {
   const [copied, setCopied] = useState(false);
+  const [failed, setFailed] = useState(false);
 
   async function handleCopy() {
-    await navigator.clipboard.writeText(prompt);
+    try {
+      await navigator.clipboard.writeText(prompt);
+    } catch {
+      // Clipboard API can fail (permissions, insecure context, unfocused
+      // document) — fall back to the legacy selection-based copy rather
+      // than silently doing nothing.
+      const textarea = document.createElement("textarea");
+      textarea.value = prompt;
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.select();
+      const ok = document.execCommand("copy");
+      document.body.removeChild(textarea);
+      if (!ok) {
+        setFailed(true);
+        setTimeout(() => setFailed(false), 2000);
+        return;
+      }
+    }
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
@@ -29,7 +49,7 @@ export default function CopyPromptButton({ label, prompt }: { label: string; pro
             cursor: "pointer",
           }}
         >
-          {copied ? "Copied!" : "Copy"}
+          {copied ? "Copied!" : failed ? "Couldn't copy" : "Copy"}
         </button>
       </div>
       <pre
