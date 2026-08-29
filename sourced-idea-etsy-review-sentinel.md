@@ -12,7 +12,7 @@ Etsy's default "Suggested" review sort doesn't necessarily favor recent or repre
 - **"Can't reply to negative feedback... showing as Suggested at the top"** — separate seller, same pattern: a single 1-star review out of ~600 five-stars became the top "suggested" review on a listing, confirmed reproducible even in incognito.
   https://community.etsy.com/t5/Technical-Issues/Can-t-reply-to-negative-feedback-Etsy-is-now-showing-as/td-p/143762883
 - **"Etsy's tracking tool reports incorrect data, customers ask for refunds"** — a separate but related trust-in-reviews thread that accumulated dozens of replies/likes across Sept 2022–2023, showing this isn't a one-off gripe.
-- Etsy's own Star Seller / Order Defect Rate policy can suspend a shop once 1%+ of reviews are 1–2 stars — so a misplaced bad review isn't just a lost sale, it's account-risk.
+- Etsy's own Star Seller / Order Defect Rate policy can suspend a shop once 1%+ of reviews are 1–2 stars — a misplaced bad review risks the account, not just a sale.
 - **Why this matters for Sourced:** the same complaint resurfaces independently in 2022, 2024, and 2025 threads — a durable, recurring pain point, not a single vent — and Etsy support has confirmed on record that there's no fix coming from their side. That's the gap.
 
 ## Target user

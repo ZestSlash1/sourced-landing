@@ -8,32 +8,6 @@ import CopyPromptButton from "./copy-prompt-button";
 
 export const dynamic = "force-dynamic";
 
-const sectionStyle: React.CSSProperties = { marginBottom: 28 };
-const labelStyle: React.CSSProperties = {
-  fontSize: 12,
-  fontWeight: 600,
-  color: "var(--ink-soft)",
-  textTransform: "uppercase",
-  letterSpacing: "0.04em",
-  marginBottom: 8,
-};
-const lockedBoxStyle: React.CSSProperties = {
-  border: "1px solid var(--line)",
-  borderRadius: "var(--r-sm)",
-  padding: "24px 20px",
-  textAlign: "center",
-};
-const upgradeButtonStyle: React.CSSProperties = {
-  display: "inline-block",
-  padding: "10px 20px",
-  background: "var(--violet)",
-  color: "#fff",
-  borderRadius: "var(--r-sm)",
-  fontWeight: 600,
-  fontSize: 14,
-  textDecoration: "none",
-};
-
 export default async function IdeaDetailPage({ params }: { params: { slug: string } }) {
   const idea = await getPublishedIdeaByIdOrSlug(params.slug);
   if (!idea) notFound();
@@ -43,65 +17,66 @@ export default async function IdeaDetailPage({ params }: { params: { slug: strin
   const scoped = access.idea;
 
   return (
-    <main style={{ maxWidth: 720, margin: "0 auto", padding: "40px 24px" }}>
-      <Link href="/feed" style={{ fontSize: 13, color: "var(--ink-soft)", textDecoration: "none" }}>
+    <main className="app-shell">
+      <Link href="/feed" className="back-link">
         ← Back to feed
       </Link>
 
-      <div style={{ margin: "16px 0 4px", fontSize: 12, fontWeight: 600, color: "var(--violet)" }}>
-        {scoped.category} · {scoped.demandScore}% demand
-      </div>
-      <h1 className="display" style={{ fontSize: 26, margin: "0 0 20px" }}>
-        {scoped.title}
-      </h1>
-
-      <div style={sectionStyle}>
-        <div style={labelStyle}>Problem</div>
-        <p style={{ margin: 0, fontSize: 15 }}>{scoped.problem.summary}</p>
-        <p style={{ margin: "6px 0 0", fontSize: 13, color: "var(--ink-soft)" }}>
-          {scoped.problem.whoFeelsIt}
-        </p>
-      </div>
-
-      <div style={sectionStyle}>
-        <div style={labelStyle}>Evidence</div>
-        <ul style={{ margin: 0, paddingLeft: 18, fontSize: 14 }}>
-          {scoped.evidence.map((e, i) => (
-            <li key={i} style={{ marginBottom: 6 }}>
-              <a href={e.url} target="_blank" rel="noopener noreferrer" style={{ color: "var(--violet)" }}>
-                {e.platform}
-                {e.subforum ? ` · ${e.subforum}` : ""}
-              </a>{" "}
-              — {e.quote}
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      {access.kind === "quota-locked" ? (
-        <div style={lockedBoxStyle}>
-          <p style={{ margin: "0 0 12px", fontSize: 14, color: "var(--ink-soft)" }}>
-            You&apos;ve used all {access.quota.quota} of your full idea{access.quota.quota === 1 ? "" : "s"} this
-            month. Resets {new Date(nextQuotaResetIso()).toLocaleDateString("en-US", { month: "long", day: "numeric" })}
-            .
-          </p>
-          <Link href="/#pricing" style={upgradeButtonStyle}>
-            Upgrade for more
-          </Link>
+      <div style={{ marginTop: 20 }}>
+        <div className="brief-cover">
+          <span className="tag">{scoped.category}</span>
+          <span className="score">{scoped.demandScore}% demand</span>
         </div>
-      ) : access.kind === "tier-locked" ? (
-        <div style={lockedBoxStyle}>
-          <p style={{ margin: "0 0 12px", fontSize: 14, color: "var(--ink-soft)" }}>
-            The full build brief, matched APIs, launch stack, and ready-to-paste agent prompts
-            unlock on {scoped.tier === "builder" ? "Builder" : "Studio"}.
-          </p>
-          <Link href="/#pricing" style={upgradeButtonStyle}>
-            See plans
-          </Link>
+        <div className="brief-body">
+          <h1 className="brief-title display">{scoped.title}</h1>
+
+          <div className="brief-section">
+            <div className="eyebrow">Problem</div>
+            <p style={{ margin: 0, fontSize: 15 }}>{scoped.problem.summary}</p>
+            <p style={{ margin: "6px 0 0", fontSize: 13, color: "var(--ink-soft)" }}>{scoped.problem.whoFeelsIt}</p>
+          </div>
+
+          <div className="brief-section">
+            <div className="eyebrow">Evidence</div>
+            <ul className="evidence-list">
+              {scoped.evidence.map((e, i) => (
+                <li key={i} className="evidence-item">
+                  <a href={e.url} target="_blank" rel="noopener noreferrer">
+                    {e.platform}
+                    {e.subforum ? ` · ${e.subforum}` : ""}
+                  </a>{" "}
+                  — {e.quote}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {access.kind === "quota-locked" ? (
+            <div className="locked-callout">
+              <p style={{ margin: "0 0 14px", fontSize: 14, color: "var(--ink-soft)" }}>
+                You&apos;ve used all {access.quota.quota} of your full idea{access.quota.quota === 1 ? "" : "s"} this
+                month. Resets{" "}
+                {new Date(nextQuotaResetIso()).toLocaleDateString("en-US", { month: "long", day: "numeric" })}.
+              </p>
+              <Link href="/#pricing" className="btn btn-primary">
+                Upgrade for more
+              </Link>
+            </div>
+          ) : access.kind === "tier-locked" ? (
+            <div className="locked-callout">
+              <p style={{ margin: "0 0 14px", fontSize: 14, color: "var(--ink-soft)" }}>
+                The full build brief, matched APIs, launch stack, and ready-to-paste agent prompts unlock on{" "}
+                {scoped.tier === "builder" ? "Builder" : "Studio"}.
+              </p>
+              <Link href="/#pricing" className="btn btn-primary">
+                See plans
+              </Link>
+            </div>
+          ) : (
+            <FullBrief idea={scoped as IdeaDrop} />
+          )}
         </div>
-      ) : (
-        <FullBrief idea={scoped as IdeaDrop} />
-      )}
+      </div>
     </main>
   );
 }
@@ -109,39 +84,39 @@ export default async function IdeaDetailPage({ params }: { params: { slug: strin
 function FullBrief({ idea }: { idea: IdeaDrop }) {
   return (
     <>
-      <div style={sectionStyle}>
-        <div style={labelStyle}>Why now</div>
+      <div className="brief-section">
+        <div className="eyebrow">Why now</div>
         <p style={{ margin: 0, fontSize: 14 }}>{idea.whyNow}</p>
       </div>
 
-      <div style={sectionStyle}>
-        <div style={labelStyle}>Build brief</div>
-        <p style={{ fontSize: 13, fontWeight: 600, margin: "0 0 4px" }}>Core loop</p>
-        <ol style={{ margin: "0 0 12px", paddingLeft: 18, fontSize: 14 }}>
+      <div className="brief-section">
+        <div className="eyebrow">Build brief</div>
+        <h5>Core loop</h5>
+        <ol className="brief-list">
           {idea.buildBrief.coreLoop.map((step, i) => (
             <li key={i}>{step}</li>
           ))}
         </ol>
-        <p style={{ fontSize: 13, fontWeight: 600, margin: "0 0 4px" }}>MVP scope</p>
-        <ul style={{ margin: "0 0 12px", paddingLeft: 18, fontSize: 14 }}>
+        <h5>MVP scope</h5>
+        <ul className="brief-list">
           {idea.buildBrief.mvpScope.map((item, i) => (
             <li key={i}>{item}</li>
           ))}
         </ul>
-        <p style={{ fontSize: 13, fontWeight: 600, margin: "0 0 4px" }}>Explicitly cut</p>
-        <ul style={{ margin: 0, paddingLeft: 18, fontSize: 14, color: "var(--ink-soft)" }}>
+        <h5>Explicitly cut</h5>
+        <ul className="brief-list" style={{ color: "var(--ink-soft)" }}>
           {idea.buildBrief.explicitlyCut.map((item, i) => (
             <li key={i}>{item}</li>
           ))}
         </ul>
       </div>
 
-      <div style={sectionStyle}>
-        <div style={labelStyle}>Matched APIs</div>
-        <ul style={{ margin: 0, paddingLeft: 18, fontSize: 14 }}>
+      <div className="brief-section">
+        <div className="eyebrow">Matched APIs</div>
+        <ul className="brief-list">
           {idea.matchedApis.map((api, i) => (
-            <li key={i} style={{ marginBottom: 4 }}>
-              <a href={api.sourceUrl} target="_blank" rel="noopener noreferrer" style={{ color: "var(--violet)" }}>
+            <li key={i}>
+              <a href={api.sourceUrl} target="_blank" rel="noopener noreferrer" style={{ color: "var(--violet-deep)", fontWeight: 600 }}>
                 {api.name}
               </a>{" "}
               — {api.purpose} ({api.freeTierLimit})
@@ -150,19 +125,19 @@ function FullBrief({ idea }: { idea: IdeaDrop }) {
         </ul>
       </div>
 
-      <div style={sectionStyle}>
-        <div style={labelStyle}>Launch stack</div>
-        <ul style={{ margin: 0, paddingLeft: 18, fontSize: 14 }}>
+      <div className="brief-section">
+        <div className="eyebrow">Launch stack</div>
+        <ul className="brief-list">
           {idea.launchStack.map((item, i) => (
-            <li key={i} style={{ marginBottom: 4 }}>
+            <li key={i}>
               <strong>{item.layer}:</strong> {item.tool} — {item.freeTierNote}
             </li>
           ))}
         </ul>
       </div>
 
-      <div style={sectionStyle}>
-        <div style={labelStyle}>Agent prompts</div>
+      <div className="brief-section">
+        <div className="eyebrow">Agent prompts</div>
         <CopyPromptButton label="Claude Code" prompt={idea.agentPrompts.claudeCode} />
         <CopyPromptButton label="Cursor / Windsurf" prompt={idea.agentPrompts.cursorWindsurf} />
         <CopyPromptButton label="v0 / Bolt" prompt={idea.agentPrompts.v0Bolt} />

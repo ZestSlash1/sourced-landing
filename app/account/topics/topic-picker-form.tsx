@@ -32,7 +32,7 @@ export default function TopicPickerForm({ initialTopics }: { initialTopics: stri
 
   return (
     <div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 24 }}>
+      <div className="topic-grid" style={{ marginBottom: 24 }}>
         {TOPICS.map((topic) => {
           const active = selected.has(topic);
           return (
@@ -40,16 +40,7 @@ export default function TopicPickerForm({ initialTopics }: { initialTopics: stri
               key={topic}
               type="button"
               onClick={() => toggle(topic)}
-              style={{
-                textAlign: "left",
-                padding: "12px 16px",
-                borderRadius: "var(--r-sm)",
-                border: `1px solid ${active ? "var(--violet)" : "var(--line)"}`,
-                background: active ? "var(--violet)" : "var(--bg)",
-                color: active ? "#fff" : "inherit",
-                cursor: "pointer",
-                fontSize: 14,
-              }}
+              className={`topic-chip ${active ? "is-active" : ""}`}
             >
               {topic}
             </button>
@@ -57,21 +48,7 @@ export default function TopicPickerForm({ initialTopics }: { initialTopics: stri
         })}
       </div>
 
-      <button
-        type="button"
-        onClick={handleSave}
-        disabled={saving}
-        style={{
-          padding: "10px 20px",
-          background: "var(--violet)",
-          color: "#fff",
-          border: "none",
-          borderRadius: "var(--r-sm)",
-          fontWeight: 600,
-          cursor: saving ? "default" : "pointer",
-          opacity: saving ? 0.7 : 1,
-        }}
-      >
+      <button type="button" onClick={handleSave} disabled={saving} className="btn btn-primary" style={{ border: "none", cursor: saving ? "default" : "pointer", opacity: saving ? 0.7 : 1 }}>
         {saving ? "Saving..." : "Save topics"}
       </button>
       {saved && <span style={{ marginLeft: 12, fontSize: 13, color: "var(--ink-soft)" }}>Saved.</span>}

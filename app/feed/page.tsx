@@ -8,6 +8,8 @@ import { getSubscriberTopics } from "@/lib/subscriptions/subscriber-topics";
 
 export const dynamic = "force-dynamic";
 
+const COVERS = ["cover-1", "cover-2", "cover-3", "cover-4", "cover-5", "cover-6"];
+
 export default async function FeedPage() {
   const viewer = await resolveViewerContext();
 
@@ -23,67 +25,52 @@ export default async function FeedPage() {
   const access = await Promise.all(ideas.map((idea) => previewAccess(idea, viewer, alreadyUnlocked)));
 
   return (
-    <main style={{ maxWidth: 720, margin: "0 auto", padding: "40px 24px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-        <h1 className="display" style={{ fontSize: 24, margin: 0 }}>
-          Feed
-        </h1>
-        <Link
-          href="/"
-          style={{ fontSize: 13, color: "var(--ink-soft)", textDecoration: "none" }}
-        >
+    <main className="app-shell">
+      <div className="app-header">
+        <h1 className="app-title display">Feed</h1>
+        <Link href="/" className="back-link">
           ← Back to Sourced
         </Link>
       </div>
-      <p style={{ color: "var(--ink-soft)", fontSize: 14, marginBottom: 28 }}>
+      <p className="app-sub">
         {topics.length > 0
           ? "Filtered to your picked topics."
           : "The admin-curated set — pick topics in your account to personalize this."}
       </p>
 
       {access.length === 0 ? (
-        <div
-          style={{
-            border: "1px dashed var(--line)",
-            borderRadius: "var(--r-sm)",
-            padding: "32px 20px",
-            textAlign: "center",
-            color: "var(--ink-soft)",
-            fontSize: 14,
-          }}
-        >
-          New ideas drop every Monday — check back soon.
-        </div>
+        <div className="empty-state">New ideas drop every Monday — check back soon.</div>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          {access.map((result) => {
+        <div className="feed-grid">
+          {access.map((result, i) => {
             const idea = result.idea;
             const badge =
               result.kind === "tier-locked" ? (
-                <span style={badgeStyle}>🔒 {idea.tier}+</span>
+                <span className="feed-badge">🔒 {idea.tier}+</span>
               ) : result.kind === "quota-locked" ? (
-                <span style={badgeStyle}>⏳ Monthly limit reached</span>
+                <span className="feed-badge">⏳ Limit reached</span>
               ) : null;
 
-            const card = (
-              <div style={{ border: "1px solid var(--line)", borderRadius: "var(--r-sm)", padding: "16px 18px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 6 }}>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: "var(--violet)" }}>
-                    {idea.category} · {idea.demandScore}% demand
-                  </span>
-                  {badge}
-                </div>
-                <h3 style={{ fontSize: 16, margin: "0 0 6px" }}>{idea.title}</h3>
-                <p style={{ fontSize: 14, color: "var(--ink-soft)", margin: 0 }}>{idea.problem.summary}</p>
-              </div>
-            );
-
             const href =
-              result.kind === "tier-locked" ? "/#pricing" : result.kind === "quota-locked" ? "/account" : `/feed/${idea.slug}`;
+              result.kind === "tier-locked"
+                ? "/#pricing"
+                : result.kind === "quota-locked"
+                  ? "/account"
+                  : `/feed/${idea.slug}`;
 
             return (
-              <Link key={idea.id} href={href} style={{ textDecoration: "none", color: "inherit" }}>
-                {card}
+              <Link key={idea.id} href={href} className="feed-card">
+                <div className={`feed-card-cover ${COVERS[i % COVERS.length]}`}>
+                  <span className="tag">{idea.category}</span>
+                  <span className="score">{idea.demandScore}% demand</span>
+                </div>
+                <div className="feed-card-body">
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
+                    <h3>{idea.title}</h3>
+                    {badge}
+                  </div>
+                  <p>{idea.problem.summary}</p>
+                </div>
               </Link>
             );
           })}
@@ -92,13 +79,3 @@ export default async function FeedPage() {
     </main>
   );
 }
-
-const badgeStyle: React.CSSProperties = {
-  fontSize: 11,
-  fontWeight: 600,
-  color: "var(--ink-soft)",
-  border: "1px solid var(--line)",
-  borderRadius: 999,
-  padding: "2px 8px",
-  whiteSpace: "nowrap",
-};

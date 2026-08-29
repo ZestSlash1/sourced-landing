@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth/require-user";
 import { getSubscriberTopics } from "@/lib/subscriptions/subscriber-topics";
@@ -15,38 +16,20 @@ export default async function TopicsPage() {
   const topics = await getSubscriberTopics(check.subscriber.id);
 
   return (
-    <main style={{ maxWidth: 560, margin: "0 auto", padding: "40px 24px" }}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 12,
-        }}
-      >
-        <h1 className="display" style={{ fontSize: 24, margin: 0 }}>
-          Pick your topics
-        </h1>
+    <main className="app-shell narrow">
+      <div className="app-header">
+        <h1 className="app-title display">Pick your topics</h1>
         <SignOutButton />
       </div>
-      <p style={{ color: "var(--ink-soft)", fontSize: 14, marginBottom: 28 }}>
-        Your feed prioritizes these. You can change this any time.
-      </p>
+      <p className="app-sub">Your feed prioritizes these. You can change this any time.</p>
 
       <TopicPickerForm initialTopics={topics} />
 
-      <a
-        href="/account"
-        style={{
-          display: "inline-block",
-          marginTop: 28,
-          fontSize: 13,
-          color: "var(--ink-soft)",
-          textDecoration: "none",
-        }}
-      >
-        ← Back to Account
-      </a>
+      <div style={{ marginTop: 28 }}>
+        <Link href="/account" className="back-link">
+          ← Back to Account
+        </Link>
+      </div>
     </main>
   );
 }

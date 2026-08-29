@@ -36,86 +36,70 @@ export default async function AccountPage() {
   const quotaResetsOn = formatDate(nextQuotaResetIso());
 
   return (
-    <main style={{ maxWidth: 560, margin: "0 auto", padding: "40px 24px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-        <h1 className="display" style={{ fontSize: 24, margin: 0 }}>
-          Account
-        </h1>
+    <main className="app-shell narrow">
+      <div className="app-header">
+        <h1 className="app-title display">Account</h1>
         <SignOutButton />
       </div>
+      <p className="app-sub">Your plan, usage, and preferences.</p>
 
-      <div
-        style={{
-          border: "1px solid var(--line)",
-          borderRadius: "var(--r-sm)",
-          padding: "20px 22px",
-          marginBottom: 24,
-        }}
-      >
-        <div style={{ marginBottom: 14 }}>
-          <div style={{ fontSize: 12, color: "var(--ink-soft)", marginBottom: 2 }}>Email</div>
-          <div style={{ fontSize: 15 }}>{subscriber.email}</div>
+      <div className="account-card">
+        <div className="account-row">
+          <div>
+            <div className="account-field-label">Email</div>
+            <div className="account-field-value" style={{ fontWeight: 400 }}>
+              {subscriber.email}
+            </div>
+          </div>
         </div>
 
-        <div style={{ display: "flex", gap: 32, marginBottom: 14 }}>
+        <div className="account-row">
           <div>
-            <div style={{ fontSize: 12, color: "var(--ink-soft)", marginBottom: 2 }}>Plan</div>
-            <div style={{ fontSize: 15, fontWeight: 600 }}>{TIER_LABEL[subscriber.tier] ?? subscriber.tier}</div>
+            <div className="account-field-label">Plan</div>
+            <div className="account-field-value">{TIER_LABEL[subscriber.tier] ?? subscriber.tier}</div>
           </div>
           <div>
-            <div style={{ fontSize: 12, color: "var(--ink-soft)", marginBottom: 2 }}>Status</div>
-            <div
-              style={{
-                fontSize: 15,
-                fontWeight: 600,
-                color: subscriber.status === "active" ? "inherit" : "var(--coral, #e5533d)",
-              }}
-            >
-              {STATUS_LABEL[subscriber.status] ?? subscriber.status}
-            </div>
+            <div className="account-field-label">Status</div>
+            <span className={`status-pill ${subscriber.status}`}>{STATUS_LABEL[subscriber.status] ?? subscriber.status}</span>
           </div>
         </div>
 
         {renewsAt && (
-          <div style={{ marginBottom: 14 }}>
-            <div style={{ fontSize: 12, color: "var(--ink-soft)", marginBottom: 2 }}>Renews</div>
-            <div style={{ fontSize: 14 }}>{renewsAt}</div>
+          <div className="account-row">
+            <div>
+              <div className="account-field-label">Renews</div>
+              <div className="account-field-value" style={{ fontWeight: 400, fontSize: 14 }}>
+                {renewsAt}
+              </div>
+            </div>
           </div>
         )}
 
         {graceEndsAt && (
-          <div style={{ marginBottom: 14 }}>
-            <div style={{ fontSize: 12, color: "var(--coral, #e5533d)", marginBottom: 2 }}>
-              Payment issue — access ends
+          <div className="account-row">
+            <div>
+              <div className="account-field-label" style={{ color: "var(--coral)" }}>
+                Payment issue — access ends
+              </div>
+              <div className="account-field-value" style={{ fontWeight: 400, fontSize: 14 }}>
+                {graceEndsAt}
+              </div>
             </div>
-            <div style={{ fontSize: 14 }}>{graceEndsAt}</div>
           </div>
         )}
 
-        <div style={{ marginBottom: subscriber.tier === "free" ? 14 : 0 }}>
-          <div style={{ fontSize: 12, color: "var(--ink-soft)", marginBottom: 2 }}>Full ideas this month</div>
-          <div style={{ fontSize: 14 }}>
-            {quota.quota === null
-              ? "Unlimited"
-              : `${quota.used} of ${quota.quota} used · resets ${quotaResetsOn}`}
+        <div className="account-row">
+          <div>
+            <div className="account-field-label">Full ideas this month</div>
+            <div className="account-field-value" style={{ fontWeight: 400, fontSize: 14 }}>
+              {quota.quota === null ? "Unlimited" : `${quota.used} of ${quota.quota} used · resets ${quotaResetsOn}`}
+            </div>
           </div>
         </div>
 
         {subscriber.tier === "free" && (
-          <div style={{ marginTop: 14 }}>
-            <Link
-              href="/#pricing"
-              style={{
-                display: "inline-block",
-                padding: "9px 16px",
-                background: "var(--violet)",
-                color: "#fff",
-                borderRadius: "var(--r-sm)",
-                fontWeight: 600,
-                fontSize: 13,
-                textDecoration: "none",
-              }}
-            >
+          <div style={{ marginTop: 4 }}>
+            <Link href="/#pricing" className="btn btn-primary" style={{ padding: "9px 18px", fontSize: 13 }}>
               Upgrade
             </Link>
           </div>
@@ -123,47 +107,17 @@ export default async function AccountPage() {
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 24 }}>
-        <Link
-          href="/feed"
-          style={{
-            padding: "14px 16px",
-            border: "1px solid var(--line)",
-            borderRadius: "var(--r-sm)",
-            textDecoration: "none",
-            color: "inherit",
-            fontSize: 14,
-            fontWeight: 600,
-          }}
-        >
+        <Link href="/feed" className="link-card">
           Your feed →
         </Link>
-        <Link
-          href="/account/topics"
-          style={{
-            padding: "14px 16px",
-            border: "1px solid var(--line)",
-            borderRadius: "var(--r-sm)",
-            textDecoration: "none",
-            color: "inherit",
-            fontSize: 14,
-            fontWeight: 600,
-          }}
-        >
+        <Link href="/account/topics" className="link-card">
           Topic preferences →
         </Link>
       </div>
 
-      <a
-        href="/"
-        style={{
-          display: "inline-block",
-          fontSize: 13,
-          color: "var(--ink-soft)",
-          textDecoration: "none",
-        }}
-      >
+      <Link href="/" className="back-link">
         ← Back to Sourced
-      </a>
+      </Link>
     </main>
   );
 }
