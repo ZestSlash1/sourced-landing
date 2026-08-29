@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState, ReactNode } from "react";
+import { MorphIcon } from "morphicons/react";
+import { Menu, X } from "lucide";
 
 type PlanKey = "builder-monthly" | "builder-yearly" | "studio-monthly";
 
@@ -74,6 +76,7 @@ export default function Home() {
   const agent = agents.find((a) => a.id === agentId)!;
   const [checkoutPending, setCheckoutPending] = useState<PlanKey | null>(null);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   async function startCheckout(plan: PlanKey) {
     setCheckoutError(null);
@@ -193,9 +196,29 @@ export default function Home() {
           <a href="#apis">API match</a>
           <a href="#sample">Sample idea</a>
           <a href="#pricing">Pricing</a>
+          <a href="/login">Log in</a>
         </div>
         <a className="nav-cta" href="#pricing">Get started</a>
+        <button
+          type="button"
+          className="nav-burger"
+          aria-expanded={mobileNavOpen}
+          aria-label={mobileNavOpen ? "Close menu" : "Open menu"}
+          onClick={() => setMobileNavOpen((v) => !v)}
+        >
+          <MorphIcon icon={mobileNavOpen ? X : Menu} size={22} />
+        </button>
       </nav>
+
+      {mobileNavOpen && (
+        <div className="mobile-nav">
+          <a href="#how" onClick={() => setMobileNavOpen(false)}>How it works</a>
+          <a href="#apis" onClick={() => setMobileNavOpen(false)}>API match</a>
+          <a href="#sample" onClick={() => setMobileNavOpen(false)}>Sample idea</a>
+          <a href="#pricing" onClick={() => setMobileNavOpen(false)}>Pricing</a>
+          <a href="/login" onClick={() => setMobileNavOpen(false)}>Log in</a>
+        </div>
+      )}
 
       <header className="hero">
         <div className="wrap">
