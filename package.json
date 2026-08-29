@@ -11,6 +11,8 @@
     "sync:apis": "tsx scripts/sync-public-apis.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.32.1",
+    "@supabase/ssr": "^0.12.5",
     "@supabase/supabase-js": "^2.112.4",
     "next": "14.2.5",
     "react": "^18.3.1",

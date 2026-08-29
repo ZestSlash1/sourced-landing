@@ -189,7 +189,7 @@
   .plan-features{list-style:none; padding:0; margin:0 0 26px; flex:1;}
   .plan-features li{font-size:14px; padding:8px 0 8px 18px; position:relative; border-bottom:1px solid #F1EFE8;}
   .plan-features li::before{content:"–"; position:absolute; left:0; color:var(--ink-soft); font-weight:600;}
-  .plan-btn{text-align:center; padding:12px; border-radius:var(--r-sm); font-weight:600; font-size:14px; text-decoration:none; border:1.5px solid var(--ink); color:var(--ink); transition:background .18s ease, color .18s ease;}
+  .plan-btn{text-align:center; padding:12px; border-radius:var(--r-sm); font-weight:600; font-size:14px; font-family:inherit; text-decoration:none; border:1.5px solid var(--ink); background:none; color:var(--ink); cursor:pointer; transition:background .18s ease, color .18s ease;}
   .plan.featured .plan-btn{background:var(--ink); border-color:var(--ink); color:#fff;}
   .plan-btn:hover{background:var(--violet); border-color:var(--violet); color:#fff;}
   .founding{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; font-size:13.5px; color:var(--ink-soft); margin-top:24px; padding:15px 18px; background:var(--surface); border:1px solid var(--line); border-left:3px solid var(--violet); border-radius:var(--r-sm); max-width:600px; margin-left:auto; margin-right:auto;}

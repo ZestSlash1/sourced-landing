@@ -31,6 +31,8 @@ export interface IdeaDropRow {
   difficulty: IdeaDrop["difficulty"];
   status: IdeaDrop["status"];
   validation_errors: string[] | null;
+  featured: boolean;
+  source_signal_ids: string[] | null;
   created_at: string;
   updated_at: string;
 }
@@ -55,10 +57,14 @@ export function rowToIdeaDrop(row: IdeaDropRow): IdeaDrop {
     agentPrompts: row.agent_prompts,
     difficulty: row.difficulty,
     status: row.status,
+    featured: row.featured,
   };
 
   if (row.validation_errors !== null) {
     idea.validationErrors = row.validation_errors;
+  }
+  if (row.source_signal_ids !== null) {
+    idea.sourceSignalIds = row.source_signal_ids;
   }
 
   return idea;
@@ -87,5 +93,7 @@ export function ideaDropToRow(
     difficulty: idea.difficulty,
     status: idea.status,
     validation_errors: idea.validationErrors ?? null,
+    featured: idea.featured ?? false,
+    source_signal_ids: idea.sourceSignalIds ?? null,
   };
 }

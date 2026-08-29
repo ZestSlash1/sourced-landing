@@ -40,12 +40,15 @@ export interface IdeaDrop {
     skillFloor: "beginner" | "intermediate" | "advanced";
   };
 
-  status: "draft" | "needs_evidence" | "published";
+  status: "draft" | "needs_evidence" | "published" | "pending_review";
   validationErrors?: string[]; // populated when status = "needs_evidence"
+
+  featured?: boolean; // admin-curated, shown to logged-out/no-topic feed visitors
+  sourceSignalIds?: string[]; // raw_signals this draft came from, for the admin review queue
 }
 
 export interface Evidence {
-  platform: "reddit" | "g2" | "upwork" | "twitter" | "hackernews" | "other";
+  platform: "reddit" | "g2" | "upwork" | "twitter" | "hackernews" | "stackexchange" | "github" | "other";
   subforum?: string; // e.g. "r/SaaS", or product name for G2
   quote: string; // paraphrased or short direct quote
   url: string;

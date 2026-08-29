@@ -59,6 +59,7 @@ const idea: IdeaDrop = {
     skillFloor: "intermediate",
   },
   status: "published",
+  featured: false,
 };
 
 const row: IdeaDropRow = {
@@ -80,6 +81,8 @@ const row: IdeaDropRow = {
   difficulty: idea.difficulty,
   status: idea.status,
   validation_errors: null,
+  featured: false,
+  source_signal_ids: null,
   created_at: "2026-08-29T00:00:00.000Z",
   updated_at: "2026-08-29T00:00:00.000Z",
 };
@@ -127,6 +130,8 @@ describe("ideaDropToRow", () => {
       difficulty: idea.difficulty,
       status: idea.status,
       validation_errors: null,
+      featured: false,
+      source_signal_ids: null,
     });
   });
 

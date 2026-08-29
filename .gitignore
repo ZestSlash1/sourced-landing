@@ -10,3 +10,6 @@ tsconfig.tsbuildinfo
 
 # Next.js generated types
 next-env.d.ts
+
+# Supabase CLI cache (created by ad-hoc `npx supabase` probes, not project config)
+supabase/.temp/

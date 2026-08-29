@@ -11,12 +11,12 @@ import { scopeToTier } from "@/lib/idea-drops/scope-to-tier";
  * Published but under-tier -> 200 with the teaser, never 403 — the teaser
  * is the upsell and is meant to be visible.
  */
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(_request: Request, { params }: { params: { id: string } }) {
   const idea = await getPublishedIdeaByIdOrSlug(params.id);
   if (!idea) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const userTier = resolveUserTier(request);
+  const userTier = await resolveUserTier();
   return NextResponse.json(scopeToTier(idea, userTier));
 }

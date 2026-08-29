@@ -1,22 +1,22 @@
+import { getCurrentUser } from "@/lib/auth/current-user";
+import { getSubscriberByUserId } from "@/lib/subscriptions/store";
 import type { UserTier } from "./scope-to-tier";
 
-const VALID_TIERS: readonly UserTier[] = ["free", "builder", "studio"];
-
 /**
- * PLACEHOLDER — there is no session/auth system in this repo yet (payments
- * ticket 01 stops at writing to a `subscribers` table by email; there is no
- * login, session, or cookie). Reads tier from a `?tier=` query param so the
- * gating routes are testable end-to-end today.
+ * Resolves the caller's tier from their real session (Phase 4 Part B3),
+ * replacing the old `?tier=` dev-only override now that a real subscriber
+ * record exists to look up.
  *
- * Replace this once auth exists: resolve the request's session/email, look
- * up `subscribers.plan` (or default "free" if no active row), and delete the
- * query-param path entirely — a `?tier=studio` in the URL must not be able
- * to unlock paid content in production.
+ * Logged-out visitors, and signed-in users with no subscribers row yet
+ * (shouldn't happen post-B2, but this stays defensive), get "free" — never
+ * an error, since this runs on every public idea read.
  */
-export function resolveUserTier(request: Request): UserTier {
-  const tier = new URL(request.url).searchParams.get("tier");
-  if (tier && (VALID_TIERS as string[]).includes(tier)) {
-    return tier as UserTier;
-  }
-  return "free";
+export async function resolveUserTier(): Promise<UserTier> {
+  const user = await getCurrentUser();
+  if (!user) return "free";
+
+  const subscriber = await getSubscriberByUserId(user.id);
+  if (!subscriber || subscriber.status !== "active") return "free";
+
+  return subscriber.tier;
 }

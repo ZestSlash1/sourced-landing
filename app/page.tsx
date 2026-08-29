@@ -299,7 +299,7 @@ export default function Home() {
                 <li>API match: name only, no docs</li>
                 <li>No card required</li>
               </ul>
-              <a className="plan-btn" href="#">Start free</a>
+              <button type="button" className="plan-btn">Start free</button>
             </Reveal>
             <Reveal delay={0.08} className="plan featured">
               <div className="plan-name">Builder</div>
@@ -312,7 +312,7 @@ export default function Home() {
                 <li>Buyer profile + build brief on every card</li>
                 <li>Full API match — auth type, free-tier limits, docs links</li>
               </ul>
-              <a className="plan-btn" href="#">Get Builder</a>
+              <button type="button" className="plan-btn">Get Builder</button>
             </Reveal>
             <Reveal delay={0.16} className="plan">
               <div className="plan-name">Studio</div>
@@ -324,7 +324,7 @@ export default function Home() {
                 <li>$0 launch stack — free-tier hosting, auth &amp; email picks per idea</li>
                 <li>48-hour early access to new cards</li>
               </ul>
-              <a className="plan-btn" href="#">Get Studio</a>
+              <button type="button" className="plan-btn">Get Studio</button>
             </Reveal>
           </div>
           <Reveal className="founding">
