@@ -1,12 +1,14 @@
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { getSubscriberByUserId } from "@/lib/subscriptions/store";
+import { track } from "@/lib/track";
 import type { IdeaDrop, IdeaDropTeaser } from "@/types/idea-drop";
-import { canUnlockIdea, getQuotaStatus, recordUnlock, type QuotaStatus } from "./quota";
+import { canUnlockIdea, getQuotaStatus, hasUnlockedIdea, recordUnlock, type QuotaStatus } from "./quota";
 import { resolveUserTier } from "./resolve-user-tier";
 import { scopeToTier, toTeaser, type UserTier } from "./scope-to-tier";
 
 export interface ViewerContext {
   subscriberId: string | null;
+  userId: string | null;
   tier: UserTier;
 }
 
@@ -14,10 +16,10 @@ export interface ViewerContext {
 export async function resolveViewerContext(): Promise<ViewerContext> {
   const tier = await resolveUserTier();
   const user = await getCurrentUser();
-  if (!user) return { subscriberId: null, tier };
+  if (!user) return { subscriberId: null, userId: null, tier };
 
   const subscriber = await getSubscriberByUserId(user.id);
-  return { subscriberId: subscriber?.id ?? null, tier };
+  return { subscriberId: subscriber?.id ?? null, userId: user.id, tier };
 }
 
 export type IdeaAccess =
@@ -75,9 +77,22 @@ export async function resolveAndRecordAccess(idea: IdeaDrop, viewer: ViewerConte
 
   const { allowed, status } = await canUnlockIdea(viewer.subscriberId, idea.id, viewer.tier);
   if (!allowed) {
+    await track({
+      eventType: "quota_exhausted",
+      userId: viewer.userId,
+      metadata: { tier: viewer.tier },
+    });
     return { kind: "quota-locked", idea: toTeaser(idea), quota: status };
   }
 
+  const alreadyUnlocked = await hasUnlockedIdea(viewer.subscriberId, idea.id);
   await recordUnlock(viewer.subscriberId, idea.id);
+  if (!alreadyUnlocked) {
+    await track({
+      eventType: "brief_unlocked",
+      userId: viewer.userId,
+      metadata: { slug: idea.slug },
+    });
+  }
   return { kind: "full", idea: scoped as IdeaDrop };
 }

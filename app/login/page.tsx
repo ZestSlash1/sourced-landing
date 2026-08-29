@@ -3,6 +3,7 @@
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { trackEvent } from "@/lib/track-client";
 import { AppleIcon, GitHubIcon, GoogleIcon } from "./oauth-icons";
 
 type Mode = "sign-in" | "sign-up";
@@ -67,6 +68,10 @@ function LoginForm() {
     if (authError) {
       setError(authError.message);
       return;
+    }
+
+    if (mode === "sign-up") {
+      trackEvent("signup", { method: "email" });
     }
 
     // signUp only returns a session immediately when email autoconfirm is

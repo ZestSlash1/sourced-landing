@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAuthServerClient } from "@/lib/supabase/auth-server";
 import { getOrCreateSubscriberForUser } from "@/lib/subscriptions/store";
+import { track } from "@/lib/track";
 
 /**
  * OAuth redirect target (Part B1): Supabase sends the browser here with a
@@ -19,6 +20,11 @@ export async function GET(request: Request) {
 
     if (!error && data.user?.email) {
       await getOrCreateSubscriberForUser(data.user.id, data.user.email);
+      await track({
+        eventType: "oauth_login",
+        userId: data.user.id,
+        metadata: { provider: data.user.app_metadata?.provider ?? "unknown" },
+      });
     }
   }
 

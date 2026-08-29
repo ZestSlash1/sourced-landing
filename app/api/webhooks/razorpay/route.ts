@@ -2,6 +2,7 @@ import { createHmac, timingSafeEqual } from "crypto";
 import { NextResponse } from "next/server";
 import { tierForRazorpayPlanId } from "@/lib/razorpay/plans";
 import { getSubscriberByRazorpaySubscriptionId, updateSubscriberTier } from "@/lib/subscriptions/store";
+import { track } from "@/lib/track";
 
 export const dynamic = "force-dynamic";
 
@@ -10,10 +11,16 @@ interface RazorpaySubscriptionEntity {
   plan_id: string;
 }
 
+interface RazorpayPaymentEntity {
+  id: string;
+  amount: number;
+}
+
 interface RazorpayWebhookPayload {
   event: string;
   payload: {
     subscription?: { entity: RazorpaySubscriptionEntity };
+    payment?: { entity: RazorpayPaymentEntity };
   };
 }
 
@@ -59,7 +66,20 @@ export async function POST(request: Request) {
     case "subscription.activated":
     case "subscription.charged": {
       const tier = tierForRazorpayPlanId(subscriptionEntity.plan_id);
-      if (tier) await updateSubscriberTier(subscriber.id, tier, "active");
+      if (tier) {
+        await updateSubscriberTier(subscriber.id, tier, "active");
+        const payment = body.payload.payment?.entity;
+        await track({
+          eventType: "checkout_completed",
+          sessionId: `webhook:${subscriptionEntity.id}`,
+          userId: subscriber.userId ?? null,
+          metadata: {
+            tier,
+            amount: payment?.amount ?? null,
+            razorpay_payment_id: payment?.id ?? null,
+          },
+        });
+      }
       break;
     }
     case "subscription.pending":

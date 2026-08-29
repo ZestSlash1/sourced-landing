@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth/require-user";
 import { getRazorpayClient } from "@/lib/razorpay/client";
-import { isPlanKey, razorpayPlanId } from "@/lib/razorpay/plans";
+import { isPlanKey, razorpayPlanId, tierForPlan } from "@/lib/razorpay/plans";
 import { setSubscriberRazorpaySubscription } from "@/lib/subscriptions/store";
+import { track } from "@/lib/track";
 
 export const dynamic = "force-dynamic";
 
@@ -39,6 +40,12 @@ export async function POST(request: Request) {
   });
 
   await setSubscriberRazorpaySubscription(check.subscriber.id, subscription.id);
+
+  await track({
+    eventType: "checkout_started",
+    userId: check.subscriber.userId ?? null,
+    metadata: { tier: tierForPlan(body.plan) },
+  });
 
   return NextResponse.json({
     subscriptionId: subscription.id,

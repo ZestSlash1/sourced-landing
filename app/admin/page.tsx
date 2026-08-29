@@ -48,6 +48,9 @@ export default async function AdminDashboard() {
           <Link href="/admin/pending" style={{ fontSize: 13 }}>
             Pending review
           </Link>
+          <Link href="/admin/analytics" style={{ fontSize: 13 }}>
+            Analytics
+          </Link>
           <SignOutButton />
         </div>
       </div>
