@@ -78,6 +78,13 @@ export default function HomeClient({ userEmail }: { userEmail: string | null }) 
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
+  // NOTE: the prices shown in the pricing section below are USD, but the
+  // Razorpay Plans this actually charges against (RAZORPAY_PLAN_BUILDER_*,
+  // RAZORPAY_PLAN_STUDIO_MONTHLY) were created in INR — currency lives on
+  // the Plan itself in Razorpay's dashboard, not in this code. Until those
+  // Plans are recreated in USD and the env vars updated to point at them,
+  // checkout will charge the old INR amount regardless of what's displayed
+  // here. Don't remove this note until that's fixed.
   async function startCheckout(plan: PlanKey) {
     setCheckoutError(null);
     setCheckoutPending(plan);
@@ -379,7 +386,7 @@ export default function HomeClient({ userEmail }: { userEmail: string | null }) 
               <div className="feature-meta">
                 <div><div className="fm-label">Buyer</div><div className="fm-value">Solo bookkeepers</div></div>
                 <div><div className="fm-label">Build time</div><div className="fm-value">~1 weekend</div></div>
-                <div><div className="fm-label">Model</div><div className="fm-value">₹800/mo per seat</div></div>
+                <div><div className="fm-label">Model</div><div className="fm-value">$10/mo per seat</div></div>
                 <div><div className="fm-label">Stack</div><div className="fm-value">Next.js + Supabase</div></div>
                 <div><div className="fm-label">APIs matched</div><div className="fm-value">Open Exchange Rates, PDFShift</div></div>
                 <div><div className="fm-label">Opens in</div><div className="fm-value">{agent.label}</div></div>
@@ -400,7 +407,7 @@ export default function HomeClient({ userEmail }: { userEmail: string | null }) 
             <Reveal delay={0} className="plan">
               <div className="plan-name">Free</div>
               <div className="plan-tag">Try before you commit</div>
-              <div className="plan-price">₹0</div>
+              <div className="plan-price">$0</div>
               <ul className="plan-features">
                 <li>1 full idea card / month</li>
                 <li>Headlines of every other card</li>
@@ -420,7 +427,7 @@ export default function HomeClient({ userEmail }: { userEmail: string | null }) 
             <Reveal delay={0.08} className="plan featured">
               <div className="plan-name">Builder</div>
               <div className="plan-tag">The full weekly feed · most common pick</div>
-              <div className="plan-price">₹399<span>/mo</span></div>
+              <div className="plan-price">$9<span>/mo</span></div>
               <button
                 type="button"
                 className="plan-old"
@@ -428,7 +435,7 @@ export default function HomeClient({ userEmail }: { userEmail: string | null }) 
                 onClick={() => startCheckout("builder-yearly")}
                 disabled={checkoutPending !== null}
               >
-                or ₹3,499/yr — save ₹1,289
+                or $90/yr — save $18
               </button>
               <ul className="plan-features">
                 <li>4 full idea cards every month</li>
@@ -448,7 +455,7 @@ export default function HomeClient({ userEmail }: { userEmail: string | null }) 
             <Reveal delay={0.16} className="plan">
               <div className="plan-name">Studio</div>
               <div className="plan-tag">For your specific niche</div>
-              <div className="plan-price">₹999<span>/mo</span></div>
+              <div className="plan-price">$19<span>/mo</span></div>
               <ul className="plan-features">
                 <li>Everything in Builder</li>
                 <li>One custom idea request / month</li>
@@ -472,7 +479,7 @@ export default function HomeClient({ userEmail }: { userEmail: string | null }) 
           )}
           <Reveal className="founding">
             <span className="founding-label">Founding rate</span>
-            <span>The first 100 subscribers keep <b>₹299/mo</b> on Builder for life. No expiry games, just first 100.</span>
+            <span>The first 100 subscribers keep <b>$7/mo</b> on Builder for life. No expiry games, just first 100.</span>
           </Reveal>
         </div>
       </section>
