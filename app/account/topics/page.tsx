@@ -34,6 +34,19 @@ export default async function TopicsPage() {
       </p>
 
       <TopicPickerForm initialTopics={topics} />
+
+      <a
+        href="/"
+        style={{
+          display: "inline-block",
+          marginTop: 28,
+          fontSize: 13,
+          color: "var(--ink-soft)",
+          textDecoration: "none",
+        }}
+      >
+        ← Back to Sourced
+      </a>
     </main>
   );
 }
