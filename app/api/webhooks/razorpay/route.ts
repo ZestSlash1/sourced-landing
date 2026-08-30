@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { tierForRazorpayPlanId } from "@/lib/razorpay/plans";
 import { getSubscriberByRazorpaySubscriptionId, updateSubscriberTier } from "@/lib/subscriptions/store";
 import { track } from "@/lib/track";
+import { notify } from "@/lib/notify";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +15,13 @@ interface RazorpaySubscriptionEntity {
 interface RazorpayPaymentEntity {
   id: string;
   amount: number;
+  currency?: string;
+}
+
+function formatAmount(payment?: RazorpayPaymentEntity): string {
+  if (!payment) return "amount unknown";
+  // Razorpay amounts are in the smallest currency unit (paise for INR).
+  return `${payment.currency ?? "INR"} ${(payment.amount / 100).toFixed(2)}`;
 }
 
 interface RazorpayWebhookPayload {
@@ -78,6 +86,12 @@ export async function POST(request: Request) {
             amount: payment?.amount ?? null,
             razorpay_payment_id: payment?.id ?? null,
           },
+        });
+        await notify({
+          title: "Payment received",
+          message: `${subscriber.email} — ${tier} — ${formatAmount(payment)}`,
+          tags: ["moneybag"],
+          priority: 4,
         });
       }
       break;

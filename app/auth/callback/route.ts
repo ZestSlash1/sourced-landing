@@ -18,8 +18,10 @@ export async function GET(request: Request) {
     const supabase = getSupabaseAuthServerClient();
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
-    if (!error && data.user?.email) {
-      await getOrCreateSubscriberForUser(data.user.id, data.user.email);
+    if (!error && data.user) {
+      if (data.user.email) {
+        await getOrCreateSubscriberForUser(data.user.id, data.user.email);
+      }
       await track({
         eventType: "oauth_login",
         userId: data.user.id,
