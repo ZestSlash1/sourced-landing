@@ -1,4 +1,5 @@
 import { NextResponse, type NextFetchEvent, type NextRequest } from "next/server";
+import { OPT_OUT_COOKIE, isExcludedTraffic } from "@/lib/analytics/exclusion";
 
 /**
  * Two jobs: (1) mint the anonymous "sid" cookie used as `session_id` on
@@ -46,7 +47,10 @@ export function middleware(request: NextRequest, event: NextFetchEvent) {
   const shouldTrack =
     request.method === "GET" &&
     !SKIP_PREFIXES.some((prefix) => pathname.startsWith(prefix)) &&
-    !STATIC_FILE.test(pathname);
+    !STATIC_FILE.test(pathname) &&
+    // Own-traffic exclusion, so the owner browsing their own site doesn't
+    // land on the admin globe (lib/analytics/exclusion.ts).
+    !isExcludedTraffic(request.headers, Boolean(request.cookies.get(OPT_OUT_COOKIE)?.value));
 
   if (shouldTrack) {
     // Vercel's edge network sets these on every request in production; all

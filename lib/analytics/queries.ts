@@ -101,24 +101,44 @@ export async function getRecentViewerLocations(limit = 500): Promise<ViewerLocat
   return Array.from(byCell.values()).sort((a, b) => b.count - a.count);
 }
 
+/** Rows per request when paging `events`. Must stay <= PostgREST's max-rows. */
+const PAGE_SIZE = 1000;
+
+/**
+ * Every event in the window, paged. PostgREST caps an unbounded `select()`
+ * at its `max-rows` setting (1000 by default) and returns the truncated set
+ * *without* an error, so a single query silently under-reports every number
+ * on the dashboard the moment the window holds more than that. Paging until
+ * a short page comes back is what keeps the totals honest.
+ */
+async function fetchEventsSince(since: string): Promise<EventRow[]> {
+  const supabase = getSupabaseServerClient();
+  const events: EventRow[] = [];
+
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data, error } = await supabase
+      .from("events")
+      .select("event_type, session_id, utm_source, referrer, metadata")
+      .gte("created_at", since)
+      .order("created_at", { ascending: true })
+      .range(from, from + PAGE_SIZE - 1);
+
+    if (error) throw new Error(`getAnalyticsSummary: ${error.message}`);
+
+    const page = (data ?? []) as EventRow[];
+    events.push(...page);
+    if (page.length < PAGE_SIZE) return events;
+  }
+}
+
 /**
  * Aggregates the events table for /admin/analytics — a fixed 30-day window,
- * fetched in one query and summarized in memory. Fine at this app's current
- * event volume; if `events` grows large enough for this to matter, move the
- * aggregation into SQL (a view or an RPC function) instead of paginating
- * this query.
+ * summarized in memory. Fine at this app's current event volume; if `events`
+ * grows large enough for the paging above to get slow, move the aggregation
+ * into SQL (a view or an RPC function).
  */
 export async function getAnalyticsSummary(): Promise<AnalyticsSummary> {
-  const supabase = getSupabaseServerClient();
-  const since = windowStartIso();
-
-  const { data, error } = await supabase
-    .from("events")
-    .select("event_type, session_id, utm_source, referrer, metadata")
-    .gte("created_at", since);
-
-  if (error) throw new Error(`getAnalyticsSummary: ${error.message}`);
-  const events = (data ?? []) as EventRow[];
+  const events = await fetchEventsSince(windowStartIso());
 
   const uniqueSessions = new Set(events.map((e) => e.session_id)).size;
   const signups = events.filter((e) => e.event_type === "signup").length;

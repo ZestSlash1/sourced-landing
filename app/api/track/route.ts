@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { getSessionId, track } from "@/lib/track";
+import { OPT_OUT_COOKIE, isExcludedTraffic } from "@/lib/analytics/exclusion";
+import { cookies, headers } from "next/headers";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +20,13 @@ export async function POST(request: Request) {
   const eventType = typeof body?.eventType === "string" ? body.eventType : null;
   if (!eventType) {
     return NextResponse.json({ error: "eventType is required" }, { status: 400 });
+  }
+
+  // Checked here as well as in middleware.ts: client-fired events (e.g.
+  // signup, via lib/track-client.ts) POST straight to this route, so the
+  // middleware's own-traffic check never sees them.
+  if (isExcludedTraffic(headers(), Boolean(cookies().get(OPT_OUT_COOKIE)?.value))) {
+    return NextResponse.json({ ok: true, excluded: true });
   }
 
   const sessionId = (typeof body?.sessionId === "string" && body.sessionId) || getSessionId();

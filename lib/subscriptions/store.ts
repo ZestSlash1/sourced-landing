@@ -1,5 +1,7 @@
 import "server-only";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { notify } from "@/lib/notify";
+import { track } from "@/lib/track";
 import type { Subscriber } from "@/types/subscriber";
 import { rowToSubscriber, subscriberToRow, type SubscriberRow } from "./mapping";
 
@@ -52,6 +54,7 @@ export async function getOrCreateSubscriberForUser(
 
   const supabase = getSupabaseServerClient();
   const existingByEmail = await getSubscriberByEmail(email);
+  const isNewSubscriber = !existingByEmail;
 
   const { data, error } = await supabase
     .from(TABLE)
@@ -69,6 +72,19 @@ export async function getOrCreateSubscriberForUser(
     .single();
 
   if (error) throw new Error(`getOrCreateSubscriberForUser: ${error.message}`);
+
+  // The one true "someone signed up" moment — this function is the only
+  // write path for a subscriber's first row, reached from both OAuth
+  // (auth/callback) and email/password (require-user) flows, so hooking the
+  // notification here (rather than in either caller) fires exactly once.
+  if (isNewSubscriber) {
+    // Tracked here rather than at the login form, so OAuth signups count
+    // too — /admin/analytics reads "signup" as the conversion denominator,
+    // and counting only the email/password form understated it.
+    await track({ eventType: "signup", userId });
+    await notify({ title: "New signup", message: email, tags: ["tada"] });
+  }
+
   return rowToSubscriber(data as SubscriberRow);
 }
 
