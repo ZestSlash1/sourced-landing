@@ -22,7 +22,13 @@ export function scopeToTier(
   return toTeaser(idea);
 }
 
-/** The always-visible slice of an idea, used both for tier gating above and for quota gating (lib/idea-drops/quota.ts) — a tier-eligible idea a subscriber is out of quota for still only shows this much. */
+/**
+ * The always-visible slice of an idea, used both for tier gating above and
+ * for quota gating (lib/idea-drops/quota.ts) — a tier-eligible idea a
+ * subscriber is out of quota for still only shows this much. Problem and
+ * evidence are public in full regardless of tier/quota; only build brief,
+ * matched APIs, launch stack, and agent prompts are actually gated.
+ */
 export function toTeaser(idea: IdeaDrop): IdeaDropTeaser {
   return {
     id: idea.id,
@@ -35,7 +41,7 @@ export function toTeaser(idea: IdeaDrop): IdeaDropTeaser {
     tier: idea.tier,
     problem: idea.problem,
     status: idea.status,
-    evidence: idea.evidence.slice(0, 1),
+    evidence: idea.evidence,
     locked: true,
   };
 }

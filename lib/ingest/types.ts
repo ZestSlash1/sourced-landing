@@ -1,4 +1,4 @@
-export type SignalSource = "reddit" | "hackernews" | "stackexchange" | "github";
+export type SignalSource = "reddit" | "hackernews" | "stackexchange" | "github" | "devto" | "lobsters";
 
 /** What a poller (Part A1) produces before it's ever written to the DB. */
 export interface RawSignalInput {
@@ -16,4 +16,6 @@ export interface RawSignal extends RawSignalInput {
   clusterKey: string | null;
   draftedIdeaId: string | null;
   fetchedAt: string;
+  /** openai/text-embedding-3-small vector, null until the embedding step runs on this signal. */
+  embedding: number[] | null;
 }

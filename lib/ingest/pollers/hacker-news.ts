@@ -29,9 +29,14 @@ interface AlgoliaHit {
  * Searches story/comment text for pain-point phrasing, then filters to a
  * minimum point threshold.
  */
+// Ask HN posts ("Ask HN: How do you handle X?", "Ask HN: Why is Y so hard?")
+// are the highest-signal complaint/pain-point posts on HN — pulled directly
+// by tag rather than relying on them happening to match a PAIN_PHRASE.
+const ASK_HN_MIN_POINTS = 10;
+
 export async function pollHackerNews(): Promise<RawSignalInput[]> {
-  const results = await Promise.all(
-    PAIN_PHRASES.map((phrase) =>
+  const results = await Promise.all([
+    ...PAIN_PHRASES.map((phrase) =>
       fetch(
         `https://hn.algolia.com/api/v1/search_by_date?query=${encodeURIComponent(phrase)}&tags=(story,comment)&numericFilters=points%3E%3D${MIN_POINTS}`,
       ).then((res) => {
@@ -39,7 +44,13 @@ export async function pollHackerNews(): Promise<RawSignalInput[]> {
         return res.json() as Promise<{ hits: AlgoliaHit[] }>;
       }),
     ),
-  );
+    fetch(
+      `https://hn.algolia.com/api/v1/search_by_date?tags=ask_hn&numericFilters=points%3E%3D${ASK_HN_MIN_POINTS}`,
+    ).then((res) => {
+      if (!res.ok) throw new Error(`HN Algolia ask_hn search failed: ${res.status}`);
+      return res.json() as Promise<{ hits: AlgoliaHit[] }>;
+    }),
+  ]);
 
   const seen = new Set<string>();
   const signals: RawSignalInput[] = [];

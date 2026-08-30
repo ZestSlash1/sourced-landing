@@ -17,6 +17,8 @@ const SOURCE_TO_PLATFORM: Record<SignalSource, Evidence["platform"]> = {
   hackernews: "hackernews",
   stackexchange: "stackexchange",
   github: "github",
+  devto: "devto",
+  lobsters: "lobsters",
 };
 
 const ENGAGEMENT_TYPE: Record<SignalSource, "upvotes" | "replies"> = {
@@ -24,6 +26,8 @@ const ENGAGEMENT_TYPE: Record<SignalSource, "upvotes" | "replies"> = {
   hackernews: "upvotes",
   stackexchange: "replies",
   github: "replies",
+  devto: "upvotes",
+  lobsters: "upvotes",
 };
 
 interface DraftedFields {

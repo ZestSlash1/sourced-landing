@@ -4,9 +4,11 @@ import { getCurrentUser } from "@/lib/auth/current-user";
 import { listFeaturedIdeas, listPublishedIdeas } from "@/lib/idea-drops/repository";
 import { unlockedIdeaIds } from "@/lib/idea-drops/quota";
 import { previewAccess, resolveViewerContext } from "@/lib/idea-drops/resolve-access";
+import { getTriangulationMap } from "@/lib/idea-drops/triangulation";
 import { getSubscriberByUserId } from "@/lib/subscriptions/store";
 import { getSubscriberTopics } from "@/lib/subscriptions/subscriber-topics";
 import { absoluteUrl } from "@/lib/seo";
+import TriangulationBadge from "./triangulation-badge";
 
 export const dynamic = "force-dynamic";
 
@@ -45,6 +47,7 @@ export default async function FeedPage() {
   const ideas = topics.length > 0 ? await listPublishedIdeas(topics) : await listFeaturedIdeas();
   const alreadyUnlocked = viewer.subscriberId ? await unlockedIdeaIds(viewer.subscriberId) : new Set<string>();
   const access = await Promise.all(ideas.map((idea) => previewAccess(idea, viewer, alreadyUnlocked)));
+  const triangulationByIdeaId = await getTriangulationMap(ideas);
 
   return (
     <main className="app-shell">
@@ -59,6 +62,9 @@ export default async function FeedPage() {
           ? "Filtered to your picked topics."
           : "The admin-curated set — pick topics in your account to personalize this."}
       </p>
+      <Link href="/methodology" className="feed-methodology-link">
+        How are these sourced? →
+      </Link>
 
       {access.length === 0 ? (
         <div className="empty-state">New ideas drop every Monday — check back soon.</div>
@@ -66,6 +72,7 @@ export default async function FeedPage() {
         <div className="feed-grid">
           {access.map((result, i) => {
             const idea = result.idea;
+            const triangulation = triangulationByIdeaId.get(idea.id);
             const badge =
               result.kind === "tier-locked" ? (
                 <span className="feed-badge">🔒 {idea.tier}+</span>
@@ -94,6 +101,11 @@ export default async function FeedPage() {
                     {badge}
                   </div>
                   <p>{idea.problem.summary}</p>
+                  {triangulation ? (
+                    <div style={{ marginTop: 10 }}>
+                      <TriangulationBadge stats={triangulation.stats} />
+                    </div>
+                  ) : null}
                 </div>
               </Link>
             );

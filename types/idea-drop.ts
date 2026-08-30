@@ -50,7 +50,7 @@ export interface IdeaDrop {
 }
 
 export interface Evidence {
-  platform: "reddit" | "g2" | "upwork" | "twitter" | "hackernews" | "stackexchange" | "github" | "other";
+  platform: "reddit" | "g2" | "upwork" | "twitter" | "hackernews" | "stackexchange" | "github" | "devto" | "lobsters" | "other";
   subforum?: string; // e.g. "r/SaaS", or product name for G2
   quote: string; // paraphrased or short direct quote
   url: string;
@@ -59,6 +59,21 @@ export interface Evidence {
     type: "upvotes" | "budget_usd" | "review_rating" | "replies";
     value: number;
   };
+}
+
+/** Derived live from source_signal_ids joined to raw_signals — never stored. */
+export interface TriangulationStats {
+  signalCount: number;
+  platformCount: number;
+  daySpan: number; // days between the earliest and latest posted_at
+}
+
+/** A public link back to one originating complaint, derived the same way. */
+export interface SourceLink {
+  source: string; // raw_signals.source, e.g. "hackernews"
+  url: string;
+  title: string | null;
+  postedAt: string | null;
 }
 
 export interface DataEntity {
@@ -94,6 +109,6 @@ export type IdeaDropTeaser = Pick<
   | "problem"
   | "status"
 > & {
-  evidence: Evidence[]; // truncated to exactly 1 item
+  evidence: Evidence[]; // full — evidence is public regardless of tier/quota
   locked: true;
 };

@@ -110,12 +110,11 @@ describe("scopeToTier", () => {
     }
   });
 
-  it("marks the under-tier payload locked and truncates evidence to one item", () => {
+  it("marks the under-tier payload locked but keeps evidence in full — evidence is public", () => {
     const scoped = scopeToTier(ideaDrop(), "free");
 
     expect(scoped).toHaveProperty("locked", true);
-    expect(scoped.evidence).toHaveLength(1);
-    expect(scoped.evidence[0]).toEqual(ideaDrop().evidence[0]);
+    expect(scoped.evidence).toEqual(ideaDrop().evidence);
   });
 
   it("exposes exactly the teaser key set and nothing more", () => {

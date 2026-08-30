@@ -204,6 +204,7 @@ export default function HomeClient({ userEmail }: { userEmail: string | null }) 
           <a href="#sample">Sample idea</a>
           <a href="#pricing">Pricing</a>
           <a href="/feed">Feed</a>
+          <a href="/methodology">Methodology</a>
           {userEmail ? <a href="/account">Account</a> : <a href="/login">Log in</a>}
         </div>
         <a className="nav-cta" href="#pricing">Get started</a>
@@ -225,6 +226,7 @@ export default function HomeClient({ userEmail }: { userEmail: string | null }) 
           <a href="#sample" onClick={() => setMobileNavOpen(false)}>Sample idea</a>
           <a href="#pricing" onClick={() => setMobileNavOpen(false)}>Pricing</a>
           <a href="/feed" onClick={() => setMobileNavOpen(false)}>Feed</a>
+          <a href="/methodology" onClick={() => setMobileNavOpen(false)}>Methodology</a>
           {userEmail ? (
             <a href="/account" onClick={() => setMobileNavOpen(false)}>Account</a>
           ) : (
@@ -531,6 +533,11 @@ export default function HomeClient({ userEmail }: { userEmail: string | null }) 
             <a href="https://github.com/public-apis/public-apis" target="_blank" rel="noopener noreferrer">public-apis</a>{" "}
             directory (MIT) ↗
           </p>
+          <p className="credit">Transparency</p>
+          <div className="transparency-links">
+            <a href="/methodology">How the pipeline works</a>
+            <a href="/rejected">Rejected clusters</a>
+          </div>
         </div>
       </footer>
     </>

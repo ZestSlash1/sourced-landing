@@ -2,8 +2,20 @@ import type { RawSignalInput } from "../types";
 
 // Sites worth mining for "I do this by hand, wish there were a tool"
 // workflow-gap questions. Webmasters/SO cover the general builder audience;
-// the others map to Sourced's existing topic list.
-const SITES = ["webmasters", "softwarerecs", "workplace"];
+// the others map to Sourced's existing topic list. softwareengineering/
+// webapps/ux/pm skew toward tool/workflow complaints rather than code Q&A,
+// which is where the cross-platform overlap with HN prose actually lives.
+// startups.stackexchange.com is not in this list: SE retired/merged it, so
+// its api_site_parameter no longer resolves (verified against /2.3/sites).
+const SITES = [
+  "webmasters",
+  "softwarerecs",
+  "workplace",
+  "softwareengineering",
+  "webapps",
+  "ux",
+  "pm",
+];
 
 const MAX_ANSWERS = 1; // unanswered or barely-answered = an unmet need
 const MIN_SCORE = 0;
