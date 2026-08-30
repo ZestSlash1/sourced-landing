@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
-export const alt = "Sourced — Real problems, sourced. Ready to build.";
+export const alt = "Sourced — Real complaints, triangulated.";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -34,10 +34,10 @@ export default function Image() {
             maxWidth: 920,
           }}
         >
-          Real problems, sourced. Ready to build.
+          Real complaints, triangulated.
         </div>
         <div style={{ display: "flex", fontSize: 24, fontWeight: 500, opacity: 0.9, marginTop: 28, maxWidth: 820 }}>
-          Validated startup ideas with proof someone will pay, and a build brief ready for Claude Code.
+          Evidence-backed build briefs, ready for Claude Code, Cursor, or v0.
         </div>
       </div>
     ),

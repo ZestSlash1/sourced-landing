@@ -3,12 +3,12 @@ import { SITE_URL } from "@/lib/seo";
 import "./globals.css";
 
 const DESCRIPTION =
-  "Sourced hands vibe coders real problems people already complain about — with proof someone will pay for the fix, and a build brief ready to hand straight to Claude Code.";
+  "Real complaints triangulated across platforms into evidence-backed build briefs for Claude Code, Cursor, and v0.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Sourced — Real problems, sourced. Ready to build.",
+    default: "Sourced — Real complaints, triangulated.",
     template: "%s | Sourced",
   },
   description: DESCRIPTION,
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     siteName: "Sourced",
-    title: "Sourced — Real problems, sourced. Ready to build.",
+    title: "Sourced — Real complaints, triangulated.",
     description: DESCRIPTION,
     url: SITE_URL,
   },

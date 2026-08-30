@@ -5,6 +5,7 @@ import { EMBEDDING_SIMILARITY_THRESHOLD, MIN_CLUSTER_PLATFORMS, MIN_CLUSTER_SIZE
 import { getMethodologyStats } from "@/lib/ingest/pipeline-stats";
 import { listRecentPipelineRuns } from "@/lib/ingest/pipeline-runs-repository";
 import { absoluteUrl } from "@/lib/seo";
+import NewsletterForm from "../newsletter-form";
 
 export const dynamic = "force-dynamic";
 
@@ -146,6 +147,16 @@ export default async function MethodologyPage() {
               </span>
             </li>
           </ol>
+        </div>
+      </section>
+
+      <section className="section" style={{ paddingTop: 0 }} aria-labelledby="methodology-newsletter-heading">
+        <div className="wrap">
+          <div className="newsletter-inline">
+            <h2 id="methodology-newsletter-heading">Want the next one?</h2>
+            <p>We’ll send one evidence-backed build opportunity when the weekly drop is ready.</p>
+            <NewsletterForm sourcePath="/methodology" />
+          </div>
         </div>
       </section>
 

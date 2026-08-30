@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, ReactNode } from "react";
 import { MorphIcon } from "morphicons/react";
 import { Menu, X } from "lucide";
+import NewsletterForm from "./newsletter-form";
 
 type PlanKey = "builder-monthly" | "builder-yearly" | "studio-monthly";
 
@@ -78,13 +79,6 @@ export default function HomeClient({ userEmail }: { userEmail: string | null }) 
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
-  // NOTE: the prices shown in the pricing section below are USD, but the
-  // Razorpay Plans this actually charges against (RAZORPAY_PLAN_BUILDER_*,
-  // RAZORPAY_PLAN_STUDIO_MONTHLY) were created in INR — currency lives on
-  // the Plan itself in Razorpay's dashboard, not in this code. Until those
-  // Plans are recreated in USD and the env vars updated to point at them,
-  // checkout will charge the old INR amount regardless of what's displayed
-  // here. Don't remove this note until that's fixed.
   async function startCheckout(plan: PlanKey) {
     setCheckoutError(null);
     setCheckoutPending(plan);
@@ -239,13 +233,12 @@ export default function HomeClient({ userEmail }: { userEmail: string | null }) 
         <div className="wrap">
           <div className="hero-badge"><span className="dot"></span> New ideas dropped every Monday</div>
           <h1 className="hero-title">
-            <span className="line"><span>You can build</span></span>
-            <span className="line"><span className="accent">Stop guessing what.</span></span>
+            <span className="line"><span>Real complaints,</span></span>
+            <span className="line"><span className="accent">triangulated.</span></span>
           </h1>
           <p className="hero-sub">
-            Sourced hands vibe coders real problems people already complain about — with
-            proof someone will pay for the fix, matching free APIs to build it with, and a
-            brief ready for whichever tool you build with.
+            Three or more signals across at least two platforms become an evidence-backed
+            build brief — ready to paste into Claude Code, Cursor, or v0.
           </p>
           <div className="hero-cta-row">
             <a className="btn btn-primary" href="#pricing">Browse this week&apos;s ideas</a>
@@ -429,7 +422,7 @@ export default function HomeClient({ userEmail }: { userEmail: string | null }) 
             <Reveal delay={0.08} className="plan featured">
               <div className="plan-name">Builder</div>
               <div className="plan-tag">The full weekly feed · most common pick</div>
-              <div className="plan-price">$9<span>/mo</span></div>
+              <div className="plan-price">₹399<span>/mo</span></div>
               <button
                 type="button"
                 className="plan-old"
@@ -437,7 +430,7 @@ export default function HomeClient({ userEmail }: { userEmail: string | null }) 
                 onClick={() => startCheckout("builder-yearly")}
                 disabled={checkoutPending !== null}
               >
-                or $90/yr — save $18
+                or ₹3,499/yr — save ₹1,289
               </button>
               <ul className="plan-features">
                 <li>4 full idea cards every month</li>
@@ -457,7 +450,7 @@ export default function HomeClient({ userEmail }: { userEmail: string | null }) 
             <Reveal delay={0.16} className="plan">
               <div className="plan-name">Studio</div>
               <div className="plan-tag">For your specific niche</div>
-              <div className="plan-price">$19<span>/mo</span></div>
+              <div className="plan-price">₹999<span>/mo</span></div>
               <ul className="plan-features">
                 <li>Everything in Builder</li>
                 <li>One custom idea request / month</li>
@@ -481,7 +474,7 @@ export default function HomeClient({ userEmail }: { userEmail: string | null }) 
           )}
           <Reveal className="founding">
             <span className="founding-label">Founding rate</span>
-            <span>The first 100 subscribers keep <b>$7/mo</b> on Builder for life. No expiry games, just first 100.</span>
+            <span>The first 100 subscribers keep <b>₹310/mo</b> on Builder for life. No expiry games, just first 100.</span>
           </Reveal>
         </div>
       </section>
@@ -524,6 +517,18 @@ export default function HomeClient({ userEmail }: { userEmail: string | null }) 
         <p>Go find it — or let Sourced bring it to you every Monday.</p>
         <a className="btn btn-primary" href="#pricing">Browse this week&apos;s ideas</a>
       </Reveal>
+
+      <section className="newsletter-section" aria-labelledby="newsletter-heading">
+        <div className="wrap">
+          <div className="newsletter-panel">
+            <div>
+              <h2 id="newsletter-heading">One verified problem a week.</h2>
+              <p>Get the evidence, the signal count, and the build brief when the next drop is ready.</p>
+            </div>
+            <NewsletterForm sourcePath="/" />
+          </div>
+        </div>
+      </section>
 
       <footer>
         <div className="wrap">

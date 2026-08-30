@@ -9,6 +9,7 @@ import { getSubscriberByUserId } from "@/lib/subscriptions/store";
 import { getSubscriberTopics } from "@/lib/subscriptions/subscriber-topics";
 import { absoluteUrl } from "@/lib/seo";
 import TriangulationBadge from "./triangulation-badge";
+import NewsletterForm from "../newsletter-form";
 
 export const dynamic = "force-dynamic";
 
@@ -112,6 +113,11 @@ export default async function FeedPage() {
           })}
         </div>
       )}
+      <section className="newsletter-inline" aria-labelledby="feed-newsletter-heading">
+        <h2 id="feed-newsletter-heading">Get the next proof drop</h2>
+        <p>One evidence-backed opportunity each week.</p>
+        <NewsletterForm sourcePath="/feed" />
+      </section>
     </main>
   );
 }
