@@ -10,6 +10,23 @@ const TAGS = ["discuss", "watercooler", "help"];
 const MIN_REACTIONS = 5;
 const MIN_COMMENTS = 3;
 
+// Recurring weekly/monthly discussion-thread titles in the discuss/watercooler
+// tags. These aren't complaint content — they're the same templated prompt
+// posted on a schedule — so every occurrence clusters as a false-positive
+// "recurring complaint" with its own past instances. Matched as a
+// case-insensitive substring against the title.
+const RECURRING_THREAD_TITLES = [
+  "what was your win this week",
+  "meme monday",
+  "what are you working on this week",
+  "what's everyone working on this week",
+];
+
+export function isRecurringThreadTitle(title: string): boolean {
+  const normalized = title.toLowerCase();
+  return RECURRING_THREAD_TITLES.some((pattern) => normalized.includes(pattern));
+}
+
 interface DevToArticle {
   id: number;
   title: string;
@@ -48,6 +65,7 @@ export async function pollDevTo(): Promise<PollResult> {
       seen.add(a.id);
 
       if (a.positive_reactions_count < MIN_REACTIONS || a.comments_count < MIN_COMMENTS) continue;
+      if (isRecurringThreadTitle(a.title)) continue;
 
       const text = a.description ?? a.title;
       if (!text) continue;
