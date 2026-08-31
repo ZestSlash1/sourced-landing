@@ -1,4 +1,5 @@
-import type { RawSignalInput } from "../types";
+import { applyNoiseFilters } from "../noise-filters";
+import type { PollResult, RawSignalInput } from "../types";
 
 // Sites worth mining for "I do this by hand, wish there were a tool"
 // workflow-gap questions. Webmasters/SO cover the general builder audience;
@@ -15,6 +16,8 @@ const SITES = [
   "webapps",
   "ux",
   "pm",
+  "serverfault",
+  "superuser",
 ];
 
 const MAX_ANSWERS = 1; // unanswered or barely-answered = an unmet need
@@ -40,7 +43,7 @@ interface SEResponse {
  * anonymous quota (300 req/day, plenty for a daily cron per site). Pulls
  * low-answer questions describing a workflow gap.
  */
-export async function pollStackExchange(): Promise<RawSignalInput[]> {
+export async function pollStackExchange(): Promise<PollResult> {
   const responses = await Promise.all(
     SITES.map((site) =>
       fetch(
@@ -71,5 +74,6 @@ export async function pollStackExchange(): Promise<RawSignalInput[]> {
     }
   }
 
-  return signals;
+  const { kept, noiseFiltered } = applyNoiseFilters("stackexchange", signals);
+  return { signals: kept, noiseFiltered };
 }

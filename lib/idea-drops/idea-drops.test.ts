@@ -149,18 +149,16 @@ describe("validateEvidence", () => {
     expect(validateEvidence(ideaDrop().evidence)).toEqual({ valid: true, errors: [] });
   });
 
+  it("accepts 3+ items from a single platform with one within 90 days", () => {
+    const result = validateEvidence([evidence(), evidence(), evidence()]);
+    expect(result).toEqual({ valid: true, errors: [] });
+  });
+
   it("rejects fewer than 3 items", () => {
     const result = validateEvidence([evidence(), evidence({ platform: "g2" })]);
 
     expect(result.valid).toBe(false);
     expect(result.errors).toContain("Only 2 evidence item(s) — minimum 3 required");
-  });
-
-  it("rejects evidence from a single platform", () => {
-    const result = validateEvidence([evidence(), evidence(), evidence()]);
-
-    expect(result.valid).toBe(false);
-    expect(result.errors).toContain("Evidence spans only 1 platform(s) — minimum 2 required");
   });
 
   it("rejects evidence that is all older than 90 days", () => {
@@ -176,7 +174,7 @@ describe("validateEvidence", () => {
   });
 
   it("reports every failing rule at once", () => {
-    expect(validateEvidence([evidence({ date: daysAgo(400) })]).errors).toHaveLength(3);
+    expect(validateEvidence([evidence({ date: daysAgo(400) })]).errors).toHaveLength(2);
   });
 });
 
@@ -190,11 +188,13 @@ describe("applyEvidenceGate", () => {
     expect(gated.validationErrors).toContain("Only 2 evidence item(s) — minimum 3 required");
   });
 
-  // Acceptance check 3: 3 items all from Reddit cannot be published.
-  it("blocks publish when all evidence is from one platform", () => {
+  // Acceptance check 3 (revised, sourced-pipeline-quality-spec.md Part 4):
+  // 3+ items from a single platform now CAN be published — the platform
+  // minimum was relaxed from 2 to 1.
+  it("allows publish when all evidence is from one platform, given 3+ items", () => {
     const idea = ideaDrop({ evidence: [evidence(), evidence(), evidence()] });
 
-    expect(applyEvidenceGate(idea, "published").status).toBe("needs_evidence");
+    expect(applyEvidenceGate(idea, "published").status).toBe("published");
   });
 
   // Acceptance check 4: 2+ platforms but all >90 days old cannot be published.

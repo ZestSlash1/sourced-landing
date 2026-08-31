@@ -1,4 +1,5 @@
-import type { RawSignalInput } from "../types";
+import { applyNoiseFilters } from "../noise-filters";
+import type { PollResult, RawSignalInput } from "../types";
 
 const MIN_SCORE = 5;
 const MIN_COMMENTS = 2;
@@ -26,7 +27,7 @@ function authorOf(submitter: LobstersStory["submitter_user"]): string | null {
  * about the same problems HN does, giving clustering real cross-platform
  * overlap to find. Politely spaced (one request at a time, no burst).
  */
-export async function pollLobsters(): Promise<RawSignalInput[]> {
+export async function pollLobsters(): Promise<PollResult> {
   const endpoints = ["https://lobste.rs/hottest.json", "https://lobste.rs/newest.json?page=1"];
 
   const seen = new Set<string>();
@@ -69,5 +70,6 @@ export async function pollLobsters(): Promise<RawSignalInput[]> {
     await new Promise((r) => setTimeout(r, 1000));
   }
 
-  return signals;
+  const { kept, noiseFiltered } = applyNoiseFilters("lobsters", signals);
+  return { signals: kept, noiseFiltered };
 }

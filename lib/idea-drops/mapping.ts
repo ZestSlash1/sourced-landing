@@ -1,4 +1,5 @@
 import type {
+  CompetitiveLandscape,
   DataEntity,
   Evidence,
   IdeaDrop,
@@ -33,6 +34,9 @@ export interface IdeaDropRow {
   validation_errors: string[] | null;
   featured: boolean;
   source_signal_ids: string[] | null;
+  platform_count: number | null;
+  cross_platform: boolean | null;
+  competitive_landscape: CompetitiveLandscape | null;
   created_at: string;
   updated_at: string;
 }
@@ -67,6 +71,15 @@ export function rowToIdeaDrop(row: IdeaDropRow): IdeaDrop {
   if (row.source_signal_ids !== null) {
     idea.sourceSignalIds = row.source_signal_ids;
   }
+  if (row.platform_count !== null) {
+    idea.platformCount = row.platform_count;
+  }
+  if (row.cross_platform !== null) {
+    idea.crossPlatform = row.cross_platform;
+  }
+  if (row.competitive_landscape !== null) {
+    idea.competitiveLandscape = row.competitive_landscape;
+  }
 
   return idea;
 }
@@ -96,5 +109,8 @@ export function ideaDropToRow(
     validation_errors: idea.validationErrors ?? null,
     featured: idea.featured ?? false,
     source_signal_ids: idea.sourceSignalIds ?? null,
+    platform_count: idea.platformCount ?? null,
+    cross_platform: idea.crossPlatform ?? null,
+    competitive_landscape: idea.competitiveLandscape ?? null,
   };
 }

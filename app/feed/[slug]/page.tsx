@@ -96,6 +96,8 @@ export default async function IdeaDetailPage({ params }: { params: { slug: strin
             {triangulation ? <SourceLinksList triangulation={triangulation} /> : null}
           </div>
 
+          <CompetitiveLandscapeSection idea={idea} />
+
           <div className="gated-zone">
             {access.kind === "signed-out" ? (
               <div className="locked-callout">
@@ -196,6 +198,56 @@ function BriefJsonLd({ idea, access }: { idea: IdeaDrop; access: IdeaAccess["kin
       : { ...base, "@type": "Article" };
 
   return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(json) }} />;
+}
+
+function formatCheckedDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+}
+
+/**
+ * Ungated, unlike the rest of the build brief — a real "no competitor found"
+ * or "here's what exists" is itself the trust signal Sourced sells against
+ * generic AI idea-generators, so it renders for every visitor regardless of
+ * tier/sign-in, same rationale as Problem/Evidence above the gated zone.
+ */
+function CompetitiveLandscapeSection({ idea }: { idea: IdeaDrop }) {
+  if (!idea.competitiveLandscape) return null;
+  const landscape = idea.competitiveLandscape;
+
+  return (
+    <div className="brief-section">
+      <div className="eyebrow">Competitive landscape</div>
+      {landscape.verdict === "no_direct_competitor" ? (
+        <p style={{ margin: 0, fontSize: 14 }}>
+          No existing tool found solving this specific problem as of {formatCheckedDate(landscape.checkedAt)}.
+        </p>
+      ) : (
+        <>
+          <ul className="brief-list">
+            {landscape.existingSolutions.map((s, i) => (
+              <li key={i}>
+                <a
+                  href={s.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: "var(--violet-deep)", fontWeight: 600 }}
+                >
+                  {s.name}
+                </a>{" "}
+                — {s.gap}
+              </li>
+            ))}
+          </ul>
+          <p style={{ margin: "6px 0 0", fontSize: 13, color: "var(--ink-soft)" }}>
+            Here&apos;s what exists and where the opening is.
+          </p>
+        </>
+      )}
+      <p className="mono" style={{ margin: "8px 0 0", fontSize: 11.5, color: "var(--ink-soft)" }}>
+        Checked {formatCheckedDate(landscape.checkedAt)}
+      </p>
+    </div>
+  );
 }
 
 function FullBrief({ idea }: { idea: IdeaDrop }) {

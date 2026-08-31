@@ -3,11 +3,23 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-export default function ReviewActions({ ideaId }: { ideaId: string }) {
+export default function ReviewActions({
+  ideaId,
+  hasCloseCompetitor,
+}: {
+  ideaId: string;
+  hasCloseCompetitor?: boolean;
+}) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
 
   async function setStatus(status: "published" | "draft") {
+    if (status === "published" && hasCloseCompetitor) {
+      const confirmed = window.confirm(
+        "This idea has an existing close competitor per the competitive landscape check — publish anyway?",
+      );
+      if (!confirmed) return;
+    }
     setBusy(true);
     await fetch(`/api/admin/ideas/${ideaId}`, {
       method: "PATCH",

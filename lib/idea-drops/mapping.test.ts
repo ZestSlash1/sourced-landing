@@ -84,6 +84,9 @@ const row: IdeaDropRow = {
   validation_errors: null,
   featured: false,
   source_signal_ids: null,
+  platform_count: null,
+  cross_platform: null,
+  competitive_landscape: null,
   created_at: "2026-08-29T00:00:00.000Z",
   updated_at: idea.updatedAt as string,
 };
@@ -133,6 +136,9 @@ describe("ideaDropToRow", () => {
       validation_errors: null,
       featured: false,
       source_signal_ids: null,
+      platform_count: null,
+      cross_platform: null,
+      competitive_landscape: null,
     });
   });
 

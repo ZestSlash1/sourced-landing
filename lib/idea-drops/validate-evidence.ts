@@ -5,6 +5,12 @@ export interface EvidenceValidationResult {
   errors: string[];
 }
 
+// Relaxed from 2 to 1 (sourced-pipeline-quality-spec.md Part 4), matching the
+// clustering-stage MIN_CLUSTER_PLATFORMS relaxation — see clustering.ts for
+// why. Cross-platform spread is still tracked as a stronger-evidence signal
+// (Evidence["platform"] diversity), just not gated on here.
+export const MIN_EVIDENCE_PLATFORMS = 1;
+
 /**
  * The hard gate an idea must clear before it can be published: enough
  * evidence, from enough distinct places, recent enough to still be true.
@@ -20,8 +26,8 @@ export function validateEvidence(evidence: Evidence[]): EvidenceValidationResult
   }
 
   const platforms = new Set(evidence.map((e) => e.platform));
-  if (platforms.size < 2) {
-    errors.push(`Evidence spans only ${platforms.size} platform(s) — minimum 2 required`);
+  if (platforms.size < MIN_EVIDENCE_PLATFORMS) {
+    errors.push(`Evidence spans only ${platforms.size} platform(s) — minimum ${MIN_EVIDENCE_PLATFORMS} required`);
   }
 
   const hasRecent = evidence.some((e) => new Date(e.date) >= ninetyDaysAgo);

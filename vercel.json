@@ -6,6 +6,7 @@
     { "path": "/api/cron/ingest-reddit", "schedule": "30 6 * * *" },
     { "path": "/api/cron/ingest-devto", "schedule": "40 6 * * *" },
     { "path": "/api/cron/ingest-lobsters", "schedule": "50 6 * * *" },
+    { "path": "/api/cron/ingest-gitlab", "schedule": "55 6 * * *" },
     { "path": "/api/cron/draft-ideas", "schedule": "0 7 * * *" }
   ]
 }

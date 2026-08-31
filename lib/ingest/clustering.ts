@@ -32,7 +32,14 @@ export const JACCARD_SIMILARITY_THRESHOLD = 0.15;
 export const EMBEDDING_SIMILARITY_THRESHOLD = 0.82;
 
 export const MIN_CLUSTER_SIZE = 3;
-export const MIN_CLUSTER_PLATFORMS = 2;
+// Relaxed from 2 to 1 (sourced-pipeline-quality-spec.md Part 4): near-miss
+// inspection at 443 classified signals showed the 2-platform requirement was
+// filtering out real, well-matched demand signal almost entirely on the basis
+// of which community posted it, not on whether the complaint is real or
+// repeated. Cross-platform spread is now tracked (see `platformCount` /
+// `crossPlatform` on SignalCluster) as a stronger-evidence signal rather than
+// gated on.
+export const MIN_CLUSTER_PLATFORMS = 1;
 
 export type ClusteringStrategy = "embedding" | "jaccard";
 
@@ -44,6 +51,8 @@ export interface SignalCluster {
   key: string;
   signals: RawSignal[];
   passesBar: boolean;
+  platformCount: number;
+  crossPlatform: boolean;
 }
 
 export interface ClusterResult {
@@ -53,6 +62,8 @@ export interface ClusterResult {
     pairsCompared: number;
     clustersFormed: number;
     clustersPassingBar: number;
+    clustersPassingBarSinglePlatform: number;
+    clustersPassingBarMultiPlatform: number;
     similarityThreshold: number;
     minClusterSize: number;
     minClusterPlatforms: number;
@@ -125,11 +136,19 @@ export function clusterSignals(signals: RawSignal[], options: ClusterOptions = {
 
   const clusters: SignalCluster[] = [];
   let clustersPassingBar = 0;
+  let clustersPassingBarSinglePlatform = 0;
+  let clustersPassingBarMultiPlatform = 0;
   Array.from(groups.values()).forEach((group) => {
     const platforms = new Set(group.map((s) => s.source));
-    const passesBar = group.length >= MIN_CLUSTER_SIZE && platforms.size >= MIN_CLUSTER_PLATFORMS;
-    if (passesBar) clustersPassingBar++;
-    clusters.push({ key: group[0].id, signals: group, passesBar });
+    const platformCount = platforms.size;
+    const crossPlatform = platformCount >= 2;
+    const passesBar = group.length >= MIN_CLUSTER_SIZE && platformCount >= MIN_CLUSTER_PLATFORMS;
+    if (passesBar) {
+      clustersPassingBar++;
+      if (crossPlatform) clustersPassingBarMultiPlatform++;
+      else clustersPassingBarSinglePlatform++;
+    }
+    clusters.push({ key: group[0].id, signals: group, passesBar, platformCount, crossPlatform });
   });
 
   return {
@@ -139,6 +158,8 @@ export function clusterSignals(signals: RawSignal[], options: ClusterOptions = {
       pairsCompared,
       clustersFormed: clusters.length,
       clustersPassingBar,
+      clustersPassingBarSinglePlatform,
+      clustersPassingBarMultiPlatform,
       similarityThreshold: threshold,
       minClusterSize: MIN_CLUSTER_SIZE,
       minClusterPlatforms: MIN_CLUSTER_PLATFORMS,

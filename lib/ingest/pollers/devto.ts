@@ -1,4 +1,5 @@
-import type { RawSignalInput } from "../types";
+import { applyNoiseFilters } from "../noise-filters";
+import type { PollResult, RawSignalInput } from "../types";
 
 // discuss/watercooler/help are Dev.to's opinion/venting/ask tags — same
 // complaint-prose register as HN ("I'm frustrated that...", "why doesn't
@@ -25,7 +26,7 @@ interface DevToArticle {
  * opinion/discussion tags and filters to ones with enough engagement to show
  * the complaint actually resonated, not just a drive-by post.
  */
-export async function pollDevTo(): Promise<RawSignalInput[]> {
+export async function pollDevTo(): Promise<PollResult> {
   const responses = await Promise.all(
     TAGS.map((tag) =>
       fetch(`https://dev.to/api/articles?tag=${encodeURIComponent(tag)}&top=30`).then(async (res) => {
@@ -63,5 +64,6 @@ export async function pollDevTo(): Promise<RawSignalInput[]> {
     }
   }
 
-  return signals;
+  const { kept, noiseFiltered } = applyNoiseFilters("devto", signals);
+  return { signals: kept, noiseFiltered };
 }

@@ -47,10 +47,30 @@ export interface IdeaDrop {
 
   featured?: boolean; // admin-curated, shown to logged-out/no-topic feed visitors
   sourceSignalIds?: string[]; // raw_signals this draft came from, for the admin review queue
+
+  // Set at draft time from the source cluster (SignalCluster.platformCount /
+  // .crossPlatform) — not re-derived from evidence[], so it survives an admin
+  // editing the evidence list. Absent on ideas drafted before this field
+  // existed; callers should treat that as unknown, not single-platform.
+  platformCount?: number;
+  crossPlatform?: boolean;
+
+  // Grounded in a real web search at draft time (see
+  // lib/ingest/competitive-landscape.ts) — never an LLM answering from
+  // memory. Null/absent means no check has run, or the search failed;
+  // that's an honest "unknown", not the same as no_direct_competitor.
+  competitiveLandscape?: CompetitiveLandscape | null;
+}
+
+export interface CompetitiveLandscape {
+  verdict: "no_direct_competitor" | "partial_overlap" | "close_competitor_exists";
+  existingSolutions: { name: string; url: string; gap: string }[];
+  checkedAt: string; // ISO timestamp
+  searchQueryUsed: string;
 }
 
 export interface Evidence {
-  platform: "reddit" | "g2" | "upwork" | "twitter" | "hackernews" | "stackexchange" | "github" | "devto" | "lobsters" | "other";
+  platform: "reddit" | "g2" | "upwork" | "twitter" | "hackernews" | "stackexchange" | "github" | "devto" | "lobsters" | "gitlab" | "devrant" | "other";
   subforum?: string; // e.g. "r/SaaS", or product name for G2
   quote: string; // paraphrased or short direct quote
   url: string;

@@ -237,8 +237,8 @@ export default function HomeClient({ userEmail }: { userEmail: string | null }) 
             <span className="line"><span className="accent">triangulated.</span></span>
           </h1>
           <p className="hero-sub">
-            Three or more signals across at least two platforms become an evidence-backed
-            build brief — ready to paste into Claude Code, Cursor, or v0.
+            Three or more independent complaints about the same problem become an
+            evidence-backed build brief — ready to paste into Claude Code, Cursor, or v0.
           </p>
           <div className="hero-cta-row">
             <a className="btn btn-primary" href="#pricing">Browse this week&apos;s ideas</a>

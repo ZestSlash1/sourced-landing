@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { pollGithubIssues } from "@/lib/ingest/pollers/github-issues";
+import { pollGitlabIssues } from "@/lib/ingest/pollers/gitlab-issues";
 import { insertRawSignals } from "@/lib/ingest/raw-signals-repository";
 import { isAuthorizedCronRequest } from "@/lib/ingest/require-cron";
 
@@ -11,7 +11,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { signals, noiseFiltered } = await pollGithubIssues();
+  const { signals, noiseFiltered } = await pollGitlabIssues();
   const inserted = await insertRawSignals(signals);
   return NextResponse.json({ fetched: signals.length, noiseFiltered, inserted });
 }

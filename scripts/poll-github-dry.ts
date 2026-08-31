@@ -8,8 +8,8 @@ import { createClient } from "@supabase/supabase-js";
 import { pollGithubIssues } from "../lib/ingest/pollers/github-issues";
 
 async function main() {
-  const signals = await pollGithubIssues();
-  console.log(`Fetched ${signals.length} github signals.`);
+  const { signals, noiseFiltered } = await pollGithubIssues();
+  console.log(`Fetched ${signals.length} github signals (${noiseFiltered} dropped by noise filters).`);
   for (const s of signals.slice(0, 5)) {
     console.log(`  [${s.engagementMetric}] ${s.title} — ${s.url}`);
   }

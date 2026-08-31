@@ -1,4 +1,5 @@
-import type { RawSignalInput } from "../types";
+import { applyNoiseFilters } from "../noise-filters";
+import type { PollResult, RawSignalInput } from "../types";
 
 const PAIN_PHRASES = [
   "wish there was",
@@ -34,7 +35,7 @@ interface AlgoliaHit {
 // by tag rather than relying on them happening to match a PAIN_PHRASE.
 const ASK_HN_MIN_POINTS = 10;
 
-export async function pollHackerNews(): Promise<RawSignalInput[]> {
+export async function pollHackerNews(): Promise<PollResult> {
   const results = await Promise.all([
     ...PAIN_PHRASES.map((phrase) =>
       fetch(
@@ -75,5 +76,6 @@ export async function pollHackerNews(): Promise<RawSignalInput[]> {
     }
   }
 
-  return signals;
+  const { kept, noiseFiltered } = applyNoiseFilters("hackernews", signals);
+  return { signals: kept, noiseFiltered };
 }

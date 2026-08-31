@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { listPendingReviewIdeas } from "@/lib/idea-drops/repository";
 import AdminShell from "../admin-shell";
+import CompetitiveLandscapePanel from "./competitive-landscape-panel";
 import ReviewActions from "./review-actions";
 
 export const dynamic = "force-dynamic";
@@ -46,7 +47,10 @@ export default async function PendingReviewPage() {
         </div>
       )}
 
-      {ideas.map((idea) => (
+      {ideas.map((idea) => {
+        const platformCount = idea.platformCount ?? new Set(idea.evidence.map((e) => e.platform)).size;
+        const crossPlatform = idea.crossPlatform ?? platformCount >= 2;
+        return (
         <div
           key={idea.id}
           style={{
@@ -64,6 +68,21 @@ export default async function PendingReviewPage() {
               <p style={{ margin: "0 0 12px", fontSize: 13, color: "var(--ink-soft)" }}>
                 {idea.category} · demand {idea.demandScore} · {idea.tier} tier · tags: {idea.tags.join(", ")}
               </p>
+              <span
+                className="mono"
+                style={{
+                  display: "inline-block",
+                  fontSize: 11,
+                  fontWeight: 700,
+                  padding: "3px 9px",
+                  borderRadius: "var(--r-chip)",
+                  marginBottom: 12,
+                  color: crossPlatform ? "var(--violet-deep)" : "var(--ink-soft)",
+                  background: crossPlatform ? "rgba(91,79,247,0.09)" : "rgba(0,0,0,0.05)",
+                }}
+              >
+                {crossPlatform ? `${platformCount}+ sources` : "1 source"}
+              </span>
             </div>
             <Link
               href={`/admin/ideas/${idea.id}`}
@@ -102,9 +121,15 @@ export default async function PendingReviewPage() {
             </ul>
           </div>
 
-          <ReviewActions ideaId={idea.id} />
+          <CompetitiveLandscapePanel ideaId={idea.id} landscape={idea.competitiveLandscape} />
+
+          <ReviewActions
+            ideaId={idea.id}
+            hasCloseCompetitor={idea.competitiveLandscape?.verdict === "close_competitor_exists"}
+          />
         </div>
-      ))}
+        );
+      })}
     </AdminShell>
   );
 }

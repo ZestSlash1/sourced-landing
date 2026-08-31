@@ -77,7 +77,8 @@ export default async function AnalyticsPage() {
         >
           <h2 style={{ fontSize: 14.5, fontWeight: 600, margin: "0 0 4px" }}>Ingest pipeline runs</h2>
           <p className="mono" style={{ fontSize: 11.5, color: "var(--ink-soft)", margin: "0 0 14px" }}>
-            Last {pipelineRuns.length} draft-pass invocations · clusters must reach 3+ signals across 2+ platforms to draft
+            Last {pipelineRuns.length} draft-pass invocations · clusters must reach 3+ signals to draft (1+ platform
+            required, 2+ platforms tracked as stronger evidence, not gated)
           </p>
           {pipelineRuns.length === 0 ? (
             <p style={{ fontSize: 13, color: "var(--ink-soft)", margin: 0 }}>
@@ -89,14 +90,21 @@ export default async function AnalyticsPage() {
                 <thead>
                   <tr style={{ textAlign: "left", color: "var(--ink-soft)" }}>
                     <th style={{ padding: "6px 8px" }}>Ran at</th>
+                    <th style={{ padding: "6px 8px" }}>Complaints</th>
+                    <th style={{ padding: "6px 8px" }}>Non-complaints</th>
                     <th style={{ padding: "6px 8px" }}>Signals</th>
                     <th style={{ padding: "6px 8px" }}>Pairs</th>
                     <th style={{ padding: "6px 8px" }}>Clusters</th>
+                    <th style={{ padding: "6px 8px" }}>Size dist.</th>
                     <th style={{ padding: "6px 8px" }}>Passing bar</th>
+                    <th style={{ padding: "6px 8px" }}>· 1 platform</th>
+                    <th style={{ padding: "6px 8px" }}>· 2+ platforms</th>
                     <th style={{ padding: "6px 8px" }}>Drafted</th>
                     <th style={{ padding: "6px 8px" }}>Threshold</th>
                     <th style={{ padding: "6px 8px" }}>Embedded</th>
                     <th style={{ padding: "6px 8px" }}>Emb. errors</th>
+                    <th style={{ padding: "6px 8px" }}>Comp. checks</th>
+                    <th style={{ padding: "6px 8px" }}>Comp. errors</th>
                     <th style={{ padding: "6px 8px" }}>Errors</th>
                   </tr>
                 </thead>
@@ -104,14 +112,26 @@ export default async function AnalyticsPage() {
                   {pipelineRuns.map((r) => (
                     <tr key={r.id} style={{ borderTop: "1px solid var(--line)" }}>
                       <td style={{ padding: "6px 8px" }}>{new Date(r.ranAt).toLocaleString()}</td>
+                      <td style={{ padding: "6px 8px" }}>{r.classifiedComplaint}</td>
+                      <td style={{ padding: "6px 8px" }}>{r.classifiedNonComplaint}</td>
                       <td style={{ padding: "6px 8px" }}>{r.signalsConsidered}</td>
                       <td style={{ padding: "6px 8px" }}>{r.pairsCompared}</td>
                       <td style={{ padding: "6px 8px" }}>{r.clustersFormed}</td>
+                      <td style={{ padding: "6px 8px" }}>
+                        {Object.entries(r.clusterSizeDistribution)
+                          .sort(([a], [b]) => a.localeCompare(b))
+                          .map(([size, count]) => `${size}:${count}`)
+                          .join(" ") || "—"}
+                      </td>
                       <td style={{ padding: "6px 8px" }}>{r.clustersPassingBar}</td>
+                      <td style={{ padding: "6px 8px" }}>{r.clustersPassingBarSinglePlatform}</td>
+                      <td style={{ padding: "6px 8px" }}>{r.clustersPassingBarMultiPlatform}</td>
                       <td style={{ padding: "6px 8px" }}>{r.drafted}</td>
                       <td style={{ padding: "6px 8px" }}>{r.similarityThreshold}</td>
                       <td style={{ padding: "6px 8px" }}>{r.embeddingsGenerated}</td>
                       <td style={{ padding: "6px 8px" }}>{r.embeddingErrors.length}</td>
+                      <td style={{ padding: "6px 8px" }}>{r.competitiveChecksRun}</td>
+                      <td style={{ padding: "6px 8px" }}>{r.competitiveCheckErrors.length}</td>
                       <td style={{ padding: "6px 8px" }}>{r.errors.length}</td>
                     </tr>
                   ))}

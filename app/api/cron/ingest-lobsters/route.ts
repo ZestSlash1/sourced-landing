@@ -11,7 +11,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const signals = await pollLobsters();
+  const { signals, noiseFiltered } = await pollLobsters();
   const inserted = await insertRawSignals(signals);
-  return NextResponse.json({ fetched: signals.length, inserted });
+  return NextResponse.json({ fetched: signals.length, noiseFiltered, inserted });
 }

@@ -74,11 +74,16 @@ async function main() {
   const clusteredSignalCount = nonSingletons.reduce((n, c) => n + c.signals.length, 0);
   console.log(`Non-singleton clusters: ${nonSingletons.length} covering ${clusteredSignalCount} signals`);
 
-  const crossPlatform = nonSingletons.filter((c) => new Set(c.signals.map((s) => s.source)).size >= 2);
+  const crossPlatform = nonSingletons.filter((c) => c.crossPlatform);
   console.log(`Cross-platform clusters (2+ sources): ${crossPlatform.length}`);
 
   const passing = clusters.filter((c) => c.passesBar);
-  console.log(`Passing 3+/2+ bar: ${passing.length}`);
+  const passingSinglePlatform = passing.filter((c) => !c.crossPlatform);
+  const passingMultiPlatform = passing.filter((c) => c.crossPlatform);
+  console.log(
+    `Passing ${MIN_CLUSTER_SIZE}+/${MIN_CLUSTER_PLATFORMS}+ bar: ${passing.length} ` +
+      `(single-platform: ${passingSinglePlatform.length}, multi-platform: ${passingMultiPlatform.length})`,
+  );
 
   function describe(c: (typeof clusters)[number]) {
     const platforms = Array.from(new Set(c.signals.map((s) => s.source)));
@@ -86,7 +91,7 @@ async function main() {
     for (const s of c.signals) console.log(`    [${s.source}] ${(s.title ?? s.text).slice(0, 100)}`);
   }
 
-  console.log("\n=== Passing clusters (3+/2+) ===");
+  console.log(`\n=== Passing clusters (${MIN_CLUSTER_SIZE}+/${MIN_CLUSTER_PLATFORMS}+) ===`);
   passing.forEach(describe);
 
   console.log("\n=== Near-misses (non-singleton, not passing) ===");

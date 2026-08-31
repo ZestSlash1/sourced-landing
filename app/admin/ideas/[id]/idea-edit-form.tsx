@@ -38,6 +38,7 @@ const JSON_FIELDS = [
   "launchStack",
   "agentPrompts",
   "difficulty",
+  "competitiveLandscape",
 ] as const;
 
 export default function IdeaEditForm({ idea }: { idea: IdeaDrop }) {
@@ -56,7 +57,7 @@ export default function IdeaEditForm({ idea }: { idea: IdeaDrop }) {
   const [jsonFields, setJsonFields] = useState<Record<(typeof JSON_FIELDS)[number], string>>(
     () =>
       Object.fromEntries(
-        JSON_FIELDS.map((field) => [field, JSON.stringify(idea[field], null, 2)]),
+        JSON_FIELDS.map((field) => [field, JSON.stringify(idea[field] ?? null, null, 2)]),
       ) as Record<(typeof JSON_FIELDS)[number], string>,
   );
 

@@ -30,9 +30,24 @@ function estimateTokens(text: string): number {
   return Math.ceil(text.length / 4);
 }
 
-function embeddingInput(signal: Pick<RawSignal, "title" | "text">): string {
-  const combined = signal.title ? `${signal.title}\n\n${signal.text}` : signal.text;
-  return denoise(combined).slice(0, MAX_INPUT_CHARS);
+/**
+ * Embeds problem_statement, not raw title/body (sourced-pipeline-quality-spec.md
+ * Part 2) — cosine similarity over raw prose compares writing style as much
+ * as meaning, which is why the same complaint on GitLab vs HN vs Stack
+ * Exchange never clustered even after the Jaccard->cosine migration. Callers
+ * must only pass classified, is_complaint=true signals here; a signal
+ * without a problem_statement has nothing meaningful to embed.
+ */
+function embeddingInput(signal: Pick<RawSignal, "problemStatement" | "title" | "text">): string {
+  // problem_statement is already a single normalized sentence with no
+  // platform boilerplate — denoise() (built to strip "Show HN:"/"Ask HN:"
+  // noise from raw prose) has nothing left to usefully remove there and
+  // would only risk stripping load-bearing words like "not"/"no". Only
+  // fall back to raw title/text (and denoise it) for a legacy signal that
+  // predates classification.
+  if (signal.problemStatement) return signal.problemStatement.slice(0, MAX_INPUT_CHARS);
+  const raw = signal.title ? `${signal.title}\n\n${signal.text}` : signal.text;
+  return denoise(raw).slice(0, MAX_INPUT_CHARS);
 }
 
 interface OpenRouterEmbeddingResponse {

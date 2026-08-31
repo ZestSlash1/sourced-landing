@@ -8,7 +8,10 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "sync:apis": "tsx scripts/sync-public-apis.ts"
+    "sync:apis": "tsx scripts/sync-public-apis.ts",
+    "ingest:dry-run": "tsx scripts/poll-all.ts",
+    "ingest:backfill-classification": "tsx scripts/backfill-classification.ts",
+    "ingest:backfill-competitive": "tsx scripts/backfill-competitive-landscape.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.5",

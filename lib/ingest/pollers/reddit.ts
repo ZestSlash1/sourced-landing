@@ -1,4 +1,5 @@
-import type { RawSignalInput } from "../types";
+import { applyNoiseFilters } from "../noise-filters";
+import type { PollResult, RawSignalInput } from "../types";
 
 const SUBREDDITS = ["Etsyseller", "shopify", "smallbusiness", "freelance", "SaaS", "webdev"];
 const MIN_UPVOTES = 20;
@@ -55,9 +56,9 @@ async function getAppOnlyToken(): Promise<string> {
  * app credentials are configured, so the other three pollers still work
  * out of the box without Reddit's OAuth setup.
  */
-export async function pollReddit(): Promise<RawSignalInput[]> {
+export async function pollReddit(): Promise<PollResult> {
   if (!process.env.REDDIT_CLIENT_ID || !process.env.REDDIT_CLIENT_SECRET) {
-    return [];
+    return { signals: [], noiseFiltered: 0 };
   }
 
   const token = await getAppOnlyToken();
@@ -91,5 +92,6 @@ export async function pollReddit(): Promise<RawSignalInput[]> {
     }
   }
 
-  return signals;
+  const { kept, noiseFiltered } = applyNoiseFilters("reddit", signals);
+  return { signals: kept, noiseFiltered };
 }

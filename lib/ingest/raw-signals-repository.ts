@@ -17,6 +17,10 @@ interface RawSignalRow {
   cluster_key: string | null;
   drafted_idea_id: string | null;
   embedding: number[] | null;
+  classified_as_complaint: boolean | null;
+  problem_statement: string | null;
+  domain: string | null;
+  classification_confidence: number | null;
 }
 
 function rowToSignal(row: RawSignalRow): RawSignal {
@@ -33,6 +37,10 @@ function rowToSignal(row: RawSignalRow): RawSignal {
     clusterKey: row.cluster_key,
     draftedIdeaId: row.drafted_idea_id,
     embedding: row.embedding,
+    classifiedAsComplaint: row.classified_as_complaint,
+    problemStatement: row.problem_statement,
+    domain: row.domain,
+    classificationConfidence: row.classification_confidence,
   };
 }
 
@@ -72,23 +80,87 @@ export interface SignalSummary {
   title: string | null;
   postedAt: string | null;
   clusterKey: string | null;
+  classifiedAsComplaint: boolean | null;
+  domain: string | null;
 }
 
 /**
- * Every signal's id/source/title/postedAt/clusterKey — nothing else. This is
- * the projection the public transparency pages (/methodology, /rejected) are
- * built on; it deliberately omits text, url, and embedding so a rejected
- * cluster's full complaint text or source link can never leak onto a public
- * page just by widening a `select("*")` upstream.
+ * Every signal's id/source/title/postedAt/clusterKey/classification —
+ * nothing else. This is the projection the public transparency pages
+ * (/methodology, /rejected) are built on; it deliberately omits text, url,
+ * and embedding so a rejected cluster's full complaint text or source link
+ * can never leak onto a public page just by widening a `select("*")`
+ * upstream. problem_statement is likewise omitted even though it's shorter
+ * than raw text — it's still the author's material paraphrased, not ours to
+ * publish without the surrounding evidence review a drafted idea gets.
  */
 export async function listAllSignalSummaries(): Promise<SignalSummary[]> {
   const supabase = getSupabaseServerClient();
-  const { data, error } = await supabase.from(TABLE).select("id, source, title, posted_at, cluster_key");
+  const { data, error } = await supabase
+    .from(TABLE)
+    .select("id, source, title, posted_at, cluster_key, classified_as_complaint, domain");
 
   if (error) throw new Error(`listAllSignalSummaries: ${error.message}`);
   return (
-    data as { id: string; source: RawSignal["source"]; title: string | null; posted_at: string | null; cluster_key: string | null }[]
-  ).map((r) => ({ id: r.id, source: r.source, title: r.title, postedAt: r.posted_at, clusterKey: r.cluster_key }));
+    data as {
+      id: string;
+      source: RawSignal["source"];
+      title: string | null;
+      posted_at: string | null;
+      cluster_key: string | null;
+      classified_as_complaint: boolean | null;
+      domain: string | null;
+    }[]
+  ).map((r) => ({
+    id: r.id,
+    source: r.source,
+    title: r.title,
+    postedAt: r.posted_at,
+    clusterKey: r.cluster_key,
+    classifiedAsComplaint: r.classified_as_complaint,
+    domain: r.domain,
+  }));
+}
+
+/** Undrafted signals with no classification yet — classification's input pool. Never re-selects an already-classified signal. */
+export async function listUnclassifiedSignals(): Promise<RawSignal[]> {
+  const supabase = getSupabaseServerClient();
+  const { data, error } = await supabase
+    .from(TABLE)
+    .select("*")
+    .is("drafted_idea_id", null)
+    .is("classified_as_complaint", null)
+    .order("fetched_at", { ascending: false });
+
+  if (error) throw new Error(`listUnclassifiedSignals: ${error.message}`);
+  return (data as RawSignalRow[]).map(rowToSignal);
+}
+
+/**
+ * Persists classification results (Part 2) — one update per signal, same
+ * shape as saveEmbeddings. classified_at is stamped so "never re-classify an
+ * already-classified signal" is auditable, not just implied by the null
+ * check the caller's query already does.
+ */
+export async function saveClassifications(
+  updates: { signalId: string; isComplaint: boolean; problemStatement: string | null; domain: string | null; confidence: number }[],
+): Promise<void> {
+  if (updates.length === 0) return;
+
+  const supabase = getSupabaseServerClient();
+  for (const u of updates) {
+    const { error } = await supabase
+      .from(TABLE)
+      .update({
+        classified_as_complaint: u.isComplaint,
+        problem_statement: u.problemStatement,
+        domain: u.domain,
+        classification_confidence: u.confidence,
+        classified_at: new Date().toISOString(),
+      })
+      .eq("id", u.signalId);
+    if (error) throw new Error(`saveClassifications: ${error.message}`);
+  }
 }
 
 /**

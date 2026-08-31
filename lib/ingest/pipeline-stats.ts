@@ -148,3 +148,26 @@ export async function listRejectedClusters(): Promise<RejectedCluster[]> {
     }))
     .sort((a, b) => (b.maxPostedAt ?? "").localeCompare(a.maxPostedAt ?? ""));
 }
+
+export interface NonComplaintSignal {
+  id: string;
+  source: string;
+  title: string | null;
+  postedAt: string | null;
+}
+
+/**
+ * Every signal the quality-pass classifier ruled out as not a complaint —
+ * launches, announcements, news, cleanly-answered questions
+ * (sourced-pipeline-quality-spec.md Part 2). Powers the "excluded as
+ * non-complaints" section of /rejected — proof the complaint gate is real,
+ * not silently dropping data. Deliberately omits url/text/domain, same
+ * transparency-page convention as listRejectedClusters.
+ */
+export async function listNonComplaintSignals(): Promise<NonComplaintSignal[]> {
+  const signals = await listAllSignalSummaries();
+  return signals
+    .filter((s) => s.classifiedAsComplaint === false)
+    .map((s) => ({ id: s.id, source: s.source, title: s.title, postedAt: s.postedAt }))
+    .sort((a, b) => (b.postedAt ?? "").localeCompare(a.postedAt ?? ""));
+}

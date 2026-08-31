@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { requireAdmin } from "@/lib/auth/require-admin";
-import { EMBEDDING_SIMILARITY_THRESHOLD, MIN_CLUSTER_PLATFORMS, MIN_CLUSTER_SIZE } from "@/lib/ingest/clustering";
+import { EMBEDDING_SIMILARITY_THRESHOLD, MIN_CLUSTER_SIZE } from "@/lib/ingest/clustering";
 import { getMethodologyStats } from "@/lib/ingest/pipeline-stats";
 import { listRecentPipelineRuns } from "@/lib/ingest/pipeline-runs-repository";
 import { absoluteUrl } from "@/lib/seo";
@@ -132,10 +132,12 @@ export default async function MethodologyPage() {
             <li>
               <span className="bar-num">2</span>
               <span>
-                A cluster only qualifies once it has <strong>{MIN_CLUSTER_SIZE}+ signals</strong> from{" "}
-                <strong>{MIN_CLUSTER_PLATFORMS}+ different platforms</strong>. One angry HN post isn&apos;t evidence
-                of demand — the same complaint showing up independently on, say, StackExchange and GitHub is a much
-                stronger signal that it&apos;s a real, shared problem rather than one person&apos;s bad day.
+                A cluster only qualifies once it has <strong>{MIN_CLUSTER_SIZE}+ independent signals</strong> —
+                distinct authors describing the same underlying problem. One angry HN post isn&apos;t evidence of
+                demand; three independent people hitting it is. When those signals span more than one platform, that
+                cross-platform spread is tracked and shown as stronger evidence — but it&apos;s no longer required to
+                clear the bar, since a narrow technical complaint repeated by three independent authors on a single
+                platform is itself real, repeated demand.
               </span>
             </li>
             <li>
@@ -192,9 +194,10 @@ export default async function MethodologyPage() {
                 <thead>
                   <tr>
                     <th>Ran at</th>
-                    <th>Signals</th>
+                    <th>Complaints</th>
                     <th>Clusters formed</th>
                     <th>Passing bar</th>
+                    <th>Cross-platform</th>
                     <th>Errors</th>
                   </tr>
                 </thead>
@@ -202,9 +205,10 @@ export default async function MethodologyPage() {
                   {pipelineRuns.map((r) => (
                     <tr key={r.id}>
                       <td>{new Date(r.ranAt).toLocaleString()}</td>
-                      <td>{r.signalsConsidered}</td>
+                      <td>{r.classifiedComplaint}</td>
                       <td>{r.clustersFormed}</td>
                       <td>{r.clustersPassingBar}</td>
+                      <td>{r.clustersPassingBarMultiPlatform}</td>
                       <td>{r.errors.length}</td>
                     </tr>
                   ))}

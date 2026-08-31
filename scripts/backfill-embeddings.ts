@@ -29,6 +29,10 @@ async function main() {
     clusterKey: r.cluster_key as string | null,
     draftedIdeaId: r.drafted_idea_id as string | null,
     embedding: (r.embedding as number[] | null) ?? null,
+    classifiedAsComplaint: (r.classified_as_complaint as boolean | null) ?? null,
+    problemStatement: (r.problem_statement as string | null) ?? null,
+    domain: (r.domain as string | null) ?? null,
+    classificationConfidence: (r.classification_confidence as number | null) ?? null,
   }));
 
   console.log(`Loaded ${signals.length} signals, ${signals.filter((s) => !s.embedding).length} missing embeddings.`);

@@ -19,6 +19,8 @@ const SOURCE_TO_PLATFORM: Record<SignalSource, Evidence["platform"]> = {
   github: "github",
   devto: "devto",
   lobsters: "lobsters",
+  gitlab: "gitlab",
+  devrant: "devrant",
 };
 
 const ENGAGEMENT_TYPE: Record<SignalSource, "upvotes" | "replies"> = {
@@ -28,6 +30,8 @@ const ENGAGEMENT_TYPE: Record<SignalSource, "upvotes" | "replies"> = {
   github: "replies",
   devto: "upvotes",
   lobsters: "upvotes",
+  gitlab: "replies",
+  devrant: "upvotes",
 };
 
 interface DraftedFields {
@@ -206,6 +210,8 @@ export async function draftIdeaFromCluster(cluster: SignalCluster): Promise<Idea
     status: "pending_review",
     featured: false,
     sourceSignalIds: cluster.signals.map((s) => s.id),
+    platformCount: cluster.platformCount,
+    crossPlatform: cluster.crossPlatform,
   };
 
   return idea;
