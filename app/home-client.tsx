@@ -5,7 +5,7 @@ import { MorphIcon } from "morphicons/react";
 import { Menu, X } from "lucide";
 import NewsletterForm from "./newsletter-form";
 
-type PlanKey = "builder-monthly" | "builder-yearly" | "studio-monthly";
+type PlanKey = "builder-monthly" | "builder-yearly" | "studio-monthly" | "builder-founding";
 
 declare global {
   interface Window {
@@ -78,6 +78,18 @@ export default function HomeClient({ userEmail }: { userEmail: string | null }) 
   const [checkoutPending, setCheckoutPending] = useState<PlanKey | null>(null);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [foundingRemaining, setFoundingRemaining] = useState<number | null>(null);
+
+  useEffect(() => {
+    fetch("/api/founding-status")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { remaining: number; total: number } | null) => {
+        if (data) setFoundingRemaining(data.remaining);
+      })
+      .catch(() => {});
+  }, []);
+
+  const foundingActive = (foundingRemaining ?? 0) > 0;
 
   async function startCheckout(plan: PlanKey) {
     setCheckoutError(null);
@@ -130,7 +142,7 @@ export default function HomeClient({ userEmail }: { userEmail: string | null }) 
   // Resumes checkout after a login redirect round-trip (?checkout=<plan>).
   useEffect(() => {
     const plan = new URLSearchParams(window.location.search).get("checkout");
-    if (plan === "builder-monthly" || plan === "builder-yearly" || plan === "studio-monthly") {
+    if (plan === "builder-monthly" || plan === "builder-yearly" || plan === "studio-monthly" || plan === "builder-founding") {
       window.history.replaceState(null, "", window.location.pathname + window.location.hash);
       startCheckout(plan);
     }
@@ -183,6 +195,7 @@ export default function HomeClient({ userEmail }: { userEmail: string | null }) 
 
   return (
     <>
+      <a href="#main-content" className="skip-link">Skip to content</a>
       <nav ref={navRef}>
         <div className="brand">
           <div className="brand-mark">
@@ -199,7 +212,7 @@ export default function HomeClient({ userEmail }: { userEmail: string | null }) 
           <a href="#pricing">Pricing</a>
           <a href="/feed">Feed</a>
           <a href="/methodology">Methodology</a>
-          {userEmail ? <a href="/account">Account</a> : <a href="/login">Log in</a>}
+          {userEmail ? <a href="/account">Account</a> : <a href="/login" aria-label="Log in to your account">Log in</a>}
         </div>
         <a className="nav-cta" href="#pricing">Get started</a>
         <button
@@ -224,11 +237,12 @@ export default function HomeClient({ userEmail }: { userEmail: string | null }) 
           {userEmail ? (
             <a href="/account" onClick={() => setMobileNavOpen(false)}>Account</a>
           ) : (
-            <a href="/login" onClick={() => setMobileNavOpen(false)}>Log in</a>
+            <a href="/login" aria-label="Log in to your account" onClick={() => setMobileNavOpen(false)}>Log in</a>
           )}
         </div>
       )}
 
+      <main id="main-content">
       <header className="hero">
         <div className="wrap">
           <div className="hero-badge"><span className="dot"></span> New ideas dropped every Monday</div>
@@ -251,6 +265,10 @@ export default function HomeClient({ userEmail }: { userEmail: string | null }) 
               {agents.map((a) => (
                 <button
                   key={a.id}
+                  role="tab"
+                  id={`agent-tab-${a.id}`}
+                  aria-selected={a.id === agentId}
+                  aria-controls="agent-snippet-panel"
                   className={`agent-btn ${a.id === agentId ? "is-active" : ""}`}
                   onClick={() => setAgentId(a.id)}
                 >
@@ -258,7 +276,12 @@ export default function HomeClient({ userEmail }: { userEmail: string | null }) 
                 </button>
               ))}
             </div>
-            <div className="agent-snippet mono">
+            <div
+              className="agent-snippet mono"
+              id="agent-snippet-panel"
+              role="tabpanel"
+              aria-labelledby={`agent-tab-${agentId}`}
+            >
               <span className="prompt">$</span>
               <span>{agent.cmd}</span>
             </div>
@@ -274,7 +297,7 @@ export default function HomeClient({ userEmail }: { userEmail: string | null }) 
                 <span className="tag">{c.tag}</span>
               </div>
               <div className="idea-body">
-                <h4>{c.title}</h4>
+                <p className="idea-card-title">{c.title}</p>
                 <div className="idea-apis">⌁ {c.apis}</div>
                 <div className="idea-foot">
                   <span>{c.signals}</span>
@@ -422,7 +445,13 @@ export default function HomeClient({ userEmail }: { userEmail: string | null }) 
             <Reveal delay={0.08} className="plan featured">
               <div className="plan-name">Builder</div>
               <div className="plan-tag">The full weekly feed · most common pick</div>
-              <div className="plan-price">₹399<span>/mo</span></div>
+              {foundingActive ? (
+                <div className="plan-price">
+                  <span className="plan-price-slash">₹399</span> ₹310<span>/mo</span>
+                </div>
+              ) : (
+                <div className="plan-price">₹399<span>/mo</span></div>
+              )}
               <button
                 type="button"
                 className="plan-old"
@@ -441,10 +470,12 @@ export default function HomeClient({ userEmail }: { userEmail: string | null }) 
               <button
                 type="button"
                 className="plan-btn"
-                onClick={() => startCheckout("builder-monthly")}
+                onClick={() => startCheckout(foundingActive ? "builder-founding" : "builder-monthly")}
                 disabled={checkoutPending !== null}
               >
-                {checkoutPending === "builder-monthly" ? "Starting..." : "Get Builder"}
+                {checkoutPending === "builder-monthly" || checkoutPending === "builder-founding"
+                  ? "Starting..."
+                  : "Get Builder"}
               </button>
             </Reveal>
             <Reveal delay={0.16} className="plan">
@@ -472,10 +503,19 @@ export default function HomeClient({ userEmail }: { userEmail: string | null }) 
               {checkoutError}
             </p>
           )}
-          <Reveal className="founding">
-            <span className="founding-label">Founding rate</span>
-            <span>The first 100 subscribers keep <b>₹310/mo</b> on Builder for life. No expiry games, just first 100.</span>
-          </Reveal>
+          {foundingRemaining !== null && (
+            <Reveal className="founding">
+              <span className="founding-label">Founding rate</span>
+              {foundingActive ? (
+                <span>
+                  <b>{foundingRemaining}</b> of 100 founding spots left — keep <b>₹310/mo</b> on Builder for
+                  life. No expiry games, just first 100.
+                </span>
+              ) : (
+                <span>All 100 founding spots are taken — Builder is now ₹399/mo for new subscribers.</span>
+              )}
+            </Reveal>
+          )}
         </div>
       </section>
 
@@ -487,7 +527,7 @@ export default function HomeClient({ userEmail }: { userEmail: string | null }) 
           </Reveal>
           <div className="faq-list">
             <Reveal delay={0} className="faq-item">
-              <h4>Where do the matched APIs come from?</h4>
+              <h3>Where do the matched APIs come from?</h3>
               <p>
                 From a structured, regularly-synced copy of the{" "}
                 <a href="https://github.com/public-apis/public-apis" target="_blank" rel="noopener noreferrer">public-apis directory</a>{" "}
@@ -497,15 +537,15 @@ export default function HomeClient({ userEmail }: { userEmail: string | null }) 
               </p>
             </Reveal>
             <Reveal delay={0.05} className="faq-item">
-              <h4>Which coding tool does this work with?</h4>
+              <h3>Which coding tool does this work with?</h3>
               <p>Any AI-assisted builder — Claude Code, Cursor, Windsurf, v0, Bolt, and more. Pick yours in the hero above and every build brief formats for it automatically.</p>
             </Reveal>
             <Reveal delay={0.1} className="faq-item">
-              <h4>Is this just ChatGPT with extra steps?</h4>
+              <h3>Is this just ChatGPT with extra steps?</h3>
               <p>No — every card starts from a real, sourced complaint, not a generated headline. You can see the source signal behind each idea, not just the pitch.</p>
             </Reveal>
             <Reveal delay={0.15} className="faq-item">
-              <h4>What if I build one and it doesn&apos;t work?</h4>
+              <h3>What if I build one and it doesn&apos;t work?</h3>
               <p>Some won&apos;t — that&apos;s true of every idea anywhere. Sourced removes the guessing on whether anyone wants it in the first place; the execution risk is still yours, same as any build.</p>
             </Reveal>
           </div>
@@ -529,6 +569,7 @@ export default function HomeClient({ userEmail }: { userEmail: string | null }) 
           </div>
         </div>
       </section>
+      </main>
 
       <footer>
         <div className="wrap">

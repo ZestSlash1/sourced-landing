@@ -9,9 +9,9 @@ import NewsletterForm from "../newsletter-form";
 
 export const dynamic = "force-dynamic";
 
-const TITLE = "Methodology";
+const TITLE = "Methodology — How We Validate Ideas";
 const DESCRIPTION =
-  "How Sourced turns real complaints from Hacker News, StackExchange, GitHub, Dev.to, and Lobsters into evidence-backed build briefs — the sources, the filtering bar, and live numbers from the pipeline.";
+  "How Sourced turns real complaints into evidence-backed build briefs — the sources, the filtering bar, and live numbers from the ingest pipeline.";
 
 export const metadata: Metadata = {
   title: TITLE,

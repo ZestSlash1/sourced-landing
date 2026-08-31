@@ -17,18 +17,18 @@ const FEED_DESCRIPTION =
   "Browse Sourced's feed of validated startup ideas — real problems people already complain about, backed by evidence, ready to build.";
 
 export const metadata: Metadata = {
-  title: "Feed",
+  title: "Startup Idea Feed",
   description: FEED_DESCRIPTION,
   alternates: { canonical: "/feed" },
   openGraph: {
     type: "website",
-    title: "Feed | Sourced",
+    title: "Startup Idea Feed | Sourced",
     description: FEED_DESCRIPTION,
     url: absoluteUrl("/feed"),
   },
   twitter: {
     card: "summary_large_image",
-    title: "Feed | Sourced",
+    title: "Startup Idea Feed | Sourced",
     description: FEED_DESCRIPTION,
   },
 };
@@ -98,7 +98,7 @@ export default async function FeedPage() {
                 </div>
                 <div className="feed-card-body">
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
-                    <h3>{idea.title}</h3>
+                    <h2>{idea.title}</h2>
                     {badge}
                   </div>
                   <p>{idea.problem.summary}</p>

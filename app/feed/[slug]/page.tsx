@@ -166,15 +166,22 @@ function SourceLinksList({ triangulation }: { triangulation: Triangulation }) {
  */
 function BriefJsonLd({ idea, access }: { idea: IdeaDrop; access: IdeaAccess["kind"] }) {
   const url = absoluteUrl(`/feed/${idea.slug}`);
+  const logoUrl = absoluteUrl("/apple-icon");
   const base = {
     "@context": "https://schema.org",
     headline: idea.title,
     description: idea.problem.summary,
+    image: [absoluteUrl(`/feed/${idea.slug}/opengraph-image`)],
     datePublished: idea.publishedAt,
     ...(idea.updatedAt ? { dateModified: idea.updatedAt } : {}),
     url,
     author: { "@type": "Organization", name: "Sourced", url: "https://www.getsourced.dev" },
-    publisher: { "@type": "Organization", name: "Sourced", url: "https://www.getsourced.dev" },
+    publisher: {
+      "@type": "Organization",
+      name: "Sourced",
+      url: "https://www.getsourced.dev",
+      logo: { "@type": "ImageObject", url: logoUrl },
+    },
     isAccessibleForFree: true,
     hasPart: {
       "@type": "WebPageElement",

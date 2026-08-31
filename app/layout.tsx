@@ -3,7 +3,7 @@ import { SITE_URL } from "@/lib/seo";
 import "./globals.css";
 
 const DESCRIPTION =
-  "Real complaints triangulated across platforms into evidence-backed build briefs for Claude Code, Cursor, and v0.";
+  "Real complaints triangulated across Hacker News, GitHub, and StackExchange into evidence-backed build briefs, ready to paste into Claude Code, Cursor, or v0.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

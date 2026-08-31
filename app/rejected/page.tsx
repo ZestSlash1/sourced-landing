@@ -7,7 +7,7 @@ import { absoluteUrl } from "@/lib/seo";
 export const dynamic = "force-dynamic";
 
 const PAGE_SIZE = 20;
-const TITLE = "Rejected clusters";
+const TITLE = "Rejected Clusters — Full Transparency Log";
 const DESCRIPTION =
   "Every signal cluster that formed in Sourced's ingest pipeline but didn't clear the 3-signals bar — shown in full, not hidden, as proof the filter is real.";
 
@@ -90,7 +90,7 @@ export default async function RejectedPage({ searchParams }: { searchParams: { p
                 {pageItems.map((c) => (
                   <div className="reject-card" key={c.clusterKey}>
                     <div className="reject-card-head">
-                      <h3>{c.theme}</h3>
+                      <h2>{c.theme}</h2>
                       <span className="reject-reason mono">Why: {whyFailed(c)}</span>
                     </div>
                     <div className="reject-meta">
