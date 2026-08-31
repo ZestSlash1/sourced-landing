@@ -56,6 +56,10 @@ async function main() {
     clusterKey: r.cluster_key as string | null,
     draftedIdeaId: r.drafted_idea_id as string | null,
     embedding: (r.embedding as number[] | null) ?? null,
+    classifiedAsComplaint: r.classified_as_complaint as boolean | null,
+    problemStatement: r.problem_statement as string | null,
+    domain: r.domain as string | null,
+    classificationConfidence: r.classification_confidence as number | null,
   }));
 
   const { clusters, stats } = clusterSignals(signals, { strategy, threshold });
