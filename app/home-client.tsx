@@ -3,7 +3,11 @@
 import { useEffect, useRef, useState, ReactNode } from "react";
 import { MorphIcon } from "morphicons/react";
 import { Menu, X } from "lucide";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
 import NewsletterForm from "./newsletter-form";
+
+gsap.registerPlugin(useGSAP);
 
 type PlanKey = "builder-monthly" | "builder-yearly" | "studio-monthly" | "builder-founding";
 
@@ -73,6 +77,7 @@ function Reveal({
 
 export default function HomeClient({ userEmail }: { userEmail: string | null }) {
   const navRef = useRef<HTMLElement | null>(null);
+  const snippetRef = useRef<HTMLDivElement | null>(null);
   const [agentId, setAgentId] = useState("claude");
   const agent = agents.find((a) => a.id === agentId)!;
   const [checkoutPending, setCheckoutPending] = useState<PlanKey | null>(null);
@@ -193,6 +198,20 @@ export default function HomeClient({ userEmail }: { userEmail: string | null }) 
     };
   }, []);
 
+  // Crossfades the exported command snippet when the agent picker changes,
+  // instead of the text snapping instantly.
+  useGSAP(
+    () => {
+      if (!snippetRef.current) return;
+      const mm = gsap.matchMedia();
+      mm.add("(prefers-reduced-motion: no-preference)", () => {
+        gsap.fromTo(snippetRef.current, { opacity: 0, y: 4 }, { opacity: 1, y: 0, duration: 0.28, ease: "power2.out" });
+      });
+      return () => mm.revert();
+    },
+    { dependencies: [agentId], scope: snippetRef },
+  );
+
   return (
     <>
       <a href="#main-content" className="skip-link">Skip to content</a>
@@ -277,6 +296,7 @@ export default function HomeClient({ userEmail }: { userEmail: string | null }) 
               ))}
             </div>
             <div
+              ref={snippetRef}
               className="agent-snippet mono"
               id="agent-snippet-panel"
               role="tabpanel"
@@ -301,7 +321,7 @@ export default function HomeClient({ userEmail }: { userEmail: string | null }) 
                 <div className="idea-apis">⌁ {c.apis}</div>
                 <div className="idea-foot">
                   <span>{c.signals}</span>
-                  <div className="signal-bar" style={{ ["--pct" as string]: `${c.pct}%` }}><span></span></div>
+                  <div className="signal-bar" style={{ ["--pct" as string]: c.pct / 100 }}><span></span></div>
                 </div>
               </div>
             </div>
@@ -317,7 +337,7 @@ export default function HomeClient({ userEmail }: { userEmail: string | null }) 
           </Reveal>
           <Reveal delay={0.08}>
             <p>
-              &quot;Build a todo app for dog walkers&quot; isn&apos;t a business — it&apos;s
+              &ldquo;Build a todo app for dog walkers&rdquo; isn&rsquo;t a business — it&rsquo;s
               a hallucination with a UI. Every card in Sourced starts as a real complaint
               pulled from a forum, a review, or a job post, from someone already paying for
               a worse fix or no fix at all.
@@ -474,7 +494,7 @@ export default function HomeClient({ userEmail }: { userEmail: string | null }) 
                 disabled={checkoutPending !== null}
               >
                 {checkoutPending === "builder-monthly" || checkoutPending === "builder-founding"
-                  ? "Starting..."
+                  ? "Starting…"
                   : "Get Builder"}
               </button>
             </Reveal>
@@ -494,7 +514,7 @@ export default function HomeClient({ userEmail }: { userEmail: string | null }) 
                 onClick={() => startCheckout("studio-monthly")}
                 disabled={checkoutPending !== null}
               >
-                {checkoutPending === "studio-monthly" ? "Starting..." : "Get Studio"}
+                {checkoutPending === "studio-monthly" ? "Starting…" : "Get Studio"}
               </button>
             </Reveal>
           </div>

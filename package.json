@@ -14,8 +14,10 @@
     "ingest:backfill-competitive": "tsx scripts/backfill-competitive-landscape.ts"
   },
   "dependencies": {
+    "@gsap/react": "^2.1.2",
     "@supabase/ssr": "^0.12.5",
     "@supabase/supabase-js": "^2.112.4",
+    "gsap": "^3.15.0",
     "lucide": "^1.37.0",
     "morphicons": "^1.7.1",
     "next": "14.2.5",

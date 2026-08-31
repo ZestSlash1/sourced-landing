@@ -204,7 +204,7 @@ function LoginForm() {
               opacity: loading ? 0.7 : 1,
             }}
           >
-            {loading ? "Please wait..." : mode === "sign-in" ? "Sign in" : "Sign up"}
+            {loading ? "Please wait…" : mode === "sign-in" ? "Sign in" : "Sign up"}
           </button>
         </form>
 
