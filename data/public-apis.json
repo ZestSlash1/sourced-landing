@@ -1,7 +1,7 @@
 {
-  "syncedAt": "2026-08-28T22:44:40.676Z",
+  "syncedAt": "2026-08-31T10:09:02.253Z",
   "source": "https://raw.githubusercontent.com/public-apis/public-apis/master/README.md",
-  "count": 1706,
+  "count": 1716,
   "entries": [
     {
       "name": "AdoptAPet",
@@ -1282,6 +1282,15 @@
       "cors": "No"
     },
     {
+      "name": "Katalis UK Company Enrichment",
+      "url": "https://meetkatalis.com/apis",
+      "description": "Verified UK company profiles with an AI summary and accuracy score, from Companies House data",
+      "category": "Business",
+      "auth": "apiKey",
+      "https": true,
+      "cors": "Unknown"
+    },
+    {
       "name": "Legal Sandbox Georgia",
       "url": "https://legal.ge/api/openapi.json",
       "description": "Find verified legal specialists in Georgia from natural-language queries",
@@ -1433,6 +1442,15 @@
       "auth": "No",
       "https": true,
       "cors": "Unknown"
+    },
+    {
+      "name": "TradeDataHub",
+      "url": "https://www.tradedatahub.net",
+      "description": "U.S. contractor datasets with a free discovery API for coverage, pricing and masked previews",
+      "category": "Business",
+      "auth": "No",
+      "https": true,
+      "cors": "Yes"
     },
     {
       "name": "Tomba email finder",
@@ -2902,6 +2920,15 @@
       "cors": "Unknown"
     },
     {
+      "name": "Aquanode",
+      "url": "https://docs.aquanode.io/docs/api/marketplace",
+      "description": "Live GPU rental prices and availability across nine cloud providers",
+      "category": "Development",
+      "auth": "No",
+      "https": true,
+      "cors": "No"
+    },
+    {
       "name": "Azure DevOps",
       "url": "https://docs.microsoft.com/en-us/rest/api/azure/devops",
       "description": "The Azure DevOps basic components of a REST API request/response pair",
@@ -3949,6 +3976,15 @@
       "name": "ScrapingDog",
       "url": "https://www.scrapingdog.com/",
       "description": "Proxy API for Web scraping",
+      "category": "Development",
+      "auth": "apiKey",
+      "https": true,
+      "cors": "Unknown"
+    },
+    {
+      "name": "Scrax",
+      "url": "https://rapidapi.com/mtaahoperators/api/scrax",
+      "description": "Web scraping API that only bills for successful scrapes",
       "category": "Development",
       "auth": "apiKey",
       "https": true,
@@ -5170,6 +5206,15 @@
       "cors": "Unknown"
     },
     {
+      "name": "WattFigure",
+      "url": "https://api.wattfigure.com/",
+      "description": "US electricity rates by state, with appliance and EV charging running costs",
+      "category": "Environment",
+      "auth": "No",
+      "https": true,
+      "cors": "Yes"
+    },
+    {
       "name": "Website Carbon",
       "url": "https://api.websitecarbon.com/",
       "description": "API to estimate the carbon footprint of loading web pages",
@@ -5573,6 +5618,15 @@
       "auth": "apiKey",
       "https": true,
       "cors": "Yes"
+    },
+    {
+      "name": "PIT Financial State",
+      "url": "https://agent-economy-pit-evaluation.onrender.com/docs",
+      "description": "Point-in-time quarterly revenue for 20 U.S. issuers",
+      "category": "Finance",
+      "auth": "apiKey",
+      "https": true,
+      "cors": "Unknown"
     },
     {
       "name": "Plaid",
@@ -6221,6 +6275,15 @@
       "auth": "apiKey",
       "https": true,
       "cors": "Unknown"
+    },
+    {
+      "name": "DotaSense Timings",
+      "url": "https://dotasense.com/cheat-sheet#timing-api",
+      "description": "Reviewed Dota 2 objective timings in JSON and CSV",
+      "category": "Games & Comics",
+      "auth": "No",
+      "https": true,
+      "cors": "Yes"
     },
     {
       "name": "Dungeons and Dragons",
@@ -10390,6 +10453,15 @@
       "cors": "Unknown"
     },
     {
+      "name": "PublicDataHub",
+      "url": "https://publicdatahub.org/api",
+      "description": "US public schools, hospitals and federal agency budgets as JSON/CSV, with provenance",
+      "category": "Open Data",
+      "auth": "No",
+      "https": true,
+      "cors": "Yes"
+    },
+    {
       "name": "Recreation Information Database",
       "url": "https://ridb.recreation.gov/",
       "description": "Recreational areas, federal lands, historic sites, museums, and other attractions/resources(US)",
@@ -13162,6 +13234,15 @@
       "cors": "Unknown"
     },
     {
+      "name": "flaky",
+      "url": "https://flakyapi.dev",
+      "description": "Fake REST API with chaos controls: force any status code, add latency, or a failure rate",
+      "category": "Test Data",
+      "auth": "No",
+      "https": true,
+      "cors": "Yes"
+    },
+    {
       "name": "GeneradorDNI",
       "url": "https://api.generadordni.es",
       "description": "Data generator API. Profiles, vehicles, banks and cards, etc",
@@ -14312,6 +14393,15 @@
       "auth": "No",
       "https": true,
       "cors": "No"
+    },
+    {
+      "name": "Wander Atlas",
+      "url": "https://wanderatlasguides.com/api/",
+      "description": "Hourly quiet and busy crowd windows for 620+ tourist attractions in 20 countries",
+      "category": "Transportation",
+      "auth": "No",
+      "https": true,
+      "cors": "Yes"
     },
     {
       "name": "1pt",
