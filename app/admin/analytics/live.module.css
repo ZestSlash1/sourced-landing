@@ -24,10 +24,13 @@
   --arc: 255, 110, 190;
   --marker: 255, 228, 245;
 
-  position: fixed;
-  inset: 0;
-  z-index: 40;
+  position: relative;
+  height: 640px;
+  max-height: 80vh;
   overflow: hidden;
+  border-radius: var(--r-xl, 20px);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow, 0 1px 2px rgba(21, 22, 26, 0.04), 0 6px 16px rgba(21, 22, 26, 0.05));
   color: var(--ink);
   font-family: "Space Grotesk", Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -82,23 +85,12 @@
   padding: 16px 24px;
   border-bottom: 1px solid var(--line);
 }
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-}
-.mark {
-  width: 25px;
-  height: 25px;
-  border-radius: 8px;
-  background: linear-gradient(135deg, #5b4ff7, #ff5eb0);
-}
 .crumb {
-  font-family: "JetBrains Mono", monospace;
-  font-size: 12.5px;
-  color: var(--muted);
+  font-family: "Space Grotesk", sans-serif;
+  font-weight: 600;
+  font-size: 14.5px;
+  letter-spacing: -0.01em;
+  color: var(--ink);
 }
 .hdrRight {
   margin-left: auto;

@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { geoContains, geoDistance, geoInterpolate, geoOrthographic } from "d3-geo";
 import * as topojson from "topojson-client";
@@ -482,13 +481,7 @@ export function LiveAnalyticsView({
     <div ref={pageRef} className={styles.page} data-theme={theme}>
       <div className={styles.shell}>
         <header className={styles.header}>
-          <div className={styles.brand}>
-            <span className={styles.mark} />
-            getsourced.dev
-          </div>
-          <div className={styles.crumb}>
-            <Link href="/admin/analytics">admin / analytics</Link> / live
-          </div>
+          <div className={styles.crumb}>Live visitor globe</div>
           <div className={styles.hdrRight}>
             <button aria-pressed={windowSel === "live"} onClick={() => changeWindow(windowSel === "24h" ? "live" : "24h")}>
               {windowSel === "24h" ? "24h" : "Last 5 min"}
