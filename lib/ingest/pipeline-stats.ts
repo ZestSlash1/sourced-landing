@@ -149,6 +149,35 @@ export async function listRejectedClusters(): Promise<RejectedCluster[]> {
     .sort((a, b) => (b.maxPostedAt ?? "").localeCompare(a.maxPostedAt ?? ""));
 }
 
+export interface NearMissCluster {
+  clusterKey: string;
+  theme: string;
+  signalCount: number;
+  platformCount: number;
+  platforms: string[];
+}
+
+/**
+ * The clusters currently closest to clearing the 3-signal bar, closest
+ * first — powers the landing page's live proof-bar widget. Same narrow
+ * transparency shape as listRejectedClusters (no urls/text/embeddings).
+ */
+export async function getNearestPassingClusters(limit = 3): Promise<NearMissCluster[]> {
+  const signals = await listAllSignalSummaries();
+  const groups = groupByCluster(signals).filter((g) => !g.passesBar);
+
+  return groups
+    .sort((a, b) => b.signalCount - a.signalCount || b.platformCount - a.platformCount)
+    .slice(0, limit)
+    .map((g) => ({
+      clusterKey: g.clusterKey,
+      theme: deriveTheme(g.signals.map((s) => s.title ?? "")),
+      signalCount: g.signalCount,
+      platformCount: g.platformCount,
+      platforms: g.platforms,
+    }));
+}
+
 export interface NonComplaintSignal {
   id: string;
   source: string;

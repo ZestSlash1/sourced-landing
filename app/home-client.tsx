@@ -5,7 +5,11 @@ import { MorphIcon } from "morphicons/react";
 import { Menu, X } from "lucide";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
+import dynamic from "next/dynamic";
 import NewsletterForm from "./newsletter-form";
+import type { ProofBarData } from "./proof-bar";
+
+const ProofBar = dynamic(() => import("./proof-bar"), { loading: () => null });
 
 gsap.registerPlugin(useGSAP);
 
@@ -75,7 +79,7 @@ function Reveal({
   );
 }
 
-export default function HomeClient({ userEmail }: { userEmail: string | null }) {
+export default function HomeClient({ userEmail, proofBar }: { userEmail: string | null; proofBar: ProofBarData }) {
   const navRef = useRef<HTMLElement | null>(null);
   const snippetRef = useRef<HTMLDivElement | null>(null);
   const [agentId, setAgentId] = useState("claude");
@@ -328,6 +332,8 @@ export default function HomeClient({ userEmail }: { userEmail: string | null }) 
           ))}
         </div>
       </div>
+
+      <ProofBar data={proofBar} />
 
       <section className="strip">
         <div className="wrap">

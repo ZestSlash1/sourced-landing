@@ -1,6 +1,6 @@
 import type { UserTier } from "@/lib/idea-drops/scope-to-tier";
 
-export const PLAN_KEYS = ["builder-monthly", "builder-yearly", "studio-monthly"] as const;
+export const PLAN_KEYS = ["builder-monthly", "builder-yearly", "studio-monthly", "builder-founding"] as const;
 export type PlanKey = (typeof PLAN_KEYS)[number];
 
 export function isPlanKey(value: string): value is PlanKey {
@@ -16,6 +16,10 @@ const PLAN_CONFIG: Record<PlanKey, PlanConfig> = {
   "builder-monthly": { tier: "builder", envVar: "RAZORPAY_PLAN_BUILDER_MONTHLY" },
   "builder-yearly": { tier: "builder", envVar: "RAZORPAY_PLAN_BUILDER_YEARLY" },
   "studio-monthly": { tier: "studio", envVar: "RAZORPAY_PLAN_STUDIO_MONTHLY" },
+  // Same tier as builder-monthly — a separate Razorpay plan_id purely so the
+  // ₹310/mo price is locked into the subscription itself. Gated to the
+  // first 100 ever-paid subscribers; see lib/subscriptions/founding.ts.
+  "builder-founding": { tier: "builder", envVar: "RAZORPAY_PLAN_BUILDER_FOUNDING" },
 };
 
 /** The tier a given plan key upgrades a subscriber to. */

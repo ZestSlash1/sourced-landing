@@ -3,6 +3,7 @@ import { requireUser } from "@/lib/auth/require-user";
 import { getRazorpayClient } from "@/lib/razorpay/client";
 import { isPlanKey, razorpayPlanId, tierForPlan } from "@/lib/razorpay/plans";
 import { setSubscriberRazorpaySubscription } from "@/lib/subscriptions/store";
+import { foundingSlotsRemaining } from "@/lib/subscriptions/founding";
 import { track } from "@/lib/track";
 
 export const dynamic = "force-dynamic";
@@ -27,6 +28,10 @@ export async function POST(request: Request) {
   const body = (await request.json()) as { plan?: string };
   if (!body.plan || !isPlanKey(body.plan)) {
     return NextResponse.json({ error: "Invalid or missing plan" }, { status: 400 });
+  }
+
+  if (body.plan === "builder-founding" && (await foundingSlotsRemaining()) <= 0) {
+    return NextResponse.json({ error: "Founding-rate spots are gone — get Builder at the regular price." }, { status: 409 });
   }
 
   const cycle = body.plan.endsWith("yearly") ? "yearly" : "monthly";
