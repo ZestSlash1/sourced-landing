@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 export default function SignOutButton() {
@@ -14,19 +15,14 @@ export default function SignOutButton() {
   }
 
   return (
-    <button
+    <motion.button
       onClick={handleSignOut}
-      style={{
-        padding: "8px 14px",
-        background: "transparent",
-        color: "var(--ink-soft)",
-        border: "1px solid var(--line)",
-        borderRadius: "var(--r-sm)",
-        cursor: "pointer",
-        fontSize: 13,
-      }}
+      className="admin-signout"
+      whileHover={{ scale: 1.03 }}
+      whileTap={{ scale: 0.97 }}
+      transition={{ type: "spring", stiffness: 260, damping: 26 }}
     >
       Sign out
-    </button>
+    </motion.button>
   );
 }

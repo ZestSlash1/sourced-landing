@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 /**
  * Single-admin login. No admin routes exist yet to redirect into on success
- * (see sourced-phase3-db-auth-spec.md Track B) — this just proves sign-in
+ * (see sourced-phase3-db-auth-spec.md Track B); this just proves sign-in
  * works against the `admins` allowlist via requireAdmin() once something
  * calls it.
  */
@@ -40,27 +41,13 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <main
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background:
-          "radial-gradient(900px 420px at 15% 0%, rgba(91,79,247,0.16), transparent 60%), radial-gradient(700px 360px at 100% 100%, rgba(255,111,94,0.12), transparent 55%), var(--bg)",
-      }}
-    >
-      <form
+    <main className="admin-login-wrap">
+      <motion.form
         onSubmit={handleSubmit}
-        style={{
-          width: "100%",
-          maxWidth: 360,
-          background: "var(--surface)",
-          border: "1px solid var(--line)",
-          borderRadius: "var(--r-xl)",
-          boxShadow: "var(--shadow-hover)",
-          padding: 32,
-        }}
+        className="admin-login-card"
+        initial={{ opacity: 0, y: 16, scale: 0.98 }}
+        animate={error ? { opacity: 1, y: 0, scale: 1, x: [0, -8, 8, -6, 6, 0] } : { opacity: 1, y: 0, scale: 1 }}
+        transition={{ type: "spring", stiffness: 240, damping: 26 }}
       >
         <div
           style={{
@@ -76,68 +63,51 @@ export default function AdminLoginPage() {
         </h1>
         <p style={{ fontSize: 13, color: "var(--ink-soft)", margin: "0 0 24px" }}>Sourced operations</p>
 
-        <label style={{ display: "block", fontSize: 13, marginBottom: 6 }}>
-          Email
-        </label>
+        <label className="admin-label">Email</label>
         <input
           type="email"
           required
           autoComplete="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          style={{
-            width: "100%",
-            padding: "10px 12px",
-            marginBottom: 16,
-            border: "1px solid var(--line)",
-            borderRadius: "var(--r-sm)",
-            font: "inherit",
-          }}
+          className="admin-input"
+          style={{ marginBottom: 16 }}
         />
 
-        <label style={{ display: "block", fontSize: 13, marginBottom: 6 }}>
-          Password
-        </label>
+        <label className="admin-label">Password</label>
         <input
           type="password"
           required
           autoComplete="current-password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          style={{
-            width: "100%",
-            padding: "10px 12px",
-            marginBottom: 20,
-            border: "1px solid var(--line)",
-            borderRadius: "var(--r-sm)",
-            font: "inherit",
-          }}
+          className="admin-input"
+          style={{ marginBottom: 20 }}
         />
 
         {error && (
-          <p style={{ color: "var(--coral)", fontSize: 13, marginBottom: 16 }}>
+          <motion.p
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="admin-error-banner"
+            style={{ marginBottom: 16 }}
+          >
             {error}
-          </p>
+          </motion.p>
         )}
 
-        <button
+        <motion.button
           type="submit"
           disabled={loading}
-          style={{
-            width: "100%",
-            padding: "10px 12px",
-            background: "var(--violet)",
-            color: "#fff",
-            border: "none",
-            borderRadius: "var(--r-sm)",
-            fontWeight: 600,
-            cursor: loading ? "default" : "pointer",
-            opacity: loading ? 0.7 : 1,
-          }}
+          className="admin-btn admin-btn-primary"
+          style={{ width: "100%", padding: "10px 12px", borderRadius: "var(--r-sm)" }}
+          whileHover={loading ? undefined : { scale: 1.02 }}
+          whileTap={loading ? undefined : { scale: 0.98 }}
+          transition={{ type: "spring", stiffness: 260, damping: 26 }}
         >
           {loading ? "Signing in..." : "Sign in"}
-        </button>
-      </form>
+        </motion.button>
+      </motion.form>
     </main>
   );
 }

@@ -2,27 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import type { IdeaDrop } from "@/types/idea-drop";
 import Link from "next/link";
 
-const inputStyle: React.CSSProperties = {
-  width: "100%",
-  padding: "8px 10px",
-  border: "1px solid var(--line)",
-  borderRadius: "var(--r-sm)",
-  font: "inherit",
-  marginBottom: 16,
-};
-
-const labelStyle: React.CSSProperties = {
-  display: "block",
-  fontSize: 13,
-  marginBottom: 6,
-  color: "var(--ink-soft)",
-};
-
 const textareaStyle: React.CSSProperties = {
-  ...inputStyle,
   fontFamily: "'JetBrains Mono', monospace",
   fontSize: 12,
   minHeight: 120,
@@ -109,7 +93,7 @@ export default function IdeaEditForm({ idea }: { idea: IdeaDrop }) {
 
   return (
     <form onSubmit={handleSubmit}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 24 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 24, flexWrap: "wrap", gap: 8 }}>
         <h1 className="display" style={{ fontSize: 22, margin: 0 }}>
           Edit idea
         </h1>
@@ -118,20 +102,20 @@ export default function IdeaEditForm({ idea }: { idea: IdeaDrop }) {
         </Link>
       </div>
 
-      <label style={labelStyle}>Title</label>
-      <input style={inputStyle} value={title} onChange={(e) => setTitle(e.target.value)} required />
+      <label className="admin-label">Title</label>
+      <input className="admin-input" style={{ marginBottom: 16 }} value={title} onChange={(e) => setTitle(e.target.value)} required />
 
-      <label style={labelStyle}>Category</label>
-      <input style={inputStyle} value={category} onChange={(e) => setCategory(e.target.value)} required />
+      <label className="admin-label">Category</label>
+      <input className="admin-input" style={{ marginBottom: 16 }} value={category} onChange={(e) => setCategory(e.target.value)} required />
 
-      <label style={labelStyle}>Tags (comma-separated)</label>
-      <input style={inputStyle} value={tags} onChange={(e) => setTags(e.target.value)} />
+      <label className="admin-label">Tags (comma-separated)</label>
+      <input className="admin-input" style={{ marginBottom: 16 }} value={tags} onChange={(e) => setTags(e.target.value)} />
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
+      <div className="admin-form-grid" style={{ marginBottom: 16 }}>
         <div>
-          <label style={labelStyle}>Demand score</label>
+          <label className="admin-label">Demand score</label>
           <input
-            style={inputStyle}
+            className="admin-input"
             type="number"
             min={0}
             max={100}
@@ -140,24 +124,16 @@ export default function IdeaEditForm({ idea }: { idea: IdeaDrop }) {
           />
         </div>
         <div>
-          <label style={labelStyle}>Tier</label>
-          <select
-            style={inputStyle}
-            value={tier}
-            onChange={(e) => setTier(e.target.value as IdeaDrop["tier"])}
-          >
+          <label className="admin-label">Tier</label>
+          <select className="admin-input" value={tier} onChange={(e) => setTier(e.target.value as IdeaDrop["tier"])}>
             <option value="free">free</option>
             <option value="builder">builder</option>
             <option value="studio">studio</option>
           </select>
         </div>
         <div>
-          <label style={labelStyle}>Status</label>
-          <select
-            style={inputStyle}
-            value={status}
-            onChange={(e) => setStatus(e.target.value as IdeaDrop["status"])}
-          >
+          <label className="admin-label">Status</label>
+          <select className="admin-input" value={status} onChange={(e) => setStatus(e.target.value as IdeaDrop["status"])}>
             <option value="draft">draft</option>
             <option value="needs_evidence">needs_evidence</option>
             <option value="pending_review">pending_review</option>
@@ -166,34 +142,37 @@ export default function IdeaEditForm({ idea }: { idea: IdeaDrop }) {
         </div>
       </div>
 
-      <label style={labelStyle}>Published at (YYYY-MM-DD, leave blank if draft)</label>
+      <label className="admin-label">Published at (YYYY-MM-DD, leave blank if draft)</label>
       <input
-        style={inputStyle}
+        className="admin-input"
+        style={{ marginBottom: 16 }}
         type="date"
         value={publishedAt}
         onChange={(e) => setPublishedAt(e.target.value)}
       />
 
-      <label style={{ ...labelStyle, display: "flex", alignItems: "center", gap: 8 }}>
+      <label className="admin-label" style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
         <input type="checkbox" checked={featured} onChange={(e) => setFeatured(e.target.checked)} />
         Featured (shown in the curated logged-out feed default)
       </label>
 
-      <label style={labelStyle}>Why now</label>
+      <label className="admin-label">Why now</label>
       <textarea
-        style={{ ...inputStyle, minHeight: 60, fontFamily: "inherit", fontSize: "inherit" }}
+        className="admin-input"
+        style={{ marginBottom: 16, minHeight: 60, fontFamily: "inherit", fontSize: "inherit" }}
         value={whyNow}
         onChange={(e) => setWhyNow(e.target.value)}
       />
 
       <p style={{ fontSize: 12, color: "var(--ink-soft)", margin: "24px 0 8px" }}>
-        Structured fields below are edited as raw JSON — malformed JSON blocks save.
+        Structured fields below are edited as raw JSON. Malformed JSON blocks save.
       </p>
 
       {JSON_FIELDS.map((field) => (
-        <div key={field}>
-          <label style={labelStyle}>{field}</label>
+        <div key={field} style={{ marginBottom: 16 }}>
+          <label className="admin-label">{field}</label>
           <textarea
+            className="admin-input"
             style={textareaStyle}
             value={jsonFields[field]}
             onChange={(e) => setJsonFields((prev) => ({ ...prev, [field]: e.target.value }))}
@@ -203,7 +182,7 @@ export default function IdeaEditForm({ idea }: { idea: IdeaDrop }) {
       ))}
 
       {idea.validationErrors && idea.validationErrors.length > 0 && (
-        <div style={{ marginBottom: 16, fontSize: 13, color: "var(--coral)" }}>
+        <div className="admin-error-banner" style={{ marginBottom: 16 }}>
           <p style={{ margin: "0 0 4px" }}>Currently blocked from publishing:</p>
           <ul style={{ margin: 0, paddingLeft: 18 }}>
             {idea.validationErrors.map((err) => (
@@ -213,26 +192,32 @@ export default function IdeaEditForm({ idea }: { idea: IdeaDrop }) {
         </div>
       )}
 
-      {error && (
-        <p style={{ color: "var(--coral)", fontSize: 13, marginBottom: 16 }}>{error}</p>
-      )}
+      <AnimatePresence>
+        {error && (
+          <motion.p
+            initial={{ opacity: 0, y: -6, height: 0 }}
+            animate={{ opacity: 1, y: 0, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ type: "spring", stiffness: 260, damping: 30 }}
+            className="admin-error-banner"
+            style={{ marginBottom: 16 }}
+          >
+            {error}
+          </motion.p>
+        )}
+      </AnimatePresence>
 
-      <button
+      <motion.button
         type="submit"
         disabled={saving}
-        style={{
-          padding: "10px 18px",
-          background: "var(--violet)",
-          color: "#fff",
-          border: "none",
-          borderRadius: "var(--r-sm)",
-          fontWeight: 600,
-          cursor: saving ? "default" : "pointer",
-          opacity: saving ? 0.7 : 1,
-        }}
+        className="admin-btn admin-btn-primary"
+        style={{ padding: "10px 18px", borderRadius: "var(--r-sm)" }}
+        whileHover={saving ? undefined : { scale: 1.02 }}
+        whileTap={saving ? undefined : { scale: 0.98 }}
+        transition={{ type: "spring", stiffness: 260, damping: 26 }}
       >
         {saving ? "Saving..." : "Save"}
-      </button>
+      </motion.button>
     </form>
   );
 }

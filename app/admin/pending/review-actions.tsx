@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { motion } from "framer-motion";
 
 export default function ReviewActions({
   ideaId,
@@ -16,7 +17,7 @@ export default function ReviewActions({
   async function setStatus(status: "published" | "draft") {
     if (status === "published" && hasCloseCompetitor) {
       const confirmed = window.confirm(
-        "This idea has an existing close competitor per the competitive landscape check — publish anyway?",
+        "This idea has an existing close competitor per the competitive landscape check. Publish anyway?",
       );
       if (!confirmed) return;
     }
@@ -32,42 +33,28 @@ export default function ReviewActions({
 
   return (
     <div style={{ display: "flex", gap: 8 }}>
-      <button
+      <motion.button
         type="button"
         disabled={busy}
         onClick={() => setStatus("published")}
-        style={{
-          padding: "7px 16px",
-          background: "var(--violet)",
-          color: "#fff",
-          border: "none",
-          borderRadius: "var(--r-chip)",
-          fontSize: 13,
-          fontWeight: 600,
-          cursor: busy ? "default" : "pointer",
-          opacity: busy ? 0.7 : 1,
-        }}
+        className="admin-btn admin-btn-primary"
+        whileHover={busy ? undefined : { scale: 1.03 }}
+        whileTap={busy ? undefined : { scale: 0.97 }}
+        transition={{ type: "spring", stiffness: 260, damping: 26 }}
       >
         Approve
-      </button>
-      <button
+      </motion.button>
+      <motion.button
         type="button"
         disabled={busy}
         onClick={() => setStatus("draft")}
-        style={{
-          padding: "7px 16px",
-          background: "rgba(255,111,94,0.12)",
-          color: "#C4432F",
-          border: "none",
-          borderRadius: "var(--r-chip)",
-          fontSize: 13,
-          fontWeight: 600,
-          cursor: busy ? "default" : "pointer",
-          opacity: busy ? 0.7 : 1,
-        }}
+        className="admin-btn admin-btn-danger"
+        whileHover={busy ? undefined : { scale: 1.03 }}
+        whileTap={busy ? undefined : { scale: 0.97 }}
+        transition={{ type: "spring", stiffness: 260, damping: 26 }}
       >
         Reject
-      </button>
+      </motion.button>
     </div>
   );
 }

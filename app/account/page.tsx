@@ -79,7 +79,7 @@ export default async function AccountPage() {
           <div className="account-row">
             <div>
               <div className="account-field-label" style={{ color: "var(--coral)" }}>
-                Payment issue — access ends
+                Payment issue: access ends
               </div>
               <div className="account-field-value" style={{ fontWeight: 400, fontSize: 14 }}>
                 {graceEndsAt}

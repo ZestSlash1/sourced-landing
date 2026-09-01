@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { MorphIcon } from "morphicons/react";
 import { Sparkles } from "lucide";
+import { motion } from "framer-motion";
 import SignOutButton from "./sign-out-button";
 
 const TABS = [
@@ -13,10 +14,11 @@ const TABS = [
 
 /**
  * Shared chrome for every signed-in /admin page: the pill topnav (Operate-mode
- * standard pattern, not a sidebar — four pages don't need one) plus a soft
+ * standard pattern, not a sidebar, since four pages don't need one) plus a soft
  * violet wash behind it. Everything below the header stays plain white so
  * dense tables and stat grids keep contrast; the color budget is spent on
- * this one band, not smeared across the page.
+ * this one band, not smeared across the page. The active tab's pill slides
+ * between tabs via a shared layoutId instead of cross-fading.
  */
 export default function AdminShell({
   active,
@@ -26,77 +28,37 @@ export default function AdminShell({
   children: React.ReactNode;
 }) {
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
-      <div
-        style={{
-          background:
-            "radial-gradient(1100px 320px at 18% -10%, rgba(91,79,247,0.16), transparent 60%), radial-gradient(700px 260px at 90% -20%, rgba(255,111,94,0.10), transparent 55%), var(--bg)",
-          borderBottom: "1px solid var(--line)",
-        }}
-      >
-        <div
-          style={{
-            maxWidth: 1040,
-            margin: "0 auto",
-            padding: "20px 24px 22px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 16,
-            flexWrap: "wrap",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div
-              style={{
-                width: 30,
-                height: 30,
-                borderRadius: "var(--r-sm)",
-                background: "var(--ink)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "var(--lime)",
-                flexShrink: 0,
-              }}
-            >
+    <div className="admin-shell">
+      <div className="admin-topband">
+        <div className="admin-topband-inner">
+          <motion.div
+            className="admin-brand"
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ type: "spring", stiffness: 240, damping: 28 }}
+          >
+            <div className="admin-brand-mark">
               <MorphIcon icon={Sparkles} size={16} />
             </div>
-            <span className="display" style={{ fontWeight: 700, fontSize: 16, letterSpacing: "-0.01em" }}>
-              Sourced <span style={{ color: "var(--ink-soft)", fontWeight: 500 }}>Admin</span>
+            <span className="display admin-brand-name">
+              Sourced <span>Admin</span>
             </span>
-          </div>
+          </motion.div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-            <nav
-              style={{
-                display: "inline-flex",
-                background: "var(--surface)",
-                border: "1px solid var(--line)",
-                borderRadius: "var(--r-chip)",
-                padding: 4,
-                gap: 2,
-                boxShadow: "var(--shadow)",
-              }}
-            >
+          <div className="admin-right">
+            <nav className="admin-nav" aria-label="Admin sections">
               {TABS.map((tab) => {
                 const isActive = tab.href === active;
                 return (
-                  <Link
-                    key={tab.href}
-                    href={tab.href}
-                    style={{
-                      padding: "7px 16px",
-                      borderRadius: "var(--r-chip)",
-                      fontSize: 13.5,
-                      fontWeight: 600,
-                      textDecoration: "none",
-                      color: isActive ? "#fff" : "var(--ink-soft)",
-                      background: isActive ? "var(--violet)" : "transparent",
-                      transition: "background .18s ease, color .18s ease",
-                    }}
-                  >
-                    {tab.label}
+                  <Link key={tab.href} href={tab.href} className={`admin-tab ${isActive ? "is-active" : ""}`}>
+                    {isActive && (
+                      <motion.span
+                        layoutId="admin-active-tab"
+                        className="admin-tab-pill"
+                        transition={{ type: "spring", stiffness: 260, damping: 28 }}
+                      />
+                    )}
+                    <span style={{ position: "relative" }}>{tab.label}</span>
                   </Link>
                 );
               })}
@@ -106,7 +68,14 @@ export default function AdminShell({
         </div>
       </div>
 
-      <div style={{ maxWidth: 1040, margin: "0 auto", padding: "32px 24px 64px" }}>{children}</div>
+      <motion.div
+        className="admin-main"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ type: "spring", stiffness: 220, damping: 28, delay: 0.05 }}
+      >
+        {children}
+      </motion.div>
     </div>
   );
 }

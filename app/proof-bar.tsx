@@ -101,9 +101,9 @@ export default function ProofBar({ data }: { data: ProofBarData }) {
       <div className="wrap">
         <motion.div variants={itemVariants} className="proof-bar-head">
           <div className="eyebrow">Live from the pipeline</div>
-          <h2>The bar, live — not a screenshot</h2>
+          <h2>Live bar, not a screenshot</h2>
           <p className="section-sub">
-            A cluster only becomes a build brief once it clears {data.minClusterSize}+ independent signals. Here&apos;s
+            A cluster only becomes a build brief once it clears {data.minClusterSize}+ independent signals. This is
             what&apos;s in the pipeline right now.
           </p>
         </motion.div>
@@ -169,7 +169,7 @@ export default function ProofBar({ data }: { data: ProofBarData }) {
 
             <p className="proof-track-note">
               {active.platformCount >= 2
-                ? "Already cross-platform — tracked as stronger evidence, though it's no longer required to clear the bar."
+                ? "Already cross-platform. That counts as stronger evidence, though it isn't required to clear the bar."
                 : "Needs more independent signals to clear the bar. Cross-platform spread would count as stronger evidence, but isn't required."}
             </p>
           </motion.div>

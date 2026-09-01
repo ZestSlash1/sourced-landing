@@ -14,7 +14,7 @@ import NewsletterForm from "../newsletter-form";
 export const dynamic = "force-dynamic";
 
 const FEED_DESCRIPTION =
-  "Browse Sourced's feed of validated startup ideas — real problems people already complain about, backed by evidence, ready to build.";
+  "Browse Sourced's feed of validated startup ideas: real problems people already complain about, backed by evidence, ready to build.";
 
 export const metadata: Metadata = {
   title: "Startup Idea Feed",
@@ -61,14 +61,14 @@ export default async function FeedPage() {
       <p className="app-sub">
         {topics.length > 0
           ? "Filtered to your picked topics."
-          : "The admin-curated set — pick topics in your account to personalize this."}
+          : "The admin-curated set. Pick topics in your account to personalize this."}
       </p>
       <Link href="/methodology" className="feed-methodology-link">
         How are these sourced? →
       </Link>
 
       {access.length === 0 ? (
-        <div className="empty-state">New ideas drop every Monday — check back soon.</div>
+        <div className="empty-state">New ideas drop every Monday. Check back soon.</div>
       ) : (
         <div className="feed-grid">
           {access.map((result, i) => {

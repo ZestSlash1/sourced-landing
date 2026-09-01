@@ -1,5 +1,6 @@
 "use client";
 
+import { motion } from "framer-motion";
 import type { ViewerLocation } from "@/lib/analytics/queries";
 
 const RADIUS = 120;
@@ -37,18 +38,12 @@ export function ViewerGlobe({ locations }: { locations: ViewerLocation[] }) {
   const points = locations.slice(0, 80);
 
   return (
-    <div
-      style={{
-        background: "var(--surface)",
-        border: "1px solid var(--line)",
-        borderRadius: "var(--r-xl)",
-        padding: "20px 22px",
-        boxShadow: "var(--shadow)",
-        display: "grid",
-        gridTemplateColumns: "auto 1fr",
-        gap: 24,
-        alignItems: "center",
-      }}
+    <motion.div
+      className="admin-card admin-globe-card"
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ type: "spring", stiffness: 220, damping: 28, delay: 0.1 }}
+      style={{ padding: "20px 22px" }}
     >
       <div style={{ perspective: 900, width: RADIUS * 2, height: RADIUS * 2, flexShrink: 0 }}>
         <div
@@ -125,7 +120,7 @@ export function ViewerGlobe({ locations }: { locations: ViewerLocation[] }) {
 
         {points.length === 0 ? (
           <p style={{ fontSize: 13, color: "var(--ink-soft)", margin: 0 }}>
-            No located views yet — geolocation is only available once this is deployed on Vercel.
+            No located views yet. Geolocation is only available once this is deployed on Vercel.
           </p>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -142,6 +137,6 @@ export function ViewerGlobe({ locations }: { locations: ViewerLocation[] }) {
           </div>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }

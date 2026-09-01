@@ -118,7 +118,7 @@ export default function HomeClient({ userEmail, proofBar }: { userEmail: string 
       }
 
       if (!res.ok) {
-        setCheckoutError("Couldn't start checkout — please try again.");
+        setCheckoutError("Couldn't start checkout. Please try again.");
         return;
       }
 
@@ -142,7 +142,7 @@ export default function HomeClient({ userEmail, proofBar }: { userEmail: string 
       });
       razorpay.open();
     } catch {
-      setCheckoutError("Couldn't start checkout — please try again.");
+      setCheckoutError("Couldn't start checkout. Please try again.");
     } finally {
       setCheckoutPending(null);
     }
@@ -275,7 +275,7 @@ export default function HomeClient({ userEmail, proofBar }: { userEmail: string 
           </h1>
           <p className="hero-sub">
             Three or more independent complaints about the same problem become an
-            evidence-backed build brief — ready to paste into Claude Code, Cursor, or v0.
+            evidence-backed build brief, ready to paste into Claude Code, Cursor, or v0.
           </p>
           <div className="hero-cta-row">
             <a className="btn btn-primary" href="#pricing">Browse this week&apos;s ideas</a>
@@ -283,7 +283,7 @@ export default function HomeClient({ userEmail, proofBar }: { userEmail: string 
           </div>
 
           <div className="agent-block">
-            <span className="agent-label">Every brief exports ready for —</span>
+            <span className="agent-label">Every brief exports ready for:</span>
             <div className="agent-picker" role="tablist" aria-label="Choose your build tool">
               {agents.map((a) => (
                 <button
@@ -343,7 +343,7 @@ export default function HomeClient({ userEmail, proofBar }: { userEmail: string 
           </Reveal>
           <Reveal delay={0.08}>
             <p>
-              &ldquo;Build a todo app for dog walkers&rdquo; isn&rsquo;t a business — it&rsquo;s
+              &ldquo;Build a todo app for dog walkers&rdquo; isn&rsquo;t a business. It&rsquo;s
               a hallucination with a UI. Every card in Sourced starts as a real complaint
               pulled from a forum, a review, or a job post, from someone already paying for
               a worse fix or no fix at all.
@@ -363,7 +363,7 @@ export default function HomeClient({ userEmail, proofBar }: { userEmail: string 
             <Reveal delay={0} className="stage">
               <div className="stage-icon">01 / HARVEST</div>
               <h3>Pulled from real complaints</h3>
-              <p>Reddit threads, 1-star G2 reviews of paid tools, and recurring Upwork gigs — places people already describe what they&apos;d pay to fix.</p>
+              <p>Reddit threads, 1-star G2 reviews of paid tools, and recurring Upwork gigs: places people already describe what they&apos;d pay to fix.</p>
             </Reveal>
             <Reveal delay={0.08} className="stage">
               <div className="stage-icon">02 / VALIDATE</div>
@@ -373,7 +373,7 @@ export default function HomeClient({ userEmail, proofBar }: { userEmail: string 
             <Reveal delay={0.16} className="stage">
               <div className="stage-icon">03 / PACKAGE</div>
               <h3>Handed to you build-ready</h3>
-              <p>Buyer profile, proof-of-demand quote, MVP scope, matched APIs, and a step brief — formatted for the tool you picked above.</p>
+              <p>Buyer profile, proof-of-demand quote, MVP scope, matched APIs, and a step brief, formatted for the tool you picked above.</p>
             </Reveal>
           </div>
         </div>
@@ -386,8 +386,8 @@ export default function HomeClient({ userEmail, proofBar }: { userEmail: string 
             <h2>Every idea comes wired to real APIs</h2>
             <p className="section-sub">
               Stage 3 of the pipeline matches each build brief against a structured copy of
-              the public-apis directory — 470k+ stars, MIT-licensed, maintained by the
-              open-source community — so you&apos;re never staring at a brief wondering what
+              the public-apis directory (470k+ stars, MIT-licensed, maintained by the
+              open-source community), so you&apos;re never staring at a brief wondering what
               actually powers it.
             </p>
           </Reveal>
@@ -485,13 +485,13 @@ export default function HomeClient({ userEmail, proofBar }: { userEmail: string 
                 onClick={() => startCheckout("builder-yearly")}
                 disabled={checkoutPending !== null}
               >
-                or ₹3,499/yr — save ₹1,289
+                or ₹3,499/yr (save ₹1,289)
               </button>
               <ul className="plan-features">
                 <li>4 full idea cards every month</li>
                 <li>Full searchable archive</li>
                 <li>Buyer profile + build brief on every card</li>
-                <li>Full API match — auth type, free-tier limits, docs links</li>
+                <li>Full API match: auth type, free-tier limits, docs links</li>
               </ul>
               <button
                 type="button"
@@ -511,7 +511,7 @@ export default function HomeClient({ userEmail, proofBar }: { userEmail: string 
               <ul className="plan-features">
                 <li>Everything in Builder</li>
                 <li>One custom idea request / month</li>
-                <li>$0 launch stack — free-tier hosting, auth &amp; email picks per idea</li>
+                <li>$0 launch stack: free-tier hosting, auth &amp; email picks per idea</li>
                 <li>48-hour early access to new cards</li>
               </ul>
               <button
@@ -534,11 +534,11 @@ export default function HomeClient({ userEmail, proofBar }: { userEmail: string 
               <span className="founding-label">Founding rate</span>
               {foundingActive ? (
                 <span>
-                  <b>{foundingRemaining}</b> of 100 founding spots left — keep <b>₹310/mo</b> on Builder for
+                  <b>{foundingRemaining}</b> of 100 founding spots left. Keep <b>₹310/mo</b> on Builder for
                   life. No expiry games, just first 100.
                 </span>
               ) : (
-                <span>All 100 founding spots are taken — Builder is now ₹399/mo for new subscribers.</span>
+                <span>All 100 founding spots are taken. Builder is now ₹399/mo for new subscribers.</span>
               )}
             </Reveal>
           )}
@@ -556,23 +556,23 @@ export default function HomeClient({ userEmail, proofBar }: { userEmail: string 
               <h3>Where do the matched APIs come from?</h3>
               <p>
                 From a structured, regularly-synced copy of the{" "}
-                <a href="https://github.com/public-apis/public-apis" target="_blank" rel="noopener noreferrer">public-apis directory</a>{" "}
-                — a 470k-star, MIT-licensed community list. We match categories to your
+                <a href="https://github.com/public-apis/public-apis" target="_blank" rel="noopener noreferrer">public-apis directory</a>
+                , a 470k-star, MIT-licensed community list. We match categories to your
                 idea&apos;s build brief; full docs links and rate limits ship on Builder and
                 above.
               </p>
             </Reveal>
             <Reveal delay={0.05} className="faq-item">
               <h3>Which coding tool does this work with?</h3>
-              <p>Any AI-assisted builder — Claude Code, Cursor, Windsurf, v0, Bolt, and more. Pick yours in the hero above and every build brief formats for it automatically.</p>
+              <p>Any AI-assisted builder: Claude Code, Cursor, Windsurf, v0, Bolt, and more. Pick yours in the hero above and every build brief formats for it automatically.</p>
             </Reveal>
             <Reveal delay={0.1} className="faq-item">
               <h3>Is this just ChatGPT with extra steps?</h3>
-              <p>No — every card starts from a real, sourced complaint, not a generated headline. You can see the source signal behind each idea, not just the pitch.</p>
+              <p>No. Every card starts from a real, sourced complaint, not a generated headline. You can see the source signal behind each idea, not just the pitch.</p>
             </Reveal>
             <Reveal delay={0.15} className="faq-item">
               <h3>What if I build one and it doesn&apos;t work?</h3>
-              <p>Some won&apos;t — that&apos;s true of every idea anywhere. Sourced removes the guessing on whether anyone wants it in the first place; the execution risk is still yours, same as any build.</p>
+              <p>Some won&apos;t. That&apos;s true of every idea anywhere. Sourced removes the guessing on whether anyone wants it in the first place; the execution risk is still yours, same as any build.</p>
             </Reveal>
           </div>
         </div>
@@ -580,7 +580,7 @@ export default function HomeClient({ userEmail, proofBar }: { userEmail: string 
 
       <Reveal scale className="cta-band">
         <h2>Your next build is already out there complaining on Reddit.</h2>
-        <p>Go find it — or let Sourced bring it to you every Monday.</p>
+        <p>Go find it, or let Sourced bring it to you every Monday.</p>
         <a className="btn btn-primary" href="#pricing">Browse this week&apos;s ideas</a>
       </Reveal>
 
@@ -599,7 +599,7 @@ export default function HomeClient({ userEmail, proofBar }: { userEmail: string 
 
       <footer>
         <div className="wrap">
-          <p>SOURCED — Real problems, sourced. Ready to build.</p>
+          <p>SOURCED · Real problems, sourced. Ready to build.</p>
           <p className="credit">
             API matching built on the{" "}
             <a href="https://github.com/public-apis/public-apis" target="_blank" rel="noopener noreferrer">public-apis</a>{" "}

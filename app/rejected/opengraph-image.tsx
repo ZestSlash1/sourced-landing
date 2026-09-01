@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
-export const alt = "Sourced — Rejected Clusters";
+export const alt = "Sourced · Rejected Clusters";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -28,7 +28,7 @@ export default function Image() {
           Rejected clusters
         </div>
         <div style={{ display: "flex", fontSize: 24, fontWeight: 500, opacity: 0.9, marginTop: 28, maxWidth: 820 }}>
-          Every cluster that didn&apos;t clear the bar — shown in full, not hidden.
+          Every cluster that didn&apos;t clear the bar, shown in full, not hidden.
         </div>
       </div>
     ),

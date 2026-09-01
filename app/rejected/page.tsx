@@ -7,9 +7,9 @@ import { absoluteUrl } from "@/lib/seo";
 export const dynamic = "force-dynamic";
 
 const PAGE_SIZE = 20;
-const TITLE = "Rejected Clusters — Full Transparency Log";
+const TITLE = "Rejected Clusters · Full Transparency Log";
 const DESCRIPTION =
-  "Every signal cluster that formed in Sourced's ingest pipeline but didn't clear the 3-signals bar — shown in full, not hidden, as proof the filter is real.";
+  "Every signal cluster that formed in Sourced's ingest pipeline but didn't clear the 3-signals bar, shown in full, not hidden, as proof the filter is real.";
 
 export const metadata: Metadata = {
   title: TITLE,
@@ -67,7 +67,7 @@ export default async function RejectedPage({ searchParams }: { searchParams: { p
           Rejected clusters
         </h1>
         <p style={{ color: "var(--ink-soft)", fontSize: 16, maxWidth: 640, margin: 0 }}>
-          Every signal cluster that formed but didn&apos;t clear the {MIN_CLUSTER_SIZE}-independent-signals bar —
+          Every signal cluster that formed but didn&apos;t clear the {MIN_CLUSTER_SIZE}-independent-signals bar,
           shown in full, not swept away. No source links, no signal text, no brief content: just the shape of what
           got filtered out.
         </p>
@@ -77,7 +77,7 @@ export default async function RejectedPage({ searchParams }: { searchParams: { p
         <div className="wrap">
           {clusters.length === 0 ? (
             <div className="empty-state">
-              No rejected clusters yet — the pipeline is still accumulating signals across sources. Check back as the
+              No rejected clusters yet. The pipeline is still accumulating signals across sources. Check back as the
               pool grows.
             </div>
           ) : (
@@ -132,7 +132,7 @@ export default async function RejectedPage({ searchParams }: { searchParams: { p
             Excluded as non-complaints
           </h2>
           <p style={{ color: "var(--ink-soft)", fontSize: 15, maxWidth: 640, margin: "0 0 16px" }}>
-            Every signal the classification pass ruled out before clustering ever ran — launches, announcements, news,
+            Every signal the classification pass ruled out before clustering ever ran: launches, announcements, news,
             questions with a clean documented answer. Stored for audit, never embedded or clustered.
           </p>
           {nonComplaints.length === 0 ? (

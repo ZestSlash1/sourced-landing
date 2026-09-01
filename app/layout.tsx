@@ -8,7 +8,7 @@ const DESCRIPTION =
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Sourced — Real complaints, triangulated.",
+    default: "Sourced · Real complaints, triangulated.",
     template: "%s | Sourced",
   },
   description: DESCRIPTION,
@@ -16,13 +16,13 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     siteName: "Sourced",
-    title: "Sourced — Real complaints, triangulated.",
+    title: "Sourced · Real complaints, triangulated.",
     description: DESCRIPTION,
     url: SITE_URL,
   },
   twitter: {
     card: "summary_large_image",
-    title: "Sourced — Real problems, sourced. Ready to build.",
+    title: "Sourced · Real problems, sourced. Ready to build.",
     description: DESCRIPTION,
   },
 };

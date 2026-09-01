@@ -9,9 +9,9 @@ import NewsletterForm from "../newsletter-form";
 
 export const dynamic = "force-dynamic";
 
-const TITLE = "Methodology — How We Validate Ideas";
+const TITLE = "Methodology · How We Validate Ideas";
 const DESCRIPTION =
-  "How Sourced turns real complaints into evidence-backed build briefs — the sources, the filtering bar, and live numbers from the ingest pipeline.";
+  "How Sourced turns real complaints into evidence-backed build briefs: the sources, the filtering bar, and live numbers from the ingest pipeline.";
 
 export const metadata: Metadata = {
   title: TITLE,
@@ -39,7 +39,7 @@ const SOURCES = [
   {
     label: "StackExchange",
     description:
-      "Barely-answered questions on Webmasters, Software Recs, UX, PM, and other workflow-focused sites — an unanswered question is often an unmet need.",
+      "Barely-answered questions on Webmasters, Software Recs, UX, PM, and other workflow-focused sites. An unanswered question is often an unmet need.",
   },
   {
     label: "GitHub Issues",
@@ -49,7 +49,7 @@ const SOURCES = [
   {
     label: "Dev.to",
     description:
-      "Posts tagged discuss, watercooler, or help — Dev.to's venting/opinion tags, above a minimum reactions and comments bar.",
+      "Posts tagged discuss, watercooler, or help, Dev.to's venting/opinion tags, above a minimum reactions and comments bar.",
   },
   {
     label: "Lobsters",
@@ -60,7 +60,7 @@ const SOURCES = [
 const PENDING_SOURCE = {
   label: "Reddit",
   description:
-    "The poller is built and wired into the daily cron, but isn't live yet — it's waiting on Reddit API credentials before it starts contributing signals.",
+    "The poller is built and wired into the daily cron, but isn't live yet. It's waiting on Reddit API credentials before it starts contributing signals.",
 };
 
 export default async function MethodologyPage() {
@@ -83,8 +83,8 @@ export default async function MethodologyPage() {
           Methodology
         </h1>
         <p style={{ color: "var(--ink-soft)", fontSize: 16, maxWidth: 640, margin: 0 }}>
-          Every idea in the feed starts as a real complaint, not a generated headline. Here&apos;s exactly how a post
-          on a forum becomes a build brief — and what gets thrown out along the way.
+          Every idea in the feed starts as a real complaint, not a generated headline. This is exactly how a post
+          on a forum becomes a build brief, and what gets thrown out along the way.
         </p>
       </div>
 
@@ -93,7 +93,7 @@ export default async function MethodologyPage() {
           <div className="eyebrow">Where ideas come from</div>
           <h2>Five sources, one more on the way</h2>
           <p className="section-sub" style={{ maxWidth: 640, marginBottom: 28 }}>
-            Every signal is a real post, question, issue, or article — pulled daily, deduped on URL, and never
+            Every signal is a real post, question, issue, or article, pulled daily, deduped on URL, and never
             paraphrased before storage.
           </p>
           <div className="source-grid">
@@ -125,17 +125,17 @@ export default async function MethodologyPage() {
                 Every signal is embedded (OpenRouter, text-embedding-3-small) and compared against every other
                 signal by cosine similarity. Two signals above{" "}
                 <strong className="mono">{EMBEDDING_SIMILARITY_THRESHOLD}</strong> similarity are folded into the
-                same cluster — they&apos;re treated as describing the same underlying problem, regardless of the
+                same cluster: they&apos;re treated as describing the same underlying problem, regardless of the
                 words either author used.
               </span>
             </li>
             <li>
               <span className="bar-num">2</span>
               <span>
-                A cluster only qualifies once it has <strong>{MIN_CLUSTER_SIZE}+ independent signals</strong> —
+                A cluster only qualifies once it has <strong>{MIN_CLUSTER_SIZE}+ independent signals</strong>,
                 distinct authors describing the same underlying problem. One angry HN post isn&apos;t evidence of
                 demand; three independent people hitting it is. When those signals span more than one platform, that
-                cross-platform spread is tracked and shown as stronger evidence — but it&apos;s no longer required to
+                cross-platform spread is tracked and shown as stronger evidence, but it&apos;s no longer required to
                 clear the bar, since a narrow technical complaint repeated by three independent authors on a single
                 platform is itself real, repeated demand.
               </span>
@@ -144,8 +144,8 @@ export default async function MethodologyPage() {
               <span className="bar-num">3</span>
               <span>
                 A human reviews every qualifying cluster at{" "}
-                <span className="mono">/admin/pending</span> before it&apos;s drafted into a brief and published —
-                clearing the bar gets a cluster in front of a reviewer, it doesn&apos;t auto-publish anything.
+                <span className="mono">/admin/pending</span> before it&apos;s drafted into a brief and published.
+                Clearing the bar gets a cluster in front of a reviewer; it doesn&apos;t auto-publish anything.
               </span>
             </li>
           </ol>
@@ -167,7 +167,7 @@ export default async function MethodologyPage() {
           <div className="eyebrow">Live numbers</div>
           <h2>Right now, from the database</h2>
           <p className="section-sub" style={{ maxWidth: 640, marginBottom: 24 }}>
-            Queried fresh on every page load — including the zeros, if that&apos;s what&apos;s true today.
+            Queried fresh on every page load, including the zeros, if that&apos;s what&apos;s true today.
           </p>
           <div className="stat-grid">
             <StatTile label="Signals ingested" value={stats.signalsIngested} />
@@ -187,7 +187,7 @@ export default async function MethodologyPage() {
           <div className="eyebrow">Pipeline health</div>
           <h2>Last {pipelineRuns.length || 5} draft-pass runs</h2>
           {pipelineRuns.length === 0 ? (
-            <div className="empty-state">No pipeline runs recorded yet — the draft-ideas cron writes here after each pass.</div>
+            <div className="empty-state">No pipeline runs recorded yet. The draft-ideas cron writes here after each pass.</div>
           ) : (
             <div className="table-card">
               <table className="mini-table mono">
