@@ -50,6 +50,7 @@ export async function POST(request: Request) {
     city: typeof body?.city === "string" ? body.city : null,
     latitude: typeof body?.latitude === "number" ? body.latitude : null,
     longitude: typeof body?.longitude === "number" ? body.longitude : null,
+    userAgent: typeof body?.userAgent === "string" ? body.userAgent : headers().get("user-agent"),
     metadata: (body?.metadata as Record<string, unknown> | undefined) ?? {},
   });
 

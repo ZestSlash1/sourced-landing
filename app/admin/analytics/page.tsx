@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { Users, UserPlus, CreditCard, TrendingUp } from "lucide";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { getAnalyticsSummary, getRecentViewerLocations } from "@/lib/analytics/queries";
@@ -31,9 +32,28 @@ export default async function AnalyticsPage() {
 
   return (
     <AdminShell active="/admin/analytics">
-      <div className="admin-page-head">
-        <h1 className="display admin-page-title">Analytics</h1>
-        <p className="mono admin-page-sub">Last {summary.windowDays} days · from the events table, live</p>
+      <div className="admin-page-head" style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+        <div>
+          <h1 className="display admin-page-title">Analytics</h1>
+          <p className="mono admin-page-sub">Last {summary.windowDays} days · from the events table, live</p>
+        </div>
+        <Link
+          href="/admin/analytics/live"
+          className="mono"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
+            fontSize: 12.5,
+            color: "var(--ink)",
+            background: "var(--surface)",
+            border: "1px solid var(--line)",
+            borderRadius: "var(--r-chip)",
+            padding: "9px 16px",
+          }}
+        >
+          Live globe →
+        </Link>
       </div>
 
       <StatGrid>

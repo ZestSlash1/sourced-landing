@@ -44,7 +44,7 @@ function countBy(items: EventRow[], label: (row: EventRow) => string): Breakdown
     .sort((a, b) => b.count - a.count);
 }
 
-function referrerLabel(referrer: string | null): string {
+export function referrerLabel(referrer: string | null): string {
   if (!referrer) return "(direct)";
   try {
     return new URL(referrer).hostname || referrer;
@@ -70,9 +70,12 @@ const LOCATIONS_WINDOW_HOURS = 24;
  * Geolocation only exists on Vercel in production (see middleware.ts), so
  * this is empty in local dev.
  */
-export async function getRecentViewerLocations(limit = 500): Promise<ViewerLocation[]> {
+export async function getRecentViewerLocations(
+  limit = 500,
+  windowHours = LOCATIONS_WINDOW_HOURS,
+): Promise<ViewerLocation[]> {
   const supabase = getSupabaseServerClient();
-  const since = new Date(Date.now() - LOCATIONS_WINDOW_HOURS * 60 * 60 * 1000).toISOString();
+  const since = new Date(Date.now() - windowHours * 60 * 60 * 1000).toISOString();
 
   const { data, error } = await supabase
     .from("events")

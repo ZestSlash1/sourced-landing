@@ -28,6 +28,7 @@ export interface TrackInput {
   city?: string | null;
   latitude?: number | null;
   longitude?: number | null;
+  userAgent?: string | null;
   metadata?: Record<string, unknown>;
 }
 
@@ -55,6 +56,7 @@ export async function track(input: TrackInput): Promise<void> {
       city: input.city ?? null,
       latitude: input.latitude ?? null,
       longitude: input.longitude ?? null,
+      user_agent: input.userAgent ?? null,
       metadata: input.metadata ?? {},
     });
 

@@ -71,6 +71,7 @@ export function middleware(request: NextRequest, event: NextFetchEvent) {
       city: city ? decodeURIComponent(city) : null,
       latitude: Number.isFinite(latitude) ? latitude : null,
       longitude: Number.isFinite(longitude) ? longitude : null,
+      userAgent: request.headers.get("user-agent"),
     };
 
     event.waitUntil(

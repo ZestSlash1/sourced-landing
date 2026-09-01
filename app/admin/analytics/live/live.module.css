@@ -1,0 +1,406 @@
+/* Scoped port of the Claude Design "live-globe" mock — every rule is nested
+   under .page so nothing leaks into the rest of the (light-themed) app. */
+
+.page {
+  --bg: #08061a;
+  --bgGrad1: rgba(84, 60, 190, 0.3);
+  --bgGrad2: rgba(190, 50, 140, 0.16);
+  --ink: #eae7ff;
+  --muted: #9a94c4;
+  --line: rgba(160, 150, 255, 0.14);
+  --panel: rgba(255, 255, 255, 0.035);
+  --card: rgba(255, 255, 255, 0.03);
+  --chip: rgba(255, 255, 255, 0.05);
+  --chipOn: rgba(255, 90, 170, 0.16);
+  --track: rgba(255, 255, 255, 0.07);
+  --tipBg: rgba(14, 10, 38, 0.94);
+  --tipLine: rgba(180, 160, 255, 0.3);
+  --sphere0: rgba(78, 72, 196, 0.95);
+  --sphere1: rgba(44, 38, 132, 0.92);
+  --sphere2: rgba(16, 12, 56, 0.96);
+  --atmo: 140, 120, 255;
+  --dot: 170, 150, 255;
+  --dotA: 0.62;
+  --arc: 255, 110, 190;
+  --marker: 255, 228, 245;
+
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  overflow: hidden;
+  color: var(--ink);
+  font-family: "Space Grotesk", Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  background:
+    radial-gradient(1100px 700px at 22% 18%, var(--bgGrad1), transparent 60%),
+    radial-gradient(900px 600px at 88% 90%, var(--bgGrad2), transparent 65%), var(--bg);
+  transition: background-color 0.25s, color 0.25s;
+}
+
+.page[data-theme="light"] {
+  --bg: #f7f6fb;
+  --bgGrad1: rgba(120, 100, 235, 0.1);
+  --bgGrad2: rgba(220, 90, 170, 0.07);
+  --ink: #171532;
+  --muted: #6d688a;
+  --line: #e4e1ef;
+  --panel: #ffffff;
+  --card: #ffffff;
+  --chip: #ffffff;
+  --chipOn: #fdeef5;
+  --track: #eceaf4;
+  --tipBg: #ffffff;
+  --tipLine: #e4e1ef;
+  --sphere0: #ffffff;
+  --sphere1: #f1eefa;
+  --sphere2: #e0dbf2;
+  --atmo: 150, 130, 255;
+  --dot: 96, 82, 170;
+  --dotA: 0.5;
+  --arc: 214, 58, 140;
+  --marker: 214, 58, 140;
+}
+
+.page a {
+  color: rgb(var(--arc));
+  text-decoration: none;
+}
+.page a:hover {
+  color: var(--ink);
+}
+
+.shell {
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--line);
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.mark {
+  width: 25px;
+  height: 25px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #5b4ff7, #ff5eb0);
+}
+.crumb {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.hdrRight {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.live {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11.5px;
+  color: rgb(var(--arc));
+  background: var(--chipOn);
+  border: 1px solid rgba(var(--arc), 0.3);
+  padding: 7px 12px;
+  border-radius: 999px;
+}
+.liveDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgb(var(--arc));
+  box-shadow: 0 0 10px rgb(var(--arc));
+  animation: blink 1.8s infinite;
+}
+@keyframes blink {
+  50% {
+    opacity: 0.25;
+  }
+}
+
+.page button {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11.5px;
+  color: var(--ink);
+  background: var(--chip);
+  border: 1px solid var(--line);
+  padding: 7px 13px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: 0.16s;
+}
+.page button:hover {
+  border-color: rgba(var(--arc), 0.45);
+}
+.page button[aria-pressed="true"] {
+  background: var(--chipOn);
+  border-color: rgba(var(--arc), 0.4);
+  color: rgb(var(--arc));
+}
+
+.main {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  min-height: 0;
+}
+.stage {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+}
+.canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+}
+.canvas.dragging {
+  cursor: grabbing;
+}
+.kpis {
+  position: absolute;
+  top: 20px;
+  left: 22px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  max-width: 66%;
+}
+.kpi {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 11px 15px;
+  min-width: 112px;
+  backdrop-filter: blur(10px);
+}
+.kpiLabel {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.kpiValue {
+  font-size: 25px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin-top: 4px;
+  font-variant-numeric: tabular-nums;
+}
+.kpiValue small {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 400;
+  margin-left: 3px;
+}
+.controls {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+}
+.hint {
+  position: absolute;
+  bottom: 22px;
+  right: 22px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  color: var(--muted);
+  opacity: 0.7;
+}
+.source {
+  position: absolute;
+  top: 20px;
+  right: 22px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10.5px;
+  color: var(--muted);
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  padding: 5px 9px;
+}
+.tip {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, -125%);
+  background: var(--tipBg);
+  border: 1px solid var(--tipLine);
+  border-radius: 11px;
+  padding: 9px 12px;
+  font-size: 12.5px;
+  white-space: nowrap;
+  transition: opacity 0.14s;
+  z-index: 5;
+}
+.tip.visible {
+  opacity: 1;
+}
+.tipTitle {
+  display: block;
+  font-size: 13.5px;
+  margin-bottom: 3px;
+}
+.tipSub {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.aside {
+  border-left: 1px solid var(--line);
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  min-height: 0;
+}
+.tabs {
+  display: flex;
+  gap: 6px;
+  padding: 14px 18px 12px;
+  border-bottom: 1px solid var(--line);
+  flex-wrap: wrap;
+}
+.tabs button {
+  padding: 6px 11px;
+}
+.sec {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--line);
+  min-height: 214px;
+}
+.sec h3 {
+  margin: 0 0 12px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 500;
+}
+.row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  padding: 6px 0;
+  font-size: 13.5px;
+  align-items: center;
+}
+.rowKey {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rowNum {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.rowBar {
+  grid-column: 1 / -1;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--track);
+  overflow: hidden;
+}
+.rowBarFill {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #5b4ff7, #ff5eb0);
+}
+.feed {
+  padding: 16px 20px;
+  overflow: hidden;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.feed h3 {
+  margin: 0 0 12px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 500;
+}
+.feedList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  flex: 1;
+}
+.feedItem {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 11px;
+  align-items: baseline;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+  animation: slide 0.42s ease-out;
+}
+@keyframes slide {
+  from {
+    opacity: 0;
+    transform: translateY(-7px);
+  }
+}
+.feedPin {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgb(var(--arc));
+  box-shadow: 0 0 8px rgb(var(--arc));
+  transform: translateY(-2px);
+}
+.feedWho {
+  font-size: 13.5px;
+  line-height: 1.35;
+}
+.feedPath {
+  display: block;
+  font-style: normal;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.feedTime {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  color: var(--muted);
+  opacity: 0.85;
+}
+
+.empty {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+@media (max-width: 1120px) {
+  .main {
+    grid-template-columns: 1fr;
+  }
+  .aside {
+    display: none;
+  }
+}
