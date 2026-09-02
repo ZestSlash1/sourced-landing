@@ -215,7 +215,11 @@ function BriefJsonLd({ idea, access }: { idea: IdeaDrop; access: IdeaAccess["kin
     headline: idea.title,
     description: idea.problem.summary,
     image: [absoluteUrl(`/feed/${idea.slug}/opengraph-image`)],
-    datePublished: idea.publishedAt,
+    // idea.publishedAt is a bare "YYYY-MM-DD" (the DB column is `date`, not
+    // timestamptz) — schema.org's datePublished wants a full ISO 8601
+    // datetime with a timezone designator, same as dateModified below gets
+    // for free from idea.updatedAt's timestamptz.
+    datePublished: new Date(idea.publishedAt).toISOString(),
     ...(idea.updatedAt ? { dateModified: idea.updatedAt } : {}),
     url,
     author: { "@type": "Organization", name: "Sourced", url: "https://www.getsourced.dev" },
