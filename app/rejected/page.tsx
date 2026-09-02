@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import { MIN_CLUSTER_PLATFORMS, MIN_CLUSTER_SIZE } from "@/lib/ingest/clustering";
 import { listNonComplaintSignals, listRejectedClusters, type RejectedCluster } from "@/lib/ingest/pipeline-stats";
 import { absoluteUrl } from "@/lib/seo";
+import { slugify } from "@/lib/slugify";
+import Breadcrumbs from "../breadcrumbs";
 
 export const dynamic = "force-dynamic";
 
@@ -43,8 +45,16 @@ function whyFailed(c: RejectedCluster): string {
 
 const NON_COMPLAINT_PAGE_SIZE = 20;
 
-export default async function RejectedPage({ searchParams }: { searchParams: { page?: string; ncPage?: string } }) {
-  const [clusters, nonComplaints] = await Promise.all([listRejectedClusters(), listNonComplaintSignals()]);
+export default async function RejectedPage({
+  searchParams,
+}: {
+  searchParams: { page?: string; ncPage?: string; category?: string };
+}) {
+  const [allClusters, nonComplaints] = await Promise.all([listRejectedClusters(), listNonComplaintSignals()]);
+  const categoryFilter = searchParams.category;
+  const clusters = categoryFilter
+    ? allClusters.filter((c) => c.domains.some((d) => slugify(d) === categoryFilter))
+    : allClusters;
   const totalPages = Math.max(1, Math.ceil(clusters.length / PAGE_SIZE));
   const requestedPage = Number(searchParams.page);
   const currentPage = Number.isFinite(requestedPage) ? Math.min(Math.max(1, requestedPage), totalPages) : 1;
@@ -63,6 +73,7 @@ export default async function RejectedPage({ searchParams }: { searchParams: { p
         <Link href="/methodology" className="back-link">
           ← Back to methodology
         </Link>
+        <Breadcrumbs items={[{ name: "Rejected", path: "/rejected" }]} />
         <h1 className="display" style={{ fontSize: "clamp(28px,4vw,38px)", fontWeight: 700, letterSpacing: "-0.02em", margin: "18px 0 10px" }}>
           Rejected clusters
         </h1>
@@ -71,6 +82,11 @@ export default async function RejectedPage({ searchParams }: { searchParams: { p
           shown in full, not swept away. No source links, no signal text, no brief content: just the shape of what
           got filtered out.
         </p>
+        {categoryFilter ? (
+          <p className="transparency-note" style={{ marginTop: 12 }}>
+            Filtered to <strong>{categoryFilter}</strong> · <Link href="/rejected">clear filter</Link>
+          </p>
+        ) : null}
       </div>
 
       <section className="section">

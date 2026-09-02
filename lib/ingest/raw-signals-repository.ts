@@ -1,5 +1,6 @@
 import "server-only";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { parseEmbeddingField } from "./embeddings";
 import type { RawSignal, RawSignalInput } from "./types";
 
 const TABLE = "raw_signals";
@@ -16,7 +17,9 @@ interface RawSignalRow {
   fetched_at: string;
   cluster_key: string | null;
   drafted_idea_id: string | null;
-  embedding: number[] | null;
+  // pgvector's text output over PostgREST ("[0.1,0.2,...]"), not a native
+  // JSON array — see parseEmbeddingField and pgvector-migration-spec.md Phase F.
+  embedding: unknown;
   classified_as_complaint: boolean | null;
   problem_statement: string | null;
   domain: string | null;
@@ -36,7 +39,7 @@ function rowToSignal(row: RawSignalRow): RawSignal {
     fetchedAt: row.fetched_at,
     clusterKey: row.cluster_key,
     draftedIdeaId: row.drafted_idea_id,
-    embedding: row.embedding,
+    embedding: parseEmbeddingField(row.embedding),
     classifiedAsComplaint: row.classified_as_complaint,
     problemStatement: row.problem_statement,
     domain: row.domain,
@@ -120,6 +123,60 @@ export async function listAllSignalSummaries(): Promise<SignalSummary[]> {
     classifiedAsComplaint: r.classified_as_complaint,
     domain: r.domain,
   }));
+}
+
+export interface PublicSignal {
+  id: string;
+  source: RawSignal["source"];
+  url: string;
+  title: string | null;
+  postedAt: string | null;
+  classifiedAsComplaint: boolean | null;
+}
+
+/**
+ * One page of signals for the public `/signals` firehose, newest-posted
+ * first, including the source `url` — unlike listAllSignalSummaries, this is
+ * meant to link out to the original post, so it's a narrower-but-different
+ * projection (url in, cluster_key/domain out) rather than a widened reuse of
+ * that function.
+ */
+export async function listSignalsPage(
+  page: number,
+  pageSize: number,
+): Promise<{ signals: PublicSignal[]; total: number }> {
+  const supabase = getSupabaseServerClient();
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+
+  const { data, error, count } = await supabase
+    .from(TABLE)
+    .select("id, source, url, title, posted_at, classified_as_complaint", { count: "exact" })
+    .order("posted_at", { ascending: false, nullsFirst: false })
+    .range(from, to);
+
+  if (error) throw new Error(`listSignalsPage: ${error.message}`);
+
+  const rows = data as {
+    id: string;
+    source: RawSignal["source"];
+    url: string;
+    title: string | null;
+    posted_at: string | null;
+    classified_as_complaint: boolean | null;
+  }[];
+
+  return {
+    signals: rows.map((r) => ({
+      id: r.id,
+      source: r.source,
+      url: r.url,
+      title: r.title,
+      postedAt: r.posted_at,
+      classifiedAsComplaint: r.classified_as_complaint,
+    })),
+    total: count ?? 0,
+  };
 }
 
 /** Undrafted signals with no classification yet — classification's input pool. Never re-selects an already-classified signal. */
@@ -230,27 +287,23 @@ export async function persistClusterKeys(assignments: { signalId: string; cluste
  * values), but this only ever runs over the handful of signals missing an
  * embedding on a given pass, not the whole pool.
  *
- * Dual-writes embedding_vec (pgvector) alongside embedding (jsonb) during
- * the pgvector migration's Phases A-E (pgvector-migration-spec.md) via the
- * set_signal_embedding_vec RPC — supabase-js can't round-trip the vector
- * wire format through a plain .update() call, so the cast happens in
- * Postgres from the vector's text literal. Once Phase F drops the jsonb
- * column and renames embedding_vec -> embedding, this goes back to a plain
- * .update({ embedding }).
+ * Post-Phase-F (pgvector-migration-spec.md), `embedding` is the pgvector
+ * column directly (the jsonb column and its dual-write are gone). Still
+ * goes through set_signal_embedding_vec rather than a plain .update(), since
+ * supabase-js can't round-trip the vector wire format through a plain
+ * .update() call — the cast happens in Postgres from the vector's text
+ * literal instead.
  */
 export async function saveEmbeddings(updates: { signalId: string; embedding: number[] }[]): Promise<void> {
   if (updates.length === 0) return;
 
   const supabase = getSupabaseServerClient();
   for (const { signalId, embedding } of updates) {
-    const { error } = await supabase.from(TABLE).update({ embedding }).eq("id", signalId);
-    if (error) throw new Error(`saveEmbeddings: ${error.message}`);
-
-    const { error: vecError } = await supabase.rpc("set_signal_embedding_vec", {
+    const { error } = await supabase.rpc("set_signal_embedding_vec", {
       p_id: signalId,
       p_vec: `[${embedding.join(",")}]`,
     });
-    if (vecError) throw new Error(`saveEmbeddings (embedding_vec): ${vecError.message}`);
+    if (error) throw new Error(`saveEmbeddings: ${error.message}`);
   }
 }
 

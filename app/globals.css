@@ -280,6 +280,29 @@
   .app-sub{color:var(--ink-soft); font-size:14.5px; margin:0 0 32px;}
   .back-link{font-size:13px; color:var(--ink-soft); text-decoration:none; transition:color .15s ease;}
   .back-link:hover{color:var(--ink);}
+  .breadcrumbs{font-size:13px; color:var(--ink-soft); margin:0 0 14px;}
+  .breadcrumbs a{color:var(--ink-soft); text-decoration:none;}
+  .breadcrumbs a:hover{color:var(--ink);}
+  .breadcrumbs [aria-current="page"]{color:var(--ink);}
+  .breadcrumb-sep{color:var(--line); padding:0 2px;}
+  .related-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:12px; margin-top:10px;}
+  .related-card{display:block; padding:14px 16px; border:1px solid var(--line); border-radius:var(--r-sm); text-decoration:none; color:inherit; transition:border-color .15s ease;}
+  .related-card:hover{border-color:var(--ink);}
+  .related-card h4{margin:0 0 4px; font-size:14px; font-weight:600;}
+  .related-card p{margin:0; font-size:12.5px; color:var(--ink-soft);}
+  .facet-chip-list{display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;}
+  .facet-chip{padding:5px 12px; border:1px solid var(--line); border-radius:999px; font-size:12.5px; color:var(--ink-soft); text-decoration:none; transition:border-color .15s ease, color .15s ease;}
+  .facet-chip:hover{border-color:var(--ink); color:var(--ink);}
+  .facet-index-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px; margin-top:16px;}
+  .facet-index-card{display:block; padding:16px; border:1px solid var(--line); border-radius:var(--r-sm); text-decoration:none; color:inherit; transition:border-color .15s ease;}
+  .facet-index-card:hover{border-color:var(--ink);}
+  .facet-index-card h3{margin:0 0 4px; font-size:15px; font-weight:600;}
+  .facet-index-card span{font-size:12px; color:var(--ink-soft);}
+  .signal-row{display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid var(--line); flex-wrap:wrap;}
+  .signal-row a{color:inherit; text-decoration:none; font-size:14px; flex:1; min-width:220px;}
+  .signal-row a:hover{color:var(--violet-deep);}
+  .signal-badge{font-size:11px; padding:3px 9px; border-radius:999px; border:1px solid var(--line); color:var(--ink-soft); white-space:nowrap;}
+  .signal-badge.is-complaint{border-color:var(--violet-deep); color:var(--violet-deep);}
   .icon-btn{
     padding:9px 15px; background:none; color:var(--ink-soft); border:1px solid var(--line);
     border-radius:var(--r-sm); cursor:pointer; font-size:13px; font-family:inherit; transition:border-color .15s ease, color .15s ease;

@@ -76,6 +76,40 @@ export async function getPublishedIdeaByIdOrSlug(idOrSlug: string): Promise<Idea
   return rowToIdeaDrop(data as IdeaDropRow);
 }
 
+/**
+ * Published ideas in one category, newest first — powers `/category/[category]`
+ * and the "related ideas" section on the brief page. `category` is matched
+ * exactly (the real DB column, not a jsonb field), so callers must resolve a
+ * URL slug to the stored category label first (see lib/idea-drops/facets.ts).
+ * `excludeId` drops one idea from the result (the brief the caller is already
+ * on); `limit` is applied after excludeId so a caller asking for 3 related
+ * ideas always gets up to 3, not up to 3-minus-one.
+ */
+export async function listPublishedIdeasByCategory(
+  category: string,
+  options?: { excludeId?: string; limit?: number },
+): Promise<IdeaDrop[]> {
+  const supabase = getSupabaseServerClient();
+  let query = supabase
+    .from(TABLE)
+    .select("*")
+    .eq("status", "published")
+    .eq("category", category)
+    .order("published_at", { ascending: false });
+
+  if (options?.limit) {
+    query = query.limit(options.limit + (options.excludeId ? 1 : 0));
+  }
+
+  const { data, error } = await query;
+  if (error) throw new Error(`listPublishedIdeasByCategory: ${error.message}`);
+
+  let ideas = (data as IdeaDropRow[]).map(rowToIdeaDrop);
+  if (options?.excludeId) ideas = ideas.filter((i) => i.id !== options.excludeId);
+  if (options?.limit) ideas = ideas.slice(0, options.limit);
+  return ideas;
+}
+
 /** Slug + last-updated timestamp for every published idea, for app/sitemap.ts. */
 export async function listPublishedSlugsForSitemap(): Promise<{ slug: string; updatedAt: string }[]> {
   const supabase = getSupabaseServerClient();

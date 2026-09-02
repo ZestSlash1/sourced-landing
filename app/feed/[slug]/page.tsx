@@ -1,15 +1,18 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { getPublishedIdeaByIdOrSlug } from "@/lib/idea-drops/repository";
+import { getPublishedIdeaByIdOrSlug, listPublishedIdeasByCategory } from "@/lib/idea-drops/repository";
 import { nextQuotaResetIso } from "@/lib/idea-drops/quota";
 import { resolveAndRecordAccess, resolveViewerContext } from "@/lib/idea-drops/resolve-access";
 import type { IdeaAccess } from "@/lib/idea-drops/resolve-access";
 import { getTriangulation, type Triangulation } from "@/lib/idea-drops/triangulation";
+import { PLATFORM_LABELS } from "@/lib/idea-drops/facets";
+import { slugify } from "@/lib/slugify";
 import type { IdeaDrop } from "@/types/idea-drop";
 import { absoluteUrl, truncate } from "@/lib/seo";
 import CopyPromptButton from "./copy-prompt-button";
 import TriangulationBadge from "../triangulation-badge";
+import Breadcrumbs from "../../breadcrumbs";
 
 export const dynamic = "force-dynamic";
 
@@ -52,6 +55,9 @@ export default async function IdeaDetailPage({ params }: { params: { slug: strin
   const access = await resolveAndRecordAccess(idea, viewer);
   const scoped = access.idea;
   const triangulation = await getTriangulation(idea.sourceSignalIds);
+  const relatedIdeas = await listPublishedIdeasByCategory(idea.category, { excludeId: idea.id, limit: 3 });
+  const categorySlug = slugify(idea.category);
+  const platformSlugs = Array.from(new Set(idea.evidence.map((e) => e.platform)));
 
   return (
     <main className="app-shell">
@@ -62,6 +68,12 @@ export default async function IdeaDetailPage({ params }: { params: { slug: strin
       </Link>
 
       <div style={{ marginTop: 20 }}>
+        <Breadcrumbs
+          items={[
+            { name: idea.category, path: `/category/${categorySlug}` },
+            { name: idea.title, path: `/feed/${idea.slug}` },
+          ]}
+        />
         <div className="brief-cover">
           <span className="tag">{idea.category}</span>
           <span className="score">{idea.demandScore}% demand</span>
@@ -97,6 +109,37 @@ export default async function IdeaDetailPage({ params }: { params: { slug: strin
           </div>
 
           <CompetitiveLandscapeSection idea={idea} />
+
+          <div className="brief-section">
+            <div className="eyebrow">In this category</div>
+            <div className="facet-chip-list">
+              <Link href={`/category/${categorySlug}`} className="facet-chip">
+                More {idea.category} ideas →
+              </Link>
+              {platformSlugs.map((p) => (
+                <Link key={p} href={`/platform/${slugify(p)}`} className="facet-chip">
+                  {PLATFORM_LABELS[p] ?? p} ideas →
+                </Link>
+              ))}
+              <Link href={`/rejected?category=${categorySlug}`} className="facet-chip">
+                Rejected {idea.category} clusters →
+              </Link>
+            </div>
+          </div>
+
+          {relatedIdeas.length > 0 ? (
+            <div className="brief-section">
+              <div className="eyebrow">Related ideas</div>
+              <div className="related-grid">
+                {relatedIdeas.map((r) => (
+                  <Link key={r.id} href={`/feed/${r.slug}`} className="related-card">
+                    <h4>{r.title}</h4>
+                    <p>{truncate(r.problem.summary, 90)}</p>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          ) : null}
 
           <div className="gated-zone">
             {access.kind === "signed-out" ? (

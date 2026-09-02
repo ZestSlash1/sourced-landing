@@ -6,6 +6,7 @@ import { getMethodologyStats } from "@/lib/ingest/pipeline-stats";
 import { listRecentPipelineRuns } from "@/lib/ingest/pipeline-runs-repository";
 import { absoluteUrl } from "@/lib/seo";
 import NewsletterForm from "../newsletter-form";
+import Breadcrumbs from "../breadcrumbs";
 
 export const dynamic = "force-dynamic";
 
@@ -79,6 +80,7 @@ export default async function MethodologyPage() {
         <Link href="/" className="back-link">
           ← Back to Sourced
         </Link>
+        <Breadcrumbs items={[{ name: "Methodology", path: "/methodology" }]} />
         <h1 className="display" style={{ fontSize: "clamp(28px,4vw,38px)", fontWeight: 700, letterSpacing: "-0.02em", margin: "18px 0 10px" }}>
           Methodology
         </h1>

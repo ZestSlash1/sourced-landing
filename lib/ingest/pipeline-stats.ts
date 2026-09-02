@@ -9,6 +9,7 @@ interface ClusterGroup {
   clusterKey: string;
   signals: SignalSummary[];
   platforms: string[];
+  domains: string[];
   signalCount: number;
   platformCount: number;
   passesBar: boolean;
@@ -33,10 +34,13 @@ function groupByCluster(signals: SignalSummary[]): ClusterGroup[] {
       .filter((d): d is string => d !== null)
       .sort();
 
+    const domains = Array.from(new Set(group.map((s) => s.domain).filter((d): d is string => d !== null)));
+
     return {
       clusterKey,
       signals: group,
       platforms,
+      domains,
       signalCount: group.length,
       platformCount: platforms.length,
       passesBar: group.length >= MIN_CLUSTER_SIZE && platforms.length >= MIN_CLUSTER_PLATFORMS,
@@ -89,6 +93,7 @@ export interface RejectedCluster {
   signalCount: number;
   platformCount: number;
   platforms: string[];
+  domains: string[];
   minPostedAt: string | null;
   maxPostedAt: string | null;
 }
@@ -143,6 +148,7 @@ export async function listRejectedClusters(): Promise<RejectedCluster[]> {
       signalCount: g.signalCount,
       platformCount: g.platformCount,
       platforms: g.platforms,
+      domains: g.domains,
       minPostedAt: g.minPostedAt,
       maxPostedAt: g.maxPostedAt,
     }))
