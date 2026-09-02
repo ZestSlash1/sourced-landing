@@ -1,22 +1,30 @@
 /**
  * pgvector migration Phase E (pgvector-migration-spec.md). Picks 20 random
  * clustered signals, computes cosine similarity against every other signal
- * two ways — the old in-process JS loop (embeddings.ts#cosineSimilarity
- * over the jsonb embedding) and the new SQL path (find_signal_neighbors RPC
- * over embedding_vec, migration 0022) — and asserts they agree within
- * 0.0001. STOP and investigate before Phase F if this fails.
+ * two ways — the in-process JS loop (embeddings.ts#cosineSimilarity) and the
+ * SQL path (find_signal_neighbors RPC, HNSW-indexed) — and asserts they
+ * agree within 0.0001. Ran pre-Phase-F to compare jsonb `embedding` against
+ * pgvector `embedding_vec`; post-Phase-F (both migrations 0022-0027 applied)
+ * both paths read the same pgvector `embedding` column, so this now mainly
+ * checks JS-computed exact cosine similarity against pgvector's HNSW
+ * approximate nearest-neighbour result — still worth running after any
+ * index/threshold change.
+ *
+ * PostgREST returns a pgvector column's value as its text output
+ * ("[0.1,0.2,...]"), not a native JSON array — parseEmbeddingField handles
+ * that (see pgvector-migration-spec.md Phase F and lib/ingest/embeddings.ts).
  */
 import { config } from "dotenv";
 config({ path: ".env.local" });
 import { createClient } from "@supabase/supabase-js";
-import { cosineSimilarity } from "../lib/ingest/embeddings";
+import { cosineSimilarity, parseEmbeddingField } from "../lib/ingest/embeddings";
 
 const SAMPLE_SIZE = 20;
 const TOLERANCE = 0.0001;
 
 interface Row {
   id: string;
-  embedding: number[] | null;
+  embedding: unknown;
 }
 
 function shuffle<T>(arr: T[]): T[] {
@@ -39,7 +47,11 @@ async function main() {
     .not("embedding", "is", null);
   if (error) throw new Error(`fetch signals: ${error.message}`);
   const signals = allSignals as Row[];
-  const embeddingById = new Map(signals.map((s) => [s.id, s.embedding!]));
+  const embeddingById = new Map<string, number[]>();
+  for (const s of signals) {
+    const parsed = parseEmbeddingField(s.embedding);
+    if (parsed) embeddingById.set(s.id, parsed);
+  }
 
   const { data: clustered, error: clusteredError } = await sb
     .from("raw_signals")

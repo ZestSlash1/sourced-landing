@@ -7,6 +7,10 @@
     { "path": "/api/cron/ingest-devto", "schedule": "40 6 * * *" },
     { "path": "/api/cron/ingest-lobsters", "schedule": "50 6 * * *" },
     { "path": "/api/cron/ingest-gitlab", "schedule": "55 6 * * *" },
-    { "path": "/api/cron/draft-ideas", "schedule": "0 7 * * *" }
+    { "path": "/api/cron/ingest-youtube", "schedule": "58 6 * * *" },
+    { "path": "/api/cron/ingest-codeberg", "schedule": "0 7 * * *" },
+    { "path": "/api/cron/ingest-discourse", "schedule": "3 7 * * *" },
+    { "path": "/api/cron/ingest-mastodon", "schedule": "10 7 * * *" },
+    { "path": "/api/cron/draft-ideas", "schedule": "20 7 * * *" }
   ]
 }

@@ -1,4 +1,16 @@
-export type SignalSource = "reddit" | "hackernews" | "stackexchange" | "github" | "devto" | "lobsters" | "gitlab" | "devrant";
+export type SignalSource =
+  | "reddit"
+  | "hackernews"
+  | "stackexchange"
+  | "github"
+  | "devto"
+  | "lobsters"
+  | "gitlab"
+  | "devrant"
+  | "youtube"
+  | "codeberg"
+  | "discourse"
+  | "mastodon";
 
 /** What a poller (Part A1) produces before it's ever written to the DB. */
 export interface RawSignalInput {

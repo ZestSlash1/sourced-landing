@@ -8,7 +8,7 @@
 import { config } from "dotenv";
 config({ path: ".env.local" });
 import { createClient } from "@supabase/supabase-js";
-import { generateMissingEmbeddings } from "../lib/ingest/embeddings";
+import { generateMissingEmbeddings, parseEmbeddingField } from "../lib/ingest/embeddings";
 import type { RawSignal } from "../lib/ingest/types";
 
 async function main() {
@@ -28,7 +28,7 @@ async function main() {
     fetchedAt: r.fetched_at as string,
     clusterKey: r.cluster_key as string | null,
     draftedIdeaId: r.drafted_idea_id as string | null,
-    embedding: (r.embedding as number[] | null) ?? null,
+    embedding: parseEmbeddingField(r.embedding),
     classifiedAsComplaint: (r.classified_as_complaint as boolean | null) ?? null,
     problemStatement: (r.problem_statement as string | null) ?? null,
     domain: (r.domain as string | null) ?? null,
@@ -45,7 +45,7 @@ async function main() {
   }
 
   for (const { signalId, embedding } of results) {
-    const { error: updateError } = await sb.from("raw_signals").update({ embedding }).eq("id", signalId);
+    const { error: updateError } = await sb.rpc("set_signal_embedding_vec", { p_id: signalId, p_vec: `[${embedding.join(",")}]` });
     if (updateError) throw new Error(`Failed to save embedding for ${signalId}: ${updateError.message}`);
   }
   console.log(`Saved ${results.length} embeddings.`);

@@ -125,6 +125,27 @@ export async function generateMissingEmbeddings(
   return { results, stats };
 }
 
+/**
+ * PostgREST serializes a pgvector column's value as its text output
+ * ("[0.1,0.2,...]"), not a native JSON array, since `vector` isn't a type it
+ * has built-in JSON support for (see pgvector-migration-spec.md Phase F).
+ * That text happens to be valid JSON array syntax, so parse it here rather
+ * than at every read site. Handles the already-an-array case too, for
+ * callers still on the pre-Phase-F jsonb column shape.
+ */
+export function parseEmbeddingField(raw: unknown): number[] | null {
+  if (Array.isArray(raw)) return raw as number[];
+  if (typeof raw === "string") {
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? (parsed as number[]) : null;
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
 export function cosineSimilarity(a: number[], b: number[]): number {
   if (a.length !== b.length || a.length === 0) return 0;
   let dot = 0;

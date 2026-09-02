@@ -26,10 +26,14 @@ import { pollGithubIssues } from "../lib/ingest/pollers/github-issues";
 import { pollDevTo } from "../lib/ingest/pollers/devto";
 import { pollLobsters } from "../lib/ingest/pollers/lobsters";
 import { pollGitlabIssues } from "../lib/ingest/pollers/gitlab-issues";
+import { pollYoutubeComments } from "../lib/ingest/pollers/youtube";
+import { pollCodeberg } from "../lib/ingest/pollers/codeberg";
+import { pollDiscourse } from "../lib/ingest/pollers/discourse";
+import { pollMastodon } from "../lib/ingest/pollers/mastodon";
 import { classifySignals, CLASSIFICATION_CONFIDENCE_FLOOR } from "../lib/ingest/classification";
 import { logClassifierStartup } from "../lib/llm/classifier";
 import { clusterSignals, EMBEDDING_SIMILARITY_THRESHOLD } from "../lib/ingest/clustering";
-import { generateMissingEmbeddings, cosineSimilarity } from "../lib/ingest/embeddings";
+import { generateMissingEmbeddings, cosineSimilarity, parseEmbeddingField } from "../lib/ingest/embeddings";
 import type { PollResult, RawSignal, RawSignalInput } from "../lib/ingest/types";
 
 const inspectNearMisses = process.argv.includes("--inspect-near-misses");
@@ -68,7 +72,7 @@ interface RawSignalRow {
   fetched_at: string;
   cluster_key: string | null;
   drafted_idea_id: string | null;
-  embedding: number[] | null;
+  embedding: unknown;
   classified_as_complaint: boolean | null;
   problem_statement: string | null;
   domain: string | null;
@@ -88,7 +92,7 @@ function rowToSignal(row: RawSignalRow): RawSignal {
     fetchedAt: row.fetched_at,
     clusterKey: row.cluster_key,
     draftedIdeaId: row.drafted_idea_id,
-    embedding: row.embedding,
+    embedding: parseEmbeddingField(row.embedding),
     classifiedAsComplaint: row.classified_as_complaint,
     problemStatement: row.problem_statement,
     domain: row.domain,
@@ -104,7 +108,7 @@ async function fetchAllUndrafted(): Promise<RawSignal[]> {
 
 async function saveEmbeddings(updates: { signalId: string; embedding: number[] }[]): Promise<void> {
   for (const { signalId, embedding } of updates) {
-    const { error } = await sb.from("raw_signals").update({ embedding }).eq("id", signalId);
+    const { error } = await sb.rpc("set_signal_embedding_vec", { p_id: signalId, p_vec: `[${embedding.join(",")}]` });
     if (error) throw new Error(error.message);
   }
 }
@@ -134,6 +138,10 @@ const POLLERS: { name: string; fn: () => Promise<PollResult> }[] = [
   { name: "devto", fn: pollDevTo },
   { name: "lobsters", fn: pollLobsters },
   { name: "gitlab", fn: pollGitlabIssues },
+  { name: "youtube", fn: pollYoutubeComments },
+  { name: "codeberg", fn: pollCodeberg },
+  { name: "discourse", fn: pollDiscourse },
+  { name: "mastodon", fn: pollMastodon },
 ];
 
 async function main() {

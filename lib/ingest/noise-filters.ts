@@ -43,7 +43,9 @@ function isGitlabNoise(title: string, author: string | null): boolean {
 export function applyNoiseFilters(source: SignalSource, signals: RawSignalInput[]): { kept: RawSignalInput[]; noiseFiltered: number } {
   let noiseFiltered = 0;
   const kept = signals.filter((s) => {
-    if (s.text.trim().length < MIN_BODY_LENGTH) {
+    // A missing/undefined text field is noise, not a crash — one malformed
+    // signal from any poller must never take down a whole poll run.
+    if (!s.text || s.text.trim().length < MIN_BODY_LENGTH) {
       noiseFiltered++;
       return false;
     }

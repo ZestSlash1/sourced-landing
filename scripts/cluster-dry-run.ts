@@ -22,6 +22,7 @@ import {
   MIN_CLUSTER_PLATFORMS,
   type ClusteringStrategy,
 } from "../lib/ingest/clustering";
+import { parseEmbeddingField } from "../lib/ingest/embeddings";
 import type { RawSignal } from "../lib/ingest/types";
 
 const write = process.argv.includes("--write");
@@ -55,7 +56,7 @@ async function main() {
     fetchedAt: r.fetched_at as string,
     clusterKey: r.cluster_key as string | null,
     draftedIdeaId: r.drafted_idea_id as string | null,
-    embedding: (r.embedding as number[] | null) ?? null,
+    embedding: parseEmbeddingField(r.embedding),
     classifiedAsComplaint: r.classified_as_complaint as boolean | null,
     problemStatement: r.problem_statement as string | null,
     domain: r.domain as string | null,
