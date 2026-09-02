@@ -11,7 +11,10 @@
     "sync:apis": "tsx scripts/sync-public-apis.ts",
     "ingest:dry-run": "tsx scripts/poll-all.ts",
     "ingest:backfill-classification": "tsx scripts/backfill-classification.ts",
-    "ingest:backfill-competitive": "tsx scripts/backfill-competitive-landscape.ts"
+    "ingest:backfill-competitive": "tsx scripts/backfill-competitive-landscape.ts",
+    "ingest:backfill-embeddings-vec": "tsx scripts/backfill-embeddings-vec.ts",
+    "ingest:verify-embedding-parity": "tsx scripts/verify-embedding-parity.ts",
+    "ingest:classifier-parity": "tsx scripts/classifier-parity.ts"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",

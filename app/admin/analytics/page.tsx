@@ -7,7 +7,7 @@ import { listRecentPipelineRuns } from "@/lib/ingest/pipeline-runs-repository";
 import AdminShell from "../admin-shell";
 import { StatCard } from "./stat-card";
 import { LiveAnalyticsView } from "./live-analytics-view";
-import { StatGrid, BreakdownGrid, BreakdownCard, PipelineTableCard } from "./analytics-client";
+import { StatGrid, BreakdownGrid, BreakdownCard, PipelineTableCard, ProviderMixCard } from "./analytics-client";
 
 export const dynamic = "force-dynamic";
 
@@ -55,6 +55,7 @@ export default async function AnalyticsPage() {
         <BreakdownCard title="Traffic by referrer" rows={summary.trafficByReferrer} accent="sun" />
       </BreakdownGrid>
 
+      <ProviderMixCard pipelineRuns={pipelineRuns} />
       <PipelineTableCard pipelineRuns={pipelineRuns} />
     </AdminShell>
   );

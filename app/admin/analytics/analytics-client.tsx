@@ -84,6 +84,61 @@ export function BreakdownGrid({ children }: { children: React.ReactNode }) {
   );
 }
 
+export function ProviderMixCard({ pipelineRuns }: { pipelineRuns: PipelineRunRow[] }) {
+  const ollamaCalls = pipelineRuns.reduce((sum, r) => sum + r.ollamaCalls, 0);
+  const openrouterCalls = pipelineRuns.reduce((sum, r) => sum + r.openrouterCalls, 0);
+  const fallbacks = pipelineRuns.reduce((sum, r) => sum + r.classifierFallbacks, 0);
+  const total = ollamaCalls + openrouterCalls;
+  const ollamaPct = total > 0 ? (ollamaCalls / total) * 100 : 0;
+  const openrouterPct = total > 0 ? 100 - ollamaPct : 0;
+
+  return (
+    <motion.div
+      variants={statCardVariants}
+      className="admin-card is-interactive"
+      style={{ padding: "20px 22px", marginTop: 20 }}
+    >
+      <h2 style={{ fontSize: 14.5, fontWeight: 600, margin: "0 0 4px" }}>Classification provider mix</h2>
+      <p className="mono" style={{ fontSize: 11.5, color: "var(--ink-soft)", margin: "0 0 16px" }}>
+        Last {pipelineRuns.length} runs · Ollama (local, free) vs OpenRouter (fallback/cloud)
+      </p>
+
+      {total === 0 ? (
+        <p style={{ fontSize: 13, color: "var(--ink-soft)", margin: 0 }}>No classification calls recorded yet.</p>
+      ) : (
+        <>
+          <div
+            style={{
+              display: "flex",
+              height: 14,
+              borderRadius: "var(--r-chip)",
+              overflow: "hidden",
+              background: ACCENTS.violet.tint,
+              marginBottom: 12,
+            }}
+          >
+            {ollamaPct > 0 && <div style={{ width: `${ollamaPct}%`, background: ACCENTS.sky.bar }} />}
+            {openrouterPct > 0 && <div style={{ width: `${openrouterPct}%`, background: ACCENTS.coral.bar }} />}
+          </div>
+          <div style={{ display: "flex", gap: 24, flexWrap: "wrap", fontSize: 13 }}>
+            <span>
+              <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: 2, background: ACCENTS.sky.bar, marginRight: 6 }} />
+              Ollama: <span className="mono">{ollamaCalls.toLocaleString()}</span> ({ollamaPct.toFixed(1)}%)
+            </span>
+            <span>
+              <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: 2, background: ACCENTS.coral.bar, marginRight: 6 }} />
+              OpenRouter: <span className="mono">{openrouterCalls.toLocaleString()}</span> ({openrouterPct.toFixed(1)}%)
+            </span>
+            <span style={{ color: "var(--ink-soft)" }}>
+              Fallbacks: <span className="mono">{fallbacks.toLocaleString()}</span>
+            </span>
+          </div>
+        </>
+      )}
+    </motion.div>
+  );
+}
+
 export function PipelineTableCard({ pipelineRuns }: { pipelineRuns: PipelineRunRow[] }) {
   return (
     <motion.div

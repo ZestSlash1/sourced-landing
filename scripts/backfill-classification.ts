@@ -10,6 +10,7 @@ import { config } from "dotenv";
 config({ path: ".env.local" });
 import { createClient } from "@supabase/supabase-js";
 import { classifySignals } from "../lib/ingest/classification";
+import { logClassifierStartup } from "../lib/llm/classifier";
 import type { RawSignal } from "../lib/ingest/types";
 
 const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false } });
@@ -38,6 +39,7 @@ async function fetchTotalClassifiedCounts(): Promise<{ complaint: number; nonCom
 }
 
 async function main() {
+  logClassifierStartup();
   const unclassified = await fetchUnclassified();
   console.log(`Backfilling classification for ${unclassified.length} unclassified signal(s)...`);
 

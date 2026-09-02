@@ -19,10 +19,24 @@ export interface PipelineRunStats {
   classifiedNonComplaint: number;
   classificationErrors: string[];
   classificationCostUsd: number;
+  // ollama-classification-spec.md: local/remote classifier provider mix.
+  ollamaCalls: number;
+  openrouterCalls: number;
+  ollamaAvgLatencyMs: number;
+  openrouterAvgLatencyMs: number;
+  classifierFallbacks: number;
+  classifierParseFailures: number;
   clusterSizeDistribution: Record<string, number>;
   competitiveChecksRun: number;
   competitiveCheckErrors: string[];
   competitiveCheckCostUsd: number;
+  // omniroute-drafts-and-ollama-lockin-spec.md: local/remote draft-generation
+  // provider mix, same pattern as the classifier's ollama/openrouter fields.
+  omnirouteCalls: number;
+  draftOpenrouterCalls: number;
+  omnirouteAvgLatencyMs: number;
+  draftOpenrouterAvgLatencyMs: number;
+  draftFallbacks: number;
   errors: string[];
 }
 
@@ -53,10 +67,21 @@ export async function recordPipelineRun(stats: PipelineRunStats): Promise<void> 
       classified_non_complaint: stats.classifiedNonComplaint,
       classification_errors: stats.classificationErrors,
       classification_cost_usd: stats.classificationCostUsd,
+      ollama_calls: stats.ollamaCalls,
+      openrouter_calls: stats.openrouterCalls,
+      ollama_avg_latency_ms: stats.ollamaAvgLatencyMs,
+      openrouter_avg_latency_ms: stats.openrouterAvgLatencyMs,
+      classifier_fallbacks: stats.classifierFallbacks,
+      classifier_parse_failures: stats.classifierParseFailures,
       cluster_size_distribution: stats.clusterSizeDistribution,
       competitive_checks_run: stats.competitiveChecksRun,
       competitive_check_errors: stats.competitiveCheckErrors,
       competitive_check_cost_usd: stats.competitiveCheckCostUsd,
+      omniroute_calls: stats.omnirouteCalls,
+      draft_openrouter_calls: stats.draftOpenrouterCalls,
+      omniroute_avg_latency_ms: stats.omnirouteAvgLatencyMs,
+      draft_openrouter_avg_latency_ms: stats.draftOpenrouterAvgLatencyMs,
+      draft_fallbacks: stats.draftFallbacks,
       errors: stats.errors,
     });
     if (error) console.error("[pipeline_runs] insert failed:", error.message);
@@ -98,10 +123,21 @@ export async function listRecentPipelineRuns(limit = 10): Promise<PipelineRunRow
     classified_non_complaint: number | null;
     classification_errors: string[] | null;
     classification_cost_usd: number | null;
+    ollama_calls: number | null;
+    openrouter_calls: number | null;
+    ollama_avg_latency_ms: number | null;
+    openrouter_avg_latency_ms: number | null;
+    classifier_fallbacks: number | null;
+    classifier_parse_failures: number | null;
     cluster_size_distribution: Record<string, number> | null;
     competitive_checks_run: number | null;
     competitive_check_errors: string[] | null;
     competitive_check_cost_usd: number | null;
+    omniroute_calls: number | null;
+    draft_openrouter_calls: number | null;
+    omniroute_avg_latency_ms: number | null;
+    draft_openrouter_avg_latency_ms: number | null;
+    draft_fallbacks: number | null;
     errors: string[] | null;
   }
   return (data as Row[]).map((r) => ({
@@ -124,10 +160,21 @@ export async function listRecentPipelineRuns(limit = 10): Promise<PipelineRunRow
     classifiedNonComplaint: r.classified_non_complaint ?? 0,
     classificationErrors: r.classification_errors ?? [],
     classificationCostUsd: r.classification_cost_usd ?? 0,
+    ollamaCalls: r.ollama_calls ?? 0,
+    openrouterCalls: r.openrouter_calls ?? 0,
+    ollamaAvgLatencyMs: r.ollama_avg_latency_ms ?? 0,
+    openrouterAvgLatencyMs: r.openrouter_avg_latency_ms ?? 0,
+    classifierFallbacks: r.classifier_fallbacks ?? 0,
+    classifierParseFailures: r.classifier_parse_failures ?? 0,
     clusterSizeDistribution: r.cluster_size_distribution ?? {},
     competitiveChecksRun: r.competitive_checks_run ?? 0,
     competitiveCheckErrors: r.competitive_check_errors ?? [],
     competitiveCheckCostUsd: r.competitive_check_cost_usd ?? 0,
+    omnirouteCalls: r.omniroute_calls ?? 0,
+    draftOpenrouterCalls: r.draft_openrouter_calls ?? 0,
+    omnirouteAvgLatencyMs: r.omniroute_avg_latency_ms ?? 0,
+    draftOpenrouterAvgLatencyMs: r.draft_openrouter_avg_latency_ms ?? 0,
+    draftFallbacks: r.draft_fallbacks ?? 0,
     errors: r.errors ?? [],
   }));
 }

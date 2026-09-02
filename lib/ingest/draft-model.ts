@@ -1,16 +1,10 @@
 import "server-only";
 import publicApisData from "@/data/public-apis.json";
 import { TOPICS } from "@/lib/topics";
+import { generateDraft } from "@/lib/llm/draft-generator";
 import type { DataEntity, Evidence, IdeaDrop, MatchedApi, StackItem } from "@/types/idea-drop";
 import type { SignalCluster } from "./clustering";
 import type { SignalSource } from "./types";
-
-// OpenRouter, not Anthropic directly — draft generation runs on a free
-// OpenRouter model so the ingest pipeline costs $0 to operate. Anthropic-
-// grade models are reserved for a future Studio-tier feature, not spent
-// here. Override via env if the default free model gets deprecated.
-const MODEL = process.env.OPENROUTER_DRAFT_MODEL ?? "meta-llama/llama-3.3-70b-instruct:free";
-const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 
 const SOURCE_TO_PLATFORM: Record<SignalSource, Evidence["platform"]> = {
   reddit: "reddit",
@@ -148,40 +142,27 @@ function extractJson(text: string): DraftedFields {
   return JSON.parse(candidate.slice(start, end + 1)) as DraftedFields;
 }
 
+export interface DraftedIdea {
+  idea: IdeaDrop;
+  provider: "omniroute" | "openrouter";
+  model: string;
+  tokens: number;
+  latencyMs: number;
+  fellBack: boolean;
+}
+
 /**
- * Draft generation (Part A3): one OpenRouter call per cluster, producing a
- * pending_review IdeaDrop. Runs on a free model so ingest costs $0 — see
- * Decision #3 and MODEL above. Evidence and matchedApis.sourceUrl are never
- * taken from the model directly — see clusterToEvidence/resolveMatchedApis.
+ * Draft generation (omniroute-drafts-and-ollama-lockin-spec.md Part 2): one
+ * draft-generator call per cluster, producing a pending_review IdeaDrop.
+ * Routed to OmniRoute first (falls back to OpenRouter) by
+ * lib/llm/draft-generator.ts — this function only owns building the prompt
+ * and parsing/shaping the result, not the provider choice. Evidence and
+ * matchedApis.sourceUrl are never taken from the model directly — see
+ * clusterToEvidence/resolveMatchedApis.
  */
-export async function draftIdeaFromCluster(cluster: SignalCluster): Promise<IdeaDrop> {
-  const apiKey = process.env.OPENROUTER_API_KEY;
-  if (!apiKey) throw new Error("Missing OPENROUTER_API_KEY environment variable.");
-
-  const res = await fetch(OPENROUTER_URL, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-      "HTTP-Referer": "https://sourced.app",
-      "X-Title": "Sourced ingest",
-    },
-    body: JSON.stringify({
-      model: MODEL,
-      messages: [{ role: "user", content: buildPrompt(cluster) }],
-      temperature: 0.4,
-    }),
-  });
-
-  if (!res.ok) {
-    throw new Error(`OpenRouter request failed: ${res.status} ${await res.text()}`);
-  }
-
-  const body = (await res.json()) as { choices: { message: { content: string } }[] };
-  const content = body.choices[0]?.message?.content;
-  if (!content) throw new Error("OpenRouter returned no message content.");
-
-  const fields = extractJson(content);
+export async function draftIdeaFromCluster(cluster: SignalCluster): Promise<DraftedIdea> {
+  const generated = await generateDraft(buildPrompt(cluster));
+  const fields = extractJson(generated.content);
   const evidence = clusterToEvidence(cluster);
   const now = new Date();
   const slug = fields.title
@@ -214,5 +195,12 @@ export async function draftIdeaFromCluster(cluster: SignalCluster): Promise<Idea
     crossPlatform: cluster.crossPlatform,
   };
 
-  return idea;
+  return {
+    idea,
+    provider: generated.provider,
+    model: generated.model,
+    tokens: generated.tokens,
+    latencyMs: generated.latencyMs,
+    fellBack: generated.fellBack,
+  };
 }

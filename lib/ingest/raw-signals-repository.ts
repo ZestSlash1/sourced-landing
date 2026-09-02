@@ -229,6 +229,14 @@ export async function persistClusterKeys(assignments: { signalId: string; cluste
  * update per signal (no bulk-upsert-by-id in PostgREST for heterogeneous
  * values), but this only ever runs over the handful of signals missing an
  * embedding on a given pass, not the whole pool.
+ *
+ * Dual-writes embedding_vec (pgvector) alongside embedding (jsonb) during
+ * the pgvector migration's Phases A-E (pgvector-migration-spec.md) via the
+ * set_signal_embedding_vec RPC — supabase-js can't round-trip the vector
+ * wire format through a plain .update() call, so the cast happens in
+ * Postgres from the vector's text literal. Once Phase F drops the jsonb
+ * column and renames embedding_vec -> embedding, this goes back to a plain
+ * .update({ embedding }).
  */
 export async function saveEmbeddings(updates: { signalId: string; embedding: number[] }[]): Promise<void> {
   if (updates.length === 0) return;
@@ -237,6 +245,12 @@ export async function saveEmbeddings(updates: { signalId: string; embedding: num
   for (const { signalId, embedding } of updates) {
     const { error } = await supabase.from(TABLE).update({ embedding }).eq("id", signalId);
     if (error) throw new Error(`saveEmbeddings: ${error.message}`);
+
+    const { error: vecError } = await supabase.rpc("set_signal_embedding_vec", {
+      p_id: signalId,
+      p_vec: `[${embedding.join(",")}]`,
+    });
+    if (vecError) throw new Error(`saveEmbeddings (embedding_vec): ${vecError.message}`);
   }
 }
 

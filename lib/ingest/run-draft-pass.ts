@@ -1,11 +1,14 @@
 import "server-only";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { upsertIdeaDrop } from "@/lib/idea-drops/repository";
 import { CLASSIFICATION_CONFIDENCE_FLOOR, CLASSIFICATION_RUN_CAP, classifySignals } from "./classification";
 import { checkCompetitiveLandscape } from "./competitive-landscape";
-import { clusterSignals } from "./clustering";
+import { CLUSTERING_STRATEGY, clusterSignals, clusterSignalsSQL } from "./clustering";
 import { draftIdeaFromCluster } from "./draft-model";
 import { DAILY_DRAFT_CAP, draftsCreatedToday } from "./daily-cap";
 import { generateMissingEmbeddings } from "./embeddings";
+import { assertClassifierConfigured, logClassifierStartup } from "@/lib/llm/classifier";
+import { assertDraftGeneratorConfigured, logDraftGeneratorStartup } from "@/lib/llm/draft-generator";
 import {
   listUndraftedSignals,
   markSignalsDrafted,
@@ -57,6 +60,11 @@ function sizeDistribution(clusters: { signals: unknown[] }[]): Record<string, nu
  * clustering.ts. Every run is logged to pipeline_runs for observability.
  */
 export async function runDraftPass(): Promise<DraftPassResult> {
+  assertClassifierConfigured();
+  logClassifierStartup();
+  assertDraftGeneratorConfigured();
+  logDraftGeneratorStartup();
+
   const [signals, alreadyToday] = await Promise.all([listUndraftedSignals(), draftsCreatedToday()]);
 
   const unclassified = signals.filter((s) => s.classifiedAsComplaint === null);
@@ -109,7 +117,15 @@ export async function runDraftPass(): Promise<DraftPassResult> {
     if (embedding) signal.embedding = embedding;
   }
 
-  const { clusters, stats } = clusterSignals(complaintSignals);
+  // pgvector migration Phase D (pgvector-migration-spec.md): the embedding
+  // strategy now sources candidate pairs from the HNSW-indexed
+  // find_signal_neighbors RPC instead of the in-process O(n^2) cosine loop.
+  // CLUSTERING_STRATEGY=jaccard keeps using the original in-process path,
+  // same as before this migration.
+  const { clusters, stats } =
+    CLUSTERING_STRATEGY === "embedding"
+      ? await clusterSignalsSQL(getSupabaseServerClient(), complaintSignals)
+      : clusterSignals(complaintSignals);
 
   // Persist cluster_key for every signal in a non-trivial cluster. Singletons
   // stay null — they're not really "clustered" and marking them would just add
@@ -130,10 +146,24 @@ export async function runDraftPass(): Promise<DraftPassResult> {
   let drafted = 0;
   let competitiveChecksRun = 0;
   let competitiveCheckCostUsd = 0;
+  let omnirouteCalls = 0;
+  let draftOpenrouterCalls = 0;
+  let omnirouteLatencyMsTotal = 0;
+  let draftOpenrouterLatencyMsTotal = 0;
+  let draftFallbacks = 0;
 
   for (const cluster of passing.slice(0, remaining)) {
     try {
-      const idea = await draftIdeaFromCluster(cluster);
+      const { idea, provider, latencyMs, fellBack } = await draftIdeaFromCluster(cluster);
+
+      if (fellBack) draftFallbacks++;
+      if (provider === "omniroute") {
+        omnirouteCalls++;
+        omnirouteLatencyMsTotal += latencyMs;
+      } else {
+        draftOpenrouterCalls++;
+        draftOpenrouterLatencyMsTotal += latencyMs;
+      }
 
       // Competitive gap check (sourced-competitive-gap-spec.md): one real,
       // logged web search per cluster, same cadence as drafting. A failed
@@ -186,10 +216,25 @@ export async function runDraftPass(): Promise<DraftPassResult> {
     classifiedNonComplaint,
     classificationErrors: classificationStats.errors,
     classificationCostUsd: classificationStats.costUsd,
+    ollamaCalls: classificationStats.ollamaCalls,
+    openrouterCalls: classificationStats.openrouterCalls,
+    ollamaAvgLatencyMs:
+      classificationStats.ollamaCalls > 0 ? classificationStats.ollamaLatencyMsTotal / classificationStats.ollamaCalls : 0,
+    openrouterAvgLatencyMs:
+      classificationStats.openrouterCalls > 0
+        ? classificationStats.openrouterLatencyMsTotal / classificationStats.openrouterCalls
+        : 0,
+    classifierFallbacks: classificationStats.fallbacks,
+    classifierParseFailures: classificationStats.parseFailures,
     clusterSizeDistribution,
     competitiveChecksRun,
     competitiveCheckErrors,
     competitiveCheckCostUsd,
+    omnirouteCalls,
+    draftOpenrouterCalls,
+    omnirouteAvgLatencyMs: omnirouteCalls > 0 ? omnirouteLatencyMsTotal / omnirouteCalls : 0,
+    draftOpenrouterAvgLatencyMs: draftOpenrouterCalls > 0 ? draftOpenrouterLatencyMsTotal / draftOpenrouterCalls : 0,
+    draftFallbacks,
     errors,
   });
 

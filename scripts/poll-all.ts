@@ -27,6 +27,7 @@ import { pollDevTo } from "../lib/ingest/pollers/devto";
 import { pollLobsters } from "../lib/ingest/pollers/lobsters";
 import { pollGitlabIssues } from "../lib/ingest/pollers/gitlab-issues";
 import { classifySignals, CLASSIFICATION_CONFIDENCE_FLOOR } from "../lib/ingest/classification";
+import { logClassifierStartup } from "../lib/llm/classifier";
 import { clusterSignals, EMBEDDING_SIMILARITY_THRESHOLD } from "../lib/ingest/clustering";
 import { generateMissingEmbeddings, cosineSimilarity } from "../lib/ingest/embeddings";
 import type { PollResult, RawSignal, RawSignalInput } from "../lib/ingest/types";
@@ -136,6 +137,7 @@ const POLLERS: { name: string; fn: () => Promise<PollResult> }[] = [
 ];
 
 async function main() {
+  logClassifierStartup();
   const pollReport: { source: string; fetched: number; noiseFiltered: number; inserted: number; error?: string }[] = [];
 
   for (const { name, fn } of POLLERS) {
