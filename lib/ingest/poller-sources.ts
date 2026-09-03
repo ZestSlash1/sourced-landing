@@ -51,6 +51,15 @@ export const DISCOURSE_INSTANCES = [
   "https://community.grafana.com",
   "https://forum.obsidian.md",
   "https://community.n8n.io",
+  // Added per ingest-expansion-v2-spec.md Part 1. Verified live via
+  // GET {instance}/latest.json returning 200 with topic data on 2026-09-04.
+  // Dropped from the spec's candidate list: community.cloudflare.com (403,
+  // bot-blocked), community.databricks.com (404, not actually Discourse),
+  // forum.figma.com (404, not actually Discourse), community.render.com
+  // (301s to render.discourse.group, which doesn't resolve — dead redirect).
+  "https://community.openai.com",
+  "https://forum.cockroachlabs.com",
+  "https://forum.asana.com",
 ];
 
 /** Politeness delay between requests to the same Discourse instance (ms). */
@@ -67,3 +76,22 @@ export const MASTODON_HASHTAGS = ["devtools", "buildinpublic", "indiehackers", "
 export const MASTODON_REQUEST_DELAY_MS = 1000;
 
 export const MASTODON_USER_AGENT = "sourced-ingest-bot/1.0 (+https://sourced.app; devtool signal poller)";
+
+/**
+ * Bluesky (AT Protocol) search queries (ingest-expansion-v2-spec.md Part 2)
+ * — the same HN pain-phrase list plus hashtags Bluesky's dev/indie-maker
+ * community actively uses.
+ */
+export const BLUESKY_SEARCH_QUERIES = [
+  "wish there was",
+  "wish there were",
+  "does anyone know a tool",
+  "does anyone know of a tool",
+  "i hate that",
+  "is there a tool",
+  "looking for a tool",
+  "i wish someone would build",
+  "#buildinpublic",
+  "#indiehackers",
+  "#saas",
+];

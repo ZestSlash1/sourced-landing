@@ -11,6 +11,8 @@
     { "path": "/api/cron/ingest-codeberg", "schedule": "0 7 * * *" },
     { "path": "/api/cron/ingest-discourse", "schedule": "3 7 * * *" },
     { "path": "/api/cron/ingest-mastodon", "schedule": "10 7 * * *" },
+    { "path": "/api/cron/ingest-bluesky", "schedule": "13 7 * * *" },
+    { "path": "/api/cron/ingest-devrant", "schedule": "16 7 * * *" },
     { "path": "/api/cron/draft-ideas", "schedule": "20 7 * * *" }
   ]
 }

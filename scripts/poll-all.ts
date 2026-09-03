@@ -30,6 +30,8 @@ import { pollYoutubeComments } from "../lib/ingest/pollers/youtube";
 import { pollCodeberg } from "../lib/ingest/pollers/codeberg";
 import { pollDiscourse } from "../lib/ingest/pollers/discourse";
 import { pollMastodon } from "../lib/ingest/pollers/mastodon";
+import { pollBluesky } from "../lib/ingest/pollers/bluesky";
+import { pollDevRant } from "../lib/ingest/pollers/devrant";
 import { classifySignals, CLASSIFICATION_CONFIDENCE_FLOOR } from "../lib/ingest/classification";
 import { logClassifierStartup } from "../lib/llm/classifier";
 import { clusterSignals, EMBEDDING_SIMILARITY_THRESHOLD } from "../lib/ingest/clustering";
@@ -142,6 +144,8 @@ const POLLERS: { name: string; fn: () => Promise<PollResult> }[] = [
   { name: "codeberg", fn: pollCodeberg },
   { name: "discourse", fn: pollDiscourse },
   { name: "mastodon", fn: pollMastodon },
+  { name: "bluesky", fn: pollBluesky },
+  { name: "devrant", fn: pollDevRant },
 ];
 
 async function main() {

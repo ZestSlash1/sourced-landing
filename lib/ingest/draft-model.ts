@@ -19,6 +19,7 @@ const SOURCE_TO_PLATFORM: Record<SignalSource, Evidence["platform"]> = {
   codeberg: "codeberg",
   discourse: "discourse",
   mastodon: "mastodon",
+  bluesky: "bluesky",
 };
 
 const ENGAGEMENT_TYPE: Record<SignalSource, "upvotes" | "replies"> = {
@@ -34,6 +35,7 @@ const ENGAGEMENT_TYPE: Record<SignalSource, "upvotes" | "replies"> = {
   codeberg: "replies",
   discourse: "replies",
   mastodon: "upvotes",
+  bluesky: "upvotes",
 };
 
 interface DraftedFields {

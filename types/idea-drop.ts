@@ -70,7 +70,7 @@ export interface CompetitiveLandscape {
 }
 
 export interface Evidence {
-  platform: "reddit" | "g2" | "upwork" | "twitter" | "hackernews" | "stackexchange" | "github" | "devto" | "lobsters" | "gitlab" | "devrant" | "youtube" | "codeberg" | "discourse" | "mastodon" | "other";
+  platform: "reddit" | "g2" | "upwork" | "twitter" | "hackernews" | "stackexchange" | "github" | "devto" | "lobsters" | "gitlab" | "devrant" | "youtube" | "codeberg" | "discourse" | "mastodon" | "bluesky" | "other";
   subforum?: string; // e.g. "r/SaaS", or product name for G2
   quote: string; // paraphrased or short direct quote
   url: string;

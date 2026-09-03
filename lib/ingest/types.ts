@@ -10,7 +10,8 @@ export type SignalSource =
   | "youtube"
   | "codeberg"
   | "discourse"
-  | "mastodon";
+  | "mastodon"
+  | "bluesky";
 
 /** What a poller (Part A1) produces before it's ever written to the DB. */
 export interface RawSignalInput {

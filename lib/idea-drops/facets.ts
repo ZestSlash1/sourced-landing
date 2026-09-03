@@ -24,6 +24,7 @@ export const PLATFORM_LABELS: Record<string, string> = {
   codeberg: "Codeberg",
   discourse: "Discourse",
   mastodon: "Mastodon",
+  bluesky: "Bluesky",
   other: "Other",
 };
 
