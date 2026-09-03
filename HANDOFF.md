@@ -32,8 +32,7 @@
   — needs KYC + purpose code in Razorpay dashboard.
 
 ## In progress / next up
-- Apply migration `0029_add_bluesky_source.sql` to Supabase instance before
-  live Bluesky signal ingestion (DevRant was already permitted in the check constraint).
+- Migration `0029_add_bluesky_source.sql` applied to Supabase database.
 - Set `BLUESKY_HANDLE` and `BLUESKY_APP_PASSWORD` in `.env.local` / Vercel
   env if Bluesky ingestion is to run actively.
 - Run `npm run ingest:dry-run -- --inspect-near-misses` on the expanded
