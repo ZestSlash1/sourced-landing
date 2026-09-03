@@ -6,6 +6,7 @@ import { Menu, X } from "lucide";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import dynamic from "next/dynamic";
+import AntigravityCanvas from "./antigravity-canvas";
 import NewsletterForm from "./newsletter-form";
 import type { ProofBarData } from "./proof-bar";
 import { trackEvent } from "@/lib/track-client";
@@ -220,6 +221,7 @@ export default function HomeClient({ userEmail, proofBar }: { userEmail: string 
 
   return (
     <>
+      <AntigravityCanvas />
       <a href="#main-content" className="skip-link">Skip to content</a>
       <nav ref={navRef}>
         <div className="brand">

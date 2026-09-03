@@ -20,7 +20,7 @@
 - Local infrastructure:
   - Self-hosted Supabase containers (`C:\Users\falcon\homelab\supabase-sourced\docker`) are running and healthy.
   - Local Ollama (`localhost:11434`) and OmniRoute (`localhost:20128`) are online and responsive.
-- Visual / Interactive: Cursor-reactive Antigravity motion background (`app/antigravity-canvas.tsx`) implemented and mounted in `app/layout.tsx`. Features physics-based microgravity float, cursor deflection with inertia, and dynamic violet triangulation filaments respecting reduced motion and tab visibility.
+- Visual / Interactive: Cursor-reactive Antigravity motion background (`app/antigravity-canvas.tsx`) fine-tuned and mounted behind the hero and header in `app/home-client.tsx` with utility styles and reduced-motion suppression in `app/globals.css`. Features physics-based microgravity float, cursor deflection with inertia, and dynamic violet triangulation filaments.
 - Test suites: 21 test files (128 tests) passing in Vitest. Full Next.js production build (`npm run build`) and typecheck verified clean.
 - Embedding blocker: OpenRouter returned 402 ("Insufficient credits") when generating embeddings for the 437 newly classified complaints using `openai/text-embedding-3-small`. 76 complaints currently have embeddings. Adding a small credit balance on OpenRouter (or adding `OPENAI_API_KEY`) will embed the remaining 437 complaints and allow the full 527-complaint pool to cluster.
 - n8n workflow "Sourced — Weekly Drop Draft" is built but **inactive** — credentials not wired up, not yet manually tested.

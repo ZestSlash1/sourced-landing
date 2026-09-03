@@ -2,6 +2,8 @@
 
 import { useEffect, useRef } from "react";
 
+type ParticleColor = "brandViolet" | "deepViolet" | "neutral";
+
 interface Particle {
   x: number;
   y: number;
@@ -11,7 +13,7 @@ interface Particle {
   baseVx: number;
   radius: number;
   baseAlpha: number;
-  isViolet: boolean;
+  colorType: ParticleColor;
   phase: number;
 }
 
@@ -44,14 +46,23 @@ export default function AntigravityCanvas() {
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     function initParticles(w: number, h: number) {
-      // Scale count with screen size: ~75 on desktop 1080p, ~35 on mobile
-      const count = Math.min(90, Math.max(30, Math.floor((w * h) / 22000)));
+      // Density-based count: ~70 on 1080p, ~30 on mobile screens
+      const count = Math.min(85, Math.max(28, Math.floor((w * h) / 24000)));
       particles = [];
 
       for (let i = 0; i < count; i++) {
-        const isViolet = Math.random() > 0.35; // 65% brand violet, 35% neutral slate
-        const baseVy = -(0.25 + Math.random() * 0.45); // gentle upward float
-        const baseVx = (Math.random() - 0.5) * 0.2;
+        const rand = Math.random();
+        let colorType: ParticleColor = "brandViolet";
+        if (rand < 0.5) {
+          colorType = "brandViolet";
+        } else if (rand < 0.78) {
+          colorType = "deepViolet";
+        } else {
+          colorType = "neutral";
+        }
+
+        const baseVy = -(0.22 + Math.random() * 0.42); // gentle microgravity upward drift
+        const baseVx = (Math.random() - 0.5) * 0.18;
 
         particles.push({
           x: Math.random() * w,
@@ -60,9 +71,9 @@ export default function AntigravityCanvas() {
           vy: baseVy,
           baseVx,
           baseVy,
-          radius: Math.random() * 1.8 + 1.2,
-          baseAlpha: Math.random() * 0.35 + 0.15,
-          isViolet,
+          radius: Math.random() * 1.6 + 1.2,
+          baseAlpha: Math.random() * 0.35 + 0.18,
+          colorType,
           phase: Math.random() * Math.PI * 2,
         });
       }
@@ -121,12 +132,12 @@ export default function AntigravityCanvas() {
 
       ctx!.clearRect(0, 0, width, height);
 
-      const maxConnectDist = 95;
+      const maxConnectDist = 82;
       const maxConnectDistSq = maxConnectDist * maxConnectDist;
       const mouseRadiusSq = mouse.radius * mouse.radius;
 
       // 1. Draw connection filaments between nearby particles (triangulation motif)
-      ctx!.lineWidth = 0.8;
+      ctx!.lineWidth = 0.75;
       for (let i = 0; i < particles.length; i++) {
         const p1 = particles[i];
         for (let j = i + 1; j < particles.length; j++) {
@@ -137,7 +148,7 @@ export default function AntigravityCanvas() {
 
           if (distSq < maxConnectDistSq) {
             const dist = Math.sqrt(distSq);
-            const alpha = (1 - dist / maxConnectDist) * 0.18;
+            const alpha = (1 - dist / maxConnectDist) * 0.16;
             ctx!.strokeStyle = `rgba(91, 79, 247, ${alpha.toFixed(3)})`;
             ctx!.beginPath();
             ctx!.moveTo(p1.x, p1.y);
@@ -153,8 +164,8 @@ export default function AntigravityCanvas() {
 
         if (!prefersReducedMotion) {
           // Subtle organic sway
-          p.phase += dt * 1.5;
-          const sway = Math.sin(p.phase) * 0.15;
+          p.phase += dt * 1.4;
+          const sway = Math.sin(p.phase) * 0.14;
 
           // Cursor repulsion / antigravity field
           const dx = p.x - mouse.x;
@@ -163,11 +174,11 @@ export default function AntigravityCanvas() {
 
           if (distSq < mouseRadiusSq && mouse.active) {
             const dist = Math.sqrt(distSq) || 1;
-            const force = (1 - dist / mouse.radius) * 3.5;
+            const force = (1 - dist / mouse.radius) * 3.6;
             const pushX = (dx / dist) * force;
             const pushY = (dy / dist) * force;
-            p.vx += pushX * 0.2;
-            p.vy += pushY * 0.2;
+            p.vx += pushX * 0.22;
+            p.vy += pushY * 0.22;
           }
 
           // Damping & drift restoration
@@ -189,14 +200,16 @@ export default function AntigravityCanvas() {
           else if (p.x > width + 20) p.x = -20;
         }
 
-        // Draw particle dot with subtle glow
+        // Draw particle dot
         ctx!.beginPath();
         ctx!.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
 
-        if (p.isViolet) {
-          ctx!.fillStyle = `rgba(91, 79, 247, ${p.baseAlpha})`;
+        if (p.colorType === "brandViolet") {
+          ctx!.fillStyle = `rgba(91, 79, 247, ${p.baseAlpha.toFixed(2)})`;
+        } else if (p.colorType === "deepViolet") {
+          ctx!.fillStyle = `rgba(66, 56, 216, ${p.baseAlpha.toFixed(2)})`;
         } else {
-          ctx!.fillStyle = `rgba(30, 32, 40, ${(p.baseAlpha * 0.7).toFixed(2)})`;
+          ctx!.fillStyle = `rgba(21, 22, 26, ${(p.baseAlpha * 0.55).toFixed(2)})`;
         }
         ctx!.fill();
       }
@@ -234,16 +247,6 @@ export default function AntigravityCanvas() {
       ref={canvasRef}
       aria-hidden="true"
       className="antigravity-bg"
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        width: "100%",
-        height: "100%",
-        pointerEvents: "none",
-        zIndex: 0,
-        opacity: 0.85,
-      }}
     />
   );
 }
