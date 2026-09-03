@@ -1,21 +1,19 @@
 import { denoise } from "./stopwords";
 import type { RawSignal } from "./types";
 
-// Routed through OpenRouter rather than OpenAI directly: this project already
-// authenticates to OpenRouter for draft generation (see draft-model.ts), so
-// reusing OPENROUTER_API_KEY needs zero new credentials. OpenRouter proxies
-// OpenAI's embedding models 1:1 on price ($0.02/1M tokens) at an
-// OpenAI-compatible /embeddings endpoint.
-const EMBEDDING_MODEL = "openai/text-embedding-3-small";
-const EMBEDDING_URL = "https://openrouter.ai/api/v1/embeddings";
-export const EMBEDDING_DIMENSIONS = 1536;
+// Primary: Local Ollama with nomic-embed-text (768 dims) — 100% free, runs locally.
+// Fallback: OpenRouter with openai/text-embedding-3-small (1536 dims).
+export const OLLAMA_EMBED_MODEL = process.env.OLLAMA_EMBED_MODEL ?? "nomic-embed-text";
+export const OPENROUTER_EMBED_MODEL = "openai/text-embedding-3-small";
+export const OPENROUTER_EMBED_URL = "https://openrouter.ai/api/v1/embeddings";
+export const EMBEDDING_DIMENSIONS = 768;
 
-// text-embedding-3-small's context window is 8192 tokens. ~4 chars/token is
+// nomic-embed-text context window is 8192 tokens. ~4 chars/token is
 // a safe rule of thumb for English prose, so this stays well under it even
 // for a few outlier signals in one batch.
 const MAX_INPUT_CHARS = 24000;
 const BATCH_SIZE = 40;
-// Per OpenRouter's published pricing for this model.
+// Per OpenRouter's published pricing for openai/text-embedding-3-small.
 const USD_PER_TOKEN = 0.02 / 1_000_000;
 
 export interface EmbeddingRunStats {
@@ -23,6 +21,7 @@ export interface EmbeddingRunStats {
   generated: number;
   errors: string[];
   costUsd: number;
+  provider?: "ollama" | "openrouter";
 }
 
 /** Rough token estimate for cost reporting — good enough at this cost scale to not be worth a real tokenizer. */
@@ -55,11 +54,47 @@ interface OpenRouterEmbeddingResponse {
   usage?: { total_tokens?: number };
 }
 
-async function embedBatch(inputs: string[]): Promise<{ embeddings: (number[] | null)[]; tokens: number; error?: string }> {
+interface OllamaEmbeddingResponse {
+  model: string;
+  embeddings: number[][];
+  prompt_eval_count?: number;
+}
+
+async function embedBatchOllama(
+  inputs: string[],
+  ollamaUrl: string,
+): Promise<{ embeddings: (number[] | null)[]; tokens: number; error?: string }> {
+  const model = process.env.OLLAMA_EMBED_MODEL ?? OLLAMA_EMBED_MODEL;
+  const endpoint = `${ollamaUrl.replace(/\/+$/, "")}/api/embed`;
+
+  const res = await fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ model, input: inputs }),
+  });
+
+  if (!res.ok) {
+    const body = await res.text();
+    return {
+      embeddings: inputs.map(() => null),
+      tokens: 0,
+      error: `Ollama embeddings request failed: ${res.status} ${body}`,
+    };
+  }
+
+  const body = (await res.json()) as OllamaEmbeddingResponse;
+  const embeddings: (number[] | null)[] = body.embeddings ?? inputs.map(() => null);
+  const tokens = body.prompt_eval_count ?? inputs.reduce((sum, t) => sum + estimateTokens(t), 0);
+  return { embeddings, tokens };
+}
+
+async function embedBatchOpenRouter(
+  inputs: string[],
+): Promise<{ embeddings: (number[] | null)[]; tokens: number; error?: string }> {
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) throw new Error("Missing OPENROUTER_API_KEY environment variable.");
 
-  const res = await fetch(EMBEDDING_URL, {
+  const res = await fetch(OPENROUTER_EMBED_URL, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${apiKey}`,
@@ -67,7 +102,7 @@ async function embedBatch(inputs: string[]): Promise<{ embeddings: (number[] | n
       "HTTP-Referer": "https://sourced.app",
       "X-Title": "Sourced ingest",
     },
-    body: JSON.stringify({ model: EMBEDDING_MODEL, input: inputs }),
+    body: JSON.stringify({ model: OPENROUTER_EMBED_MODEL, input: inputs }),
   });
 
   if (!res.ok) {
@@ -86,6 +121,30 @@ async function embedBatch(inputs: string[]): Promise<{ embeddings: (number[] | n
   }
   const tokens = body.usage?.total_tokens ?? inputs.reduce((sum, t) => sum + estimateTokens(t), 0);
   return { embeddings, tokens };
+}
+
+async function embedBatch(
+  inputs: string[],
+): Promise<{ embeddings: (number[] | null)[]; tokens: number; costUsd: number; provider: "ollama" | "openrouter"; error?: string }> {
+  const ollamaUrl = process.env.OLLAMA_URL;
+  if (ollamaUrl) {
+    try {
+      const ollamaResult = await embedBatchOllama(inputs, ollamaUrl);
+      if (!ollamaResult.error) {
+        return { ...ollamaResult, costUsd: 0, provider: "ollama" };
+      }
+      console.warn(`[embeddings] Ollama embed returned error, trying OpenRouter fallback: ${ollamaResult.error}`);
+    } catch (err) {
+      console.error("[embeddings] Ollama embed failed, falling back to OpenRouter:", err instanceof Error ? err.message : err);
+    }
+  }
+
+  const openRouterResult = await embedBatchOpenRouter(inputs);
+  return {
+    ...openRouterResult,
+    costUsd: openRouterResult.tokens * USD_PER_TOKEN,
+    provider: "openrouter",
+  };
 }
 
 /**
@@ -108,9 +167,10 @@ export async function generateMissingEmbeddings(
     const batch = missing.slice(i, i + BATCH_SIZE);
     const inputs = batch.map((s) => embeddingInput(s));
     try {
-      const { embeddings, tokens, error } = await embedBatch(inputs);
+      const { embeddings, costUsd, provider, error } = await embedBatch(inputs);
       if (error) stats.errors.push(error);
-      stats.costUsd += tokens * USD_PER_TOKEN;
+      stats.costUsd += costUsd;
+      if (provider) stats.provider = provider;
       embeddings.forEach((embedding, idx) => {
         if (embedding) {
           results.push({ signalId: batch[idx].id, embedding });

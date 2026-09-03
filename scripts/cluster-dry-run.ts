@@ -37,11 +37,19 @@ const threshold = thresholdArg
 
 async function main() {
   const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false } });
-  const { data, error } = await sb
+  const complaintsOnly = !process.argv.includes("--all-signals");
+  let query = sb
     .from("raw_signals")
     .select("*")
     .is("drafted_idea_id", null)
+    .range(0, 5000)
     .order("fetched_at", { ascending: false });
+
+  if (complaintsOnly) {
+    query = query.eq("classified_as_complaint", true);
+  }
+
+  const { data, error } = await query;
   if (error) throw error;
 
   const signals: RawSignal[] = (data ?? []).map((r: Record<string, unknown>) => ({
