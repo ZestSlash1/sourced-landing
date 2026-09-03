@@ -23,7 +23,7 @@ export async function resolveViewerContext(): Promise<ViewerContext> {
 }
 
 export type IdeaAccess =
-  | { kind: "full"; idea: IdeaDrop }
+  | { kind: "full"; idea: IdeaDrop; freshUnlock?: boolean }
   | { kind: "signed-out"; idea: IdeaDropTeaser }
   | { kind: "tier-locked"; idea: IdeaDropTeaser }
   | { kind: "quota-locked"; idea: IdeaDropTeaser; quota: QuotaStatus };
@@ -98,5 +98,5 @@ export async function resolveAndRecordAccess(idea: IdeaDrop, viewer: ViewerConte
       metadata: { slug: idea.slug },
     });
   }
-  return { kind: "full", idea: scoped as IdeaDrop };
+  return { kind: "full", idea: scoped as IdeaDrop, freshUnlock: !alreadyUnlocked };
 }

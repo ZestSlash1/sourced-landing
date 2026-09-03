@@ -36,9 +36,17 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const umamiSrc = process.env.NEXT_PUBLIC_UMAMI_SRC;
+  const umamiWebsiteId = process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID;
+
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        {children}
+        {umamiSrc && umamiWebsiteId && (
+          <script defer src={umamiSrc} data-website-id={umamiWebsiteId} />
+        )}
+      </body>
     </html>
   );
 }

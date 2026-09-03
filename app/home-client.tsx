@@ -8,6 +8,7 @@ import { useGSAP } from "@gsap/react";
 import dynamic from "next/dynamic";
 import NewsletterForm from "./newsletter-form";
 import type { ProofBarData } from "./proof-bar";
+import { trackEvent } from "@/lib/track-client";
 
 const ProofBar = dynamic(() => import("./proof-bar"), { loading: () => null });
 
@@ -101,6 +102,7 @@ export default function HomeClient({ userEmail, proofBar }: { userEmail: string 
   const foundingActive = (foundingRemaining ?? 0) > 0;
 
   async function startCheckout(plan: PlanKey) {
+    trackEvent("upgrade_cta_click", { plan });
     setCheckoutError(null);
     setCheckoutPending(plan);
 

@@ -11,6 +11,7 @@ import { slugify } from "@/lib/slugify";
 import type { IdeaDrop } from "@/types/idea-drop";
 import { absoluteUrl, truncate } from "@/lib/seo";
 import CopyPromptButton from "./copy-prompt-button";
+import UnlockTracker from "./unlock-tracker";
 import TriangulationBadge from "../triangulation-badge";
 import Breadcrumbs from "../../breadcrumbs";
 
@@ -62,6 +63,7 @@ export default async function IdeaDetailPage({ params }: { params: { slug: strin
   return (
     <main className="app-shell">
       <BriefJsonLd idea={idea} access={access.kind} />
+      {access.kind === "full" && access.freshUnlock && <UnlockTracker slug={idea.slug} />}
 
       <Link href="/feed" className="back-link">
         ← Back to feed

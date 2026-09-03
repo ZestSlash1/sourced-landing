@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { trackEvent } from "@/lib/track-client";
 
 export default function NewsletterForm({ sourcePath }: { sourcePath: "/" | "/feed" | "/methodology" }) {
   const [email, setEmail] = useState("");
@@ -22,6 +23,7 @@ export default function NewsletterForm({ sourcePath }: { sourcePath: "/" | "/fee
       setStatus("success");
       setMessage("You’re on the list. The next proof drop will land in your inbox.");
       setEmail("");
+      trackEvent("newsletter_signup", { sourcePath });
     } catch (error) {
       setStatus("error");
       setMessage(error instanceof Error ? error.message : "We couldn't save your email. Please try again.");
