@@ -14,6 +14,12 @@ import CopyPromptButton from "./copy-prompt-button";
 import UnlockTracker from "./unlock-tracker";
 import TriangulationBadge from "../triangulation-badge";
 import Breadcrumbs from "../../breadcrumbs";
+import { computeEconomicAssessment } from "@/lib/idea-drops/economic-severity";
+import { generateOutreachPack } from "@/lib/idea-drops/outreach";
+import { generateProductionContract } from "@/lib/idea-drops/production-contract";
+import EconomicSeverityCard from "./economic-severity-card";
+import OutreachPackPanel from "./outreach-pack-panel";
+import SpecContractPanel from "./spec-contract-panel";
 
 export const dynamic = "force-dynamic";
 
@@ -60,6 +66,8 @@ export default async function IdeaDetailPage({ params }: { params: { slug: strin
   const categorySlug = slugify(idea.category);
   const platformSlugs = Array.from(new Set(idea.evidence.map((e) => e.platform)));
 
+  const economicAssessment = computeEconomicAssessment(idea);
+
   return (
     <main className="app-shell">
       <BriefJsonLd idea={idea} access={access.kind} />
@@ -88,6 +96,8 @@ export default async function IdeaDetailPage({ params }: { params: { slug: strin
             <p style={{ margin: 0, fontSize: 15 }}>{idea.problem.summary}</p>
             <p style={{ margin: "6px 0 0", fontSize: 13, color: "var(--ink-soft)" }}>{idea.problem.whoFeelsIt}</p>
           </div>
+
+          <EconomicSeverityCard assessment={economicAssessment} />
 
           <div className="brief-section">
             <div className="eyebrow">Evidence · {idea.evidence.length} source{idea.evidence.length === 1 ? "" : "s"}</div>
@@ -147,8 +157,7 @@ export default async function IdeaDetailPage({ params }: { params: { slug: strin
             {access.kind === "signed-out" ? (
               <div className="locked-callout">
                 <p style={{ margin: "0 0 14px", fontSize: 14, color: "var(--ink-soft)" }}>
-                  Sign in for free to view the full build brief, matched APIs, launch stack, and ready-to-paste agent
-                  prompts.
+                  Sign in for free to view the full build brief, Day-1 customer outreach pack, matched APIs, and spec-driven agent contracts.
                 </p>
                 <Link href={`/login?next=${encodeURIComponent(`/feed/${scoped.slug}`)}`} className="btn btn-primary">
                   Sign in to unlock
@@ -168,7 +177,7 @@ export default async function IdeaDetailPage({ params }: { params: { slug: strin
             ) : access.kind === "tier-locked" ? (
               <div className="locked-callout">
                 <p style={{ margin: "0 0 14px", fontSize: 14, color: "var(--ink-soft)" }}>
-                  The full build brief, matched APIs, launch stack, and ready-to-paste agent prompts unlock on{" "}
+                  The full build brief, Day-1 customer outreach pack, launch stack, and spec-driven agent contracts unlock on{" "}
                   {scoped.tier === "builder" ? "Builder" : "Studio"}.
                 </p>
                 <Link href="/#pricing" className="btn btn-primary">
@@ -307,6 +316,9 @@ function CompetitiveLandscapeSection({ idea }: { idea: IdeaDrop }) {
 }
 
 function FullBrief({ idea }: { idea: IdeaDrop }) {
+  const outreachPack = generateOutreachPack(idea);
+  const contractMarkdown = generateProductionContract(idea);
+
   return (
     <>
       <div className="brief-section">
@@ -336,6 +348,8 @@ function FullBrief({ idea }: { idea: IdeaDrop }) {
         </ul>
       </div>
 
+      {outreachPack.items.length > 0 && <OutreachPackPanel pack={outreachPack} />}
+
       <div className="brief-section">
         <div className="eyebrow">Matched APIs</div>
         <ul className="brief-list">
@@ -362,10 +376,11 @@ function FullBrief({ idea }: { idea: IdeaDrop }) {
       </div>
 
       <div className="brief-section">
-        <div className="eyebrow">Agent prompts</div>
+        <div className="eyebrow">Agent prompts & spec contract</div>
         <CopyPromptButton label="Claude Code" prompt={idea.agentPrompts.claudeCode} />
         <CopyPromptButton label="Cursor / Windsurf" prompt={idea.agentPrompts.cursorWindsurf} />
         <CopyPromptButton label="v0 / Bolt" prompt={idea.agentPrompts.v0Bolt} />
+        <SpecContractPanel slug={idea.slug} contractMarkdown={contractMarkdown} />
       </div>
     </>
   );

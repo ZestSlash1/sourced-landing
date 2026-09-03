@@ -21,7 +21,11 @@
   - Self-hosted Supabase containers (`C:\Users\falcon\homelab\supabase-sourced\docker`) are running and healthy.
   - Local Ollama (`localhost:11434`) and OmniRoute (`localhost:20128`) are online and responsive.
 - Visual / Interactive: Cursor-reactive Antigravity motion background (`app/antigravity-canvas.tsx`) fine-tuned and mounted behind the hero and header in `app/home-client.tsx` with utility styles and reduced-motion suppression in `app/globals.css`. Features physics-based microgravity float, cursor deflection with inertia, and dynamic violet triangulation filaments.
-- Test suites: 21 test files (128 tests) passing in Vitest. Full Next.js production build (`npm run build`) and typecheck verified clean.
+- Strategic Expansion (Day-1 Validation & Agent Contracts):
+  - Day-1 Customer Outreach Pack (`lib/idea-drops/outreach.ts`, `app/feed/[slug]/outreach-pack-panel.tsx`) generated from verified evidence links across GitHub, HN, Discourse, etc. with platform etiquette rules.
+  - Economic Severity & Willingness-to-Pay Index (`lib/idea-drops/economic-severity.ts`, `app/feed/[slug]/economic-severity-card.tsx`) displaying buyer persona, pricing architecture, and net monthly ROI.
+  - Spec-Driven Production Contract (`lib/idea-drops/production-contract.ts`, `app/feed/[slug]/spec-contract-panel.tsx`, `app/api/ideas/[id]/spec/route.ts`) providing full `CLAUDE.md` architecture specifications with Postgres DDL, Supabase RLS policies, API retry contracts, and acceptance criteria.
+- Test suites: 24 test files (133 tests) passing in Vitest. Full Next.js production build (`npm run build`) and typecheck verified clean.
 - Embedding blocker: OpenRouter returned 402 ("Insufficient credits") when generating embeddings for the 437 newly classified complaints using `openai/text-embedding-3-small`. 76 complaints currently have embeddings. Adding a small credit balance on OpenRouter (or adding `OPENAI_API_KEY`) will embed the remaining 437 complaints and allow the full 527-complaint pool to cluster.
 - n8n workflow "Sourced — Weekly Drop Draft" is built but **inactive** — credentials not wired up, not yet manually tested.
 - Razorpay international payments (USD/EUR/GBP) available but not activated — needs KYC + purpose code in Razorpay dashboard.
