@@ -31,6 +31,8 @@ export const viewport: Viewport = {
   themeColor: "#5B4FF7",
 };
 
+import AntigravityCanvas from "./antigravity-canvas";
+
 export default function RootLayout({
   children,
 }: {
@@ -42,7 +44,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        {children}
+        <AntigravityCanvas />
+        <div style={{ position: "relative", zIndex: 1 }}>{children}</div>
         {umamiSrc && umamiWebsiteId && (
           <script defer src={umamiSrc} data-website-id={umamiWebsiteId} />
         )}
