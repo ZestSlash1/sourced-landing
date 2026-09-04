@@ -2,16 +2,16 @@
    under .page so nothing leaks into the rest of the (light-themed) app. */
 
 .page {
-  --bg: #08061a;
-  --bgGrad1: rgba(84, 60, 190, 0.3);
-  --bgGrad2: rgba(190, 50, 140, 0.16);
+  --bg: #09071c;
+  --bgGrad1: rgba(124, 58, 237, 0.22);
+  --bgGrad2: rgba(168, 85, 247, 0.12);
   --ink: #eae7ff;
   --muted: #9a94c4;
   --line: rgba(160, 150, 255, 0.14);
-  --panel: rgba(255, 255, 255, 0.035);
-  --card: rgba(255, 255, 255, 0.03);
+  --panel: rgba(18, 14, 45, 0.6);
+  --card: rgba(22, 17, 54, 0.7);
   --chip: rgba(255, 255, 255, 0.05);
-  --chipOn: rgba(255, 90, 170, 0.16);
+  --chipOn: rgba(124, 58, 237, 0.22);
   --track: rgba(255, 255, 255, 0.07);
   --tipBg: rgba(14, 10, 38, 0.94);
   --tipLine: rgba(180, 160, 255, 0.3);
@@ -21,16 +21,16 @@
   --atmo: 140, 120, 255;
   --dot: 170, 150, 255;
   --dotA: 0.62;
-  --arc: 255, 110, 190;
-  --marker: 255, 228, 245;
+  --arc: 168, 85, 247;
+  --marker: 245, 228, 255;
 
   position: relative;
-  height: 640px;
-  max-height: 80vh;
+  height: 680px;
+  max-height: 85vh;
   overflow: hidden;
   border-radius: var(--r-xl, 20px);
   border: 1px solid var(--line);
-  box-shadow: var(--shadow, 0 1px 2px rgba(21, 22, 26, 0.04), 0 6px 16px rgba(21, 22, 26, 0.05));
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2), 0 1px 3px rgba(0, 0, 0, 0.1);
   color: var(--ink);
   font-family: "Space Grotesk", Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -41,27 +41,27 @@
 }
 
 .page[data-theme="light"] {
-  --bg: #f7f6fb;
-  --bgGrad1: rgba(120, 100, 235, 0.1);
-  --bgGrad2: rgba(220, 90, 170, 0.07);
+  --bg: #faf9fd;
+  --bgGrad1: rgba(124, 58, 237, 0.08);
+  --bgGrad2: rgba(99, 102, 241, 0.05);
   --ink: #171532;
   --muted: #6d688a;
-  --line: #e4e1ef;
-  --panel: #ffffff;
-  --card: #ffffff;
+  --line: #e6e2f0;
+  --panel: rgba(255, 255, 255, 0.7);
+  --card: rgba(255, 255, 255, 0.85);
   --chip: #ffffff;
-  --chipOn: #fdeef5;
-  --track: #eceaf4;
+  --chipOn: #ede9fe;
+  --track: #eeeaf7;
   --tipBg: #ffffff;
-  --tipLine: #e4e1ef;
+  --tipLine: #dcd6ee;
   --sphere0: #ffffff;
   --sphere1: #f1eefa;
-  --sphere2: #e0dbf2;
+  --sphere2: #ded8f3;
   --atmo: 150, 130, 255;
   --dot: 96, 82, 170;
   --dotA: 0.5;
-  --arc: 214, 58, 140;
-  --marker: 214, 58, 140;
+  --arc: 124, 58, 237;
+  --marker: 124, 58, 237;
 }
 
 .page a {
@@ -81,33 +81,55 @@
 .header {
   display: flex;
   align-items: center;
-  gap: 18px;
-  padding: 16px 24px;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 22px;
   border-bottom: 1px solid var(--line);
+  background: var(--panel);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.hdrLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 .crumb {
   font-family: "Space Grotesk", sans-serif;
   font-weight: 600;
-  font-size: 14.5px;
+  font-size: 15px;
   letter-spacing: -0.01em;
   color: var(--ink);
+}
+.sourceTag {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  color: var(--muted);
+  background: var(--chip);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 3px 8px;
+  letter-spacing: 0.02em;
 }
 .hdrRight {
   margin-left: auto;
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 8px;
 }
 .live {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
   font-family: "JetBrains Mono", monospace;
-  font-size: 11.5px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
   color: rgb(var(--arc));
   background: var(--chipOn);
-  border: 1px solid rgba(var(--arc), 0.3);
-  padding: 7px 12px;
+  border: 1px solid rgba(var(--arc), 0.35);
+  padding: 6px 11px;
   border-radius: 999px;
 }
 .liveDot {
@@ -128,31 +150,37 @@
   font-family: "JetBrains Mono", monospace;
   font-size: 11.5px;
   color: var(--ink);
-  background: var(--chip);
+  background: var(--card);
   border: 1px solid var(--line);
-  padding: 7px 13px;
-  border-radius: 999px;
+  padding: 6px 12px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: 0.16s;
+  transition: all 0.16s ease;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 .page button:hover {
   border-color: rgba(var(--arc), 0.45);
+  background: var(--chipOn);
 }
 .page button[aria-pressed="true"] {
   background: var(--chipOn);
   border-color: rgba(var(--arc), 0.4);
   color: rgb(var(--arc));
+  font-weight: 600;
 }
 
 .main {
   display: grid;
-  grid-template-columns: 1fr 380px;
+  grid-template-columns: 1fr 390px;
   min-height: 0;
+  height: 100%;
 }
 .stage {
   position: relative;
   min-width: 0;
   overflow: hidden;
+  height: 100%;
 }
 .canvas {
   display: block;
@@ -163,70 +191,87 @@
 .canvas.dragging {
   cursor: grabbing;
 }
+
+/* KPIs overlay - compact 2x2 grid in upper left */
 .kpis {
   position: absolute;
-  top: 20px;
-  left: 22px;
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  max-width: 66%;
+  top: 18px;
+  left: 20px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(118px, 1fr));
+  gap: 8px;
+  max-width: 276px;
+  z-index: 3;
+  pointer-events: none;
 }
 .kpi {
-  background: var(--panel);
+  background: var(--card);
   border: 1px solid var(--line);
-  border-radius: 14px;
-  padding: 11px 15px;
-  min-width: 112px;
-  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  padding: 10px 14px;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  pointer-events: auto;
 }
 .kpiLabel {
   font-family: "JetBrains Mono", monospace;
-  font-size: 10px;
-  letter-spacing: 0.09em;
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
+  white-space: nowrap;
 }
 .kpiValue {
-  font-size: 25px;
+  font-size: 22px;
   font-weight: 600;
   letter-spacing: -0.02em;
-  margin-top: 4px;
+  margin-top: 3px;
   font-variant-numeric: tabular-nums;
+  color: var(--ink);
 }
 .kpiValue small {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--muted);
   font-weight: 400;
   margin-left: 3px;
 }
-.controls {
+
+/* Stage Footer - controls on left, hint on right */
+.stageFooter {
   position: absolute;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
+  bottom: 16px;
+  left: 20px;
+  right: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  pointer-events: none;
+  z-index: 3;
+}
+.controls {
   display: flex;
   gap: 8px;
+  pointer-events: auto;
+}
+.controls button {
+  border-radius: 999px;
+  padding: 6px 14px;
 }
 .hint {
-  position: absolute;
-  bottom: 22px;
-  right: 22px;
   font-family: "JetBrains Mono", monospace;
   font-size: 11px;
   color: var(--muted);
-  opacity: 0.7;
-}
-.source {
-  position: absolute;
-  top: 20px;
-  right: 22px;
-  font-family: "JetBrains Mono", monospace;
-  font-size: 10.5px;
-  color: var(--muted);
-  border: 1px dashed var(--line);
+  opacity: 0.85;
+  pointer-events: none;
+  background: var(--card);
+  padding: 5px 10px;
   border-radius: 8px;
-  padding: 5px 9px;
+  border: 1px solid var(--line);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  white-space: nowrap;
 }
 .tip {
   position: absolute;
@@ -258,27 +303,52 @@
 
 .aside {
   border-left: 1px solid var(--line);
-  display: grid;
-  grid-template-rows: auto auto 1fr;
-  min-height: 0;
-}
-.tabs {
   display: flex;
-  gap: 6px;
-  padding: 14px 18px 12px;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  background: var(--panel);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+/* Tabs - 4-column uniform segmented control */
+.tabs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  padding: 12px 16px;
   border-bottom: 1px solid var(--line);
-  flex-wrap: wrap;
 }
 .tabs button {
-  padding: 6px 11px;
+  width: 100%;
+  padding: 6px 2px;
+  text-align: center;
+  font-size: 11px;
+  border-radius: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
+
+/* Breakdown Section */
 .sec {
-  padding: 16px 20px;
+  padding: 14px 18px;
   border-bottom: 1px solid var(--line);
-  min-height: 214px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+.sec::-webkit-scrollbar,
+.feedList::-webkit-scrollbar {
+  width: 4px;
+}
+.sec::-webkit-scrollbar-thumb,
+.feedList::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 4px;
 }
 .sec h3 {
-  margin: 0 0 12px;
+  margin: 0 0 10px;
   font-family: "JetBrains Mono", monospace;
   font-size: 10px;
   letter-spacing: 0.1em;
@@ -290,8 +360,8 @@
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 8px;
-  padding: 6px 0;
-  font-size: 13.5px;
+  padding: 5px 0;
+  font-size: 13px;
   align-items: center;
 }
 .rowKey {
@@ -316,17 +386,20 @@
   display: block;
   height: 100%;
   border-radius: 2px;
-  background: linear-gradient(90deg, #5b4ff7, #ff5eb0);
+  background: linear-gradient(90deg, #7c3aed, #a855f7);
 }
+
+/* Live Feed Section */
 .feed {
-  padding: 16px 20px;
+  padding: 14px 18px;
   overflow: hidden;
   min-height: 0;
+  flex: 1;
   display: flex;
   flex-direction: column;
 }
 .feed h3 {
-  margin: 0 0 12px;
+  margin: 0 0 10px;
   font-family: "JetBrains Mono", monospace;
   font-size: 10px;
   letter-spacing: 0.1em;
@@ -338,22 +411,22 @@
   list-style: none;
   margin: 0;
   padding: 0;
-  overflow: hidden;
+  overflow-y: auto;
   flex: 1;
 }
 .feedItem {
   display: grid;
   grid-template-columns: auto 1fr auto;
-  gap: 11px;
+  gap: 10px;
   align-items: baseline;
-  padding: 8px 0;
+  padding: 7px 0;
   border-bottom: 1px solid var(--line);
-  animation: slide 0.42s ease-out;
+  animation: slide 0.35s ease-out;
 }
 @keyframes slide {
   from {
     opacity: 0;
-    transform: translateY(-7px);
+    transform: translateY(-5px);
   }
 }
 .feedPin {
@@ -365,7 +438,7 @@
   transform: translateY(-2px);
 }
 .feedWho {
-  font-size: 13.5px;
+  font-size: 13px;
   line-height: 1.35;
 }
 .feedPath {
@@ -388,11 +461,42 @@
   color: var(--muted);
 }
 
+/* Responsive */
 @media (max-width: 1120px) {
   .main {
     grid-template-columns: 1fr;
   }
   .aside {
     display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .hdrRight {
+    margin-left: 0;
+    width: 100%;
+    justify-content: space-between;
+  }
+  .stageFooter {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    bottom: 12px;
+  }
+  .kpis {
+    max-width: 240px;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .kpi {
+    padding: 8px 10px;
+  }
+  .kpiValue {
+    font-size: 18px;
   }
 }

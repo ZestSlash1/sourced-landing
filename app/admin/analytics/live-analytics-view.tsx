@@ -481,7 +481,10 @@ export function LiveAnalyticsView({
     <div ref={pageRef} className={styles.page} data-theme={theme}>
       <div className={styles.shell}>
         <header className={styles.header}>
-          <div className={styles.crumb}>Live visitor globe</div>
+          <div className={styles.hdrLeft}>
+            <span className={styles.crumb}>Live visitor globe</span>
+            <span className={styles.sourceTag}>source: live · getLiveAnalytics()</span>
+          </div>
           <div className={styles.hdrRight}>
             <button aria-pressed={windowSel === "live"} onClick={() => changeWindow(windowSel === "24h" ? "live" : "24h")}>
               {windowSel === "24h" ? "24h" : "Last 5 min"}
@@ -517,16 +520,17 @@ export function LiveAnalyticsView({
                 </div>
               </div>
             </div>
-            <div className={styles.source}>source: live · getLiveAnalytics()</div>
-            <div className={styles.controls}>
-              <button aria-pressed={!spin} onClick={() => setSpin((s) => !s)}>
-                {spin ? "Pause rotation" : "Resume rotation"}
-              </button>
-              <button aria-pressed={!showArcs} onClick={() => setShowArcs((s) => !s)}>
-                {showArcs ? "Hide arcs" : "Show arcs"}
-              </button>
+            <div className={styles.stageFooter}>
+              <div className={styles.controls}>
+                <button aria-pressed={!spin} onClick={() => setSpin((s) => !s)}>
+                  {spin ? "Pause rotation" : "Resume rotation"}
+                </button>
+                <button aria-pressed={!showArcs} onClick={() => setShowArcs((s) => !s)}>
+                  {showArcs ? "Hide arcs" : "Show arcs"}
+                </button>
+              </div>
+              <div className={styles.hint}>drag to rotate · scroll to zoom</div>
             </div>
-            <div className={styles.hint}>drag to rotate · scroll to zoom</div>
             <div ref={tipRef} className={styles.tip} />
           </div>
           <aside className={styles.aside}>

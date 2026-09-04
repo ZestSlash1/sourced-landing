@@ -7,6 +7,13 @@
 **Date:** 2026-09-04
 
 ## Current state
+- Live Visitor Globe UI Overhaul (`/admin/analytics`):
+  - Fixed visual text and button collisions from overlapping absolute containers.
+  - Relocated the live telemetry source tag (`source: live · getLiveAnalytics()`) into the header crumb bar.
+  - Grouped rotation and arc controls with the drag/scroll hint into a unified flex footer (`.stageFooter`), eliminating collision on smaller viewports.
+  - Converted the 4 KPI stat cards into a clean 2x2 HUD overlay with glassmorphism, backdrop-blur, and monospace micro-labels.
+  - Converted sidebar tabs into a uniform 4-column CSS grid so all tabs (`Countries`, `Pages`, `Referrers`, `Devices`) fit neatly on a single line.
+  - Unified color theme to Sourced's violet design language (`--arc: 124, 58, 237`) in both light and dark modes.
 - 1-Click Database Schema Exporter (`schema.sql` & Prisma) shipped and live:
   - Generates production-ready PostgreSQL DDL (`lib/idea-drops/sql-schema-generator.ts`) from `buildBrief.dataModel` with UUID extension, foreign key constraints, indexes, Supabase Row-Level Security (RLS), auto-updated timestamp triggers, and realistic development seed records.
   - Also generates clean Prisma schema format (`schema.prisma`).
