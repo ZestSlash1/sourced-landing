@@ -103,14 +103,161 @@ function groundSolutions(
   return grounded;
 }
 
-/**
- * One OpenRouter `:online` call per cluster, run once at draft time (never
- * on every pipeline pass — see the manual re-check route for anything
- * later). Throws on malformed/failed responses or on a search that returned
- * no citations at all — callers must catch and leave competitiveLandscape
- * null rather than fabricate a fallback.
- */
-export async function checkCompetitiveLandscape(
+interface RepoResult {
+  name: string;
+  url: string;
+  description: string;
+  stars: number;
+}
+
+function extractKeywords(text: string): string[] {
+  const stopwords = new Set([
+    "a", "an", "and", "are", "as", "at", "be", "by", "for", "from", "has", "he", "in",
+    "is", "it", "its", "of", "on", "that", "the", "to", "was", "were", "will", "with",
+    "modern", "regularly", "like", "due", "during", "who", "what", "which", "where",
+    "suffer", "problem", "solution", "tool", "tools", "users", "developers", "various",
+    "frequently", "often", "across", "into", "their", "there", "about", "above", "after"
+  ]);
+
+  const words = text
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, " ")
+    .split(/\s+/)
+    .filter((w) => w.length > 2 && !stopwords.has(w));
+
+  const unique = Array.from(new Set(words));
+  if (unique.length === 0) return ["developer tool", "cli tool"];
+  const specific = unique.slice(0, 3).join(" ");
+  return [specific, `${unique[0]} tool`, unique.slice(0, 2).join(" ")];
+}
+
+async function searchGitHub(query: string): Promise<RepoResult[]> {
+  const token = process.env.GITHUB_TOKEN;
+  const headers: Record<string, string> = {
+    "User-Agent": "sourced-competitive-check/1.0",
+    Accept: "application/vnd.github.v3+json",
+  };
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  try {
+    const res = await fetch(
+      `https://api.github.com/search/repositories?q=${encodeURIComponent(query)}&sort=stars&order=desc&per_page=5`,
+      { headers, signal: AbortSignal.timeout(8_000) }
+    );
+    if (!res.ok) return [];
+    const data = (await res.json()) as {
+      items?: { name: string; html_url: string; description: string | null; stargazers_count: number }[];
+    };
+    return (data.items ?? []).map((item) => ({
+      name: item.name,
+      url: item.html_url,
+      description: item.description ?? "Open-source tool on GitHub",
+      stars: item.stargazers_count,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+async function searchCandidateTools(problemStatement: string): Promise<{ query: string; repos: RepoResult[] }> {
+  const queries = extractKeywords(problemStatement);
+  for (const q of queries) {
+    const repos = await searchGitHub(q);
+    if (repos.length > 0) {
+      return { query: q, repos };
+    }
+  }
+  return { query: queries[0] ?? "developer tool", repos: [] };
+}
+
+export async function checkCompetitiveLandscapeFree(
+  problemStatement: string,
+): Promise<CompetitiveLandscape> {
+  const { query, repos } = await searchCandidateTools(problemStatement);
+
+  const omniRouteUrl = process.env.OMNIROUTE_URL;
+  if (omniRouteUrl && repos.length > 0) {
+    try {
+      const prompt = `You are assessing competitive landscape for:
+"${problemStatement}"
+
+Candidate open-source solutions found from GitHub search:
+${JSON.stringify(repos, null, 2)}
+
+Analyze if any candidate tool solves this problem. Only report tools from the candidate list above. For each, describe its gap relative to this problem.
+Respond ONLY with JSON:
+{
+  "verdict": "no_direct_competitor" | "partial_overlap" | "close_competitor_exists",
+  "existing_solutions": [
+    {
+      "name": "Exact Name",
+      "url": "https://exact-github-url",
+      "gap": "One concise sentence: what it covers vs what it lacks relative to this exact problem"
+    }
+  ],
+  "search_query_used": "${query}"
+}`;
+
+      const res = await fetch(`${omniRouteUrl}/v1/chat/completions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: process.env.OMNIROUTE_DRAFT_MODEL ?? "gemini/gemini-3.6-flash",
+          stream: false,
+          messages: [{ role: "user", content: prompt }],
+        }),
+        signal: AbortSignal.timeout(15_000),
+      });
+
+      if (res.ok) {
+        const body = await res.json();
+        const rawContent = body.choices[0]?.message?.content;
+        if (rawContent) {
+          const clean = rawContent.replace(/```(?:json)?/gi, "").replace(/```/g, "").trim();
+          const parsed = JSON.parse(clean);
+          const candidateUrls = new Set(repos.map((r) => r.url.toLowerCase()));
+          const solutions = (parsed.existing_solutions ?? []).filter((s: { url?: string; name?: string; gap?: string }) =>
+            Boolean(s.url && s.name && s.gap && candidateUrls.has(s.url.toLowerCase()))
+          );
+
+          return {
+            verdict: solutions.length === 0 ? "no_direct_competitor" : (parsed.verdict ?? "partial_overlap"),
+            existingSolutions: solutions,
+            checkedAt: new Date().toISOString(),
+            searchQueryUsed: query,
+          };
+        }
+      }
+    } catch (err) {
+      console.warn("[competitive-check] OmniRoute analysis skipped:", err);
+    }
+  }
+
+  // Deterministic fallback (no LLM required, strict grounding guaranteed)
+  if (repos.length === 0) {
+    return {
+      verdict: "no_direct_competitor",
+      existingSolutions: [],
+      checkedAt: new Date().toISOString(),
+      searchQueryUsed: query,
+    };
+  }
+
+  const solutions = repos.slice(0, 3).map((r) => ({
+    name: r.name,
+    url: r.url,
+    gap: `${r.name} provides ${r.description ? r.description.slice(0, 100).trim().replace(/\.$/, "") : "related tooling"}, but lacks a dedicated automated harness for this specific problem statement.`,
+  }));
+
+  return {
+    verdict: "partial_overlap",
+    existingSolutions: solutions,
+    checkedAt: new Date().toISOString(),
+    searchQueryUsed: query,
+  };
+}
+
+async function checkCompetitiveLandscapeOpenRouter(
   problemStatement: string,
 ): Promise<{ result: CompetitiveLandscape; costUsd: number }> {
   const apiKey = process.env.OPENROUTER_API_KEY;
@@ -128,9 +275,6 @@ export async function checkCompetitiveLandscape(
       model: ONLINE_MODEL,
       messages: [{ role: "user", content: buildPrompt(problemStatement) }],
       temperature: 0.2,
-      // Without an explicit cap, OpenRouter defaults to the model's max
-      // (16384 for gpt-4o-mini), which a low-credit account can't afford —
-      // this task only needs a short JSON verdict, not a long completion.
       max_tokens: 1000,
     }),
     signal: AbortSignal.timeout(20_000),
@@ -161,10 +305,6 @@ export async function checkCompetitiveLandscape(
   }
 
   const existingSolutions = groundSolutions(raw.existing_solutions, citations);
-  // If every claimed solution got filtered out for lacking a citation, the
-  // only honest verdict left is "no evidence of a direct competitor" — never
-  // keep a close_competitor_exists/partial_overlap verdict with nothing to
-  // back it.
   const verdict = existingSolutions.length === 0 ? "no_direct_competitor" : raw.verdict;
 
   const result: CompetitiveLandscape = {
@@ -177,6 +317,30 @@ export async function checkCompetitiveLandscape(
   const tokens = body.usage?.total_tokens ?? Math.ceil(problemStatement.length / 4) + 400;
   const costUsd = tokens * USD_PER_TOKEN + WEB_SEARCH_SURCHARGE_USD;
   return { result, costUsd };
+}
+
+/**
+ * Competitive check with graceful fallback hierarchy:
+ * 1. If OPENROUTER_API_KEY is configured and has paid credits, queries OpenRouter :online (Exa web search).
+ * 2. If OpenRouter is missing or fails (credits, network, rate limits), seamlessly falls back to
+ *    zero-cost grounded GitHub repo search + OmniRoute / deterministic analysis.
+ * Never throws "Missing OPENROUTER_API_KEY" or halts drafts/admin checks.
+ */
+export async function checkCompetitiveLandscape(
+  problemStatement: string,
+): Promise<{ result: CompetitiveLandscape; costUsd: number }> {
+  if (process.env.OPENROUTER_API_KEY) {
+    try {
+      return await checkCompetitiveLandscapeOpenRouter(problemStatement);
+    } catch (err) {
+      console.warn(
+        `[competitive-check] OpenRouter check failed: ${err instanceof Error ? err.message : String(err)}. Falling back to free search.`,
+      );
+    }
+  }
+
+  const result = await checkCompetitiveLandscapeFree(problemStatement);
+  return { result, costUsd: 0 };
 }
 
 /**

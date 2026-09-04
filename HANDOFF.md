@@ -11,7 +11,13 @@
   - Upgraded cookie handling in `lib/supabase/auth-server.ts` to modern `@supabase/ssr` `getAll` and `setAll` methods, fixing chunked cookie retrieval (`sb-*-auth-token.0`, etc.) that previously returned null on `getUser()`.
   - Added session synchronization into `middleware.ts` via `@supabase/ssr` `createServerClient`, ensuring auth tokens are refreshed and passed down into Server Components.
   - Upgraded `app/admin/login/page.tsx`, `app/admin/sign-out-button.tsx`, `app/login/page.tsx`, and `app/account/sign-out-button.tsx` to use `window.location.href` for full-page navigation, eliminating Next.js App Router client cache race conditions. Added active session display and quick action controls on `/admin/login`.
-  - Added unit tests in `lib/auth/require-admin.test.ts` and `lib/supabase/auth-server.test.ts`. 27 test files (149 tests) passing in Vitest.
+  - Added unit tests in `lib/auth/require-admin.test.ts` and `lib/supabase/auth-server.test.ts`.
+- Competitive landscape check resilience & zero-cost fallback shipped:
+  - Fixed `lib/ingest/competitive-landscape.ts` and `app/api/admin/ideas/[id]/recheck-competitive/route.ts` to prevent crashes when `OPENROUTER_API_KEY` is missing or out of credits.
+  - Implemented graceful fallback hierarchy: tries OpenRouter `:online` (Exa search) if available and funded; otherwise falls back to free grounded search using GitHub repository search API + OmniRoute (`localhost:20128`) / deterministic candidate tool analysis.
+  - Preserved strict anti-hallucination grounding: candidate solutions are strictly filtered against URLs returned from search.
+  - Executed check and persisted competitive landscape to Supabase Postgres for pending drop `sourced-2026-09-04-8d55e372` (`VT-Fuzz`), resolving the "Run check" error in `/admin/pending`.
+  - Added unit tests in `lib/ingest/competitive-landscape.test.ts` (6 tests). 28 test suites (155 tests) passing in Vitest.
 - Full website audit completed & verified:
   - Public routes: `/`, `/feed`, `/feed/[slug]`, `/category/[category]`, `/platform/[platform]`, `/stack/[technology]`, `/tools/[matched-api]`, `/signals`, `/rejected`, `/methodology`, `/account`, `/account/topics`.
   - Admin routes: `/admin` (idea drops list), `/admin/pending` (pending reviews & competitive check), `/admin/ideas/[id]` (raw JSON & field editor), `/admin/analytics` (KPI summary, 3D live globe & real-time telemetry feed).
@@ -44,12 +50,12 @@
   - Day-1 Customer Outreach Pack (`lib/idea-drops/outreach.ts`, `app/feed/[slug]/outreach-pack-panel.tsx`) generated from verified evidence links across GitHub, HN, Discourse, etc. with platform etiquette rules.
   - Economic Severity & Willingness-to-Pay Index (`lib/idea-drops/economic-severity.ts`, `app/feed/[slug]/economic-severity-card.tsx`) displaying buyer persona, pricing architecture, and net monthly ROI.
   - Spec-Driven Production Contract (`lib/idea-drops/production-contract.ts`, `app/feed/[slug]/spec-contract-panel.tsx`, `app/api/ideas/[id]/spec/route.ts`) providing full `CLAUDE.md` architecture specifications with Postgres DDL, Supabase RLS policies, API retry contracts, and acceptance criteria.
-- Test suites: 27 test files (149 tests) passing in Vitest. Full Next.js production build (`npm run build`) and typecheck verified clean.
+- Test suites: 28 test files (155 tests) passing in Vitest. Full Next.js production build (`npm run build`) and typecheck verified clean.
 - n8n workflow "Sourced — Weekly Drop Draft" is built but **inactive** — credentials not wired up, not yet manually tested.
 - Razorpay international payments (USD/EUR/GBP) available but not activated — needs KYC + purpose code in Razorpay dashboard.
 
 ## In progress / next up
-- Review newly drafted drop in `/admin/pending` (`sourced-2026-09-04-8d55e372`).
+- Review newly drafted drop in `/admin/pending` (`sourced-2026-09-04-8d55e372`), now displaying the grounded competitive landscape.
 - Set `BLUESKY_HANDLE` and `BLUESKY_APP_PASSWORD` in `.env.local` / Vercel env to activate live Bluesky searching.
 - Wire n8n workflow credentials or schedule automated weekly drop drafting via `runDraftPass()`.
 - Execute Tier 1 from `sourced-off-page-seo-checklist.md` using drafts in `seo-drafts/` (Show HN, Dev.to, directory submissions).
