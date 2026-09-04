@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState, ReactNode } from "react";
-import { MorphIcon } from "morphicons/react";
-import { Menu, X } from "lucide";
+import Link from "next/link";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import dynamic from "next/dynamic";
 import DotField from "@/components/DotField";
 import NewsletterForm from "./newsletter-form";
 import type { ProofBarData } from "./proof-bar";
+import type { IdeaDrop } from "@/types/idea-drop";
 import { trackEvent } from "@/lib/track-client";
 
 const ProofBar = dynamic(() => import("./proof-bar"), { loading: () => null });
@@ -81,117 +81,43 @@ function Reveal({
   );
 }
 
-interface NavItem {
-  label: string;
-  href: string;
-  icon: ReactNode;
+interface HomeClientProps {
+  userEmail: string | null;
+  proofBar: ProofBarData;
+  featuredIdeas?: IdeaDrop[];
+  sampleIdea?: IdeaDrop | null;
 }
 
-const baseNavItems: NavItem[] = [
-  {
-    label: "How it works",
-    href: "#how",
-    icon: (
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <polygon points="12 2 2 7 12 12 22 7 12 2" />
-        <polyline points="2 17 12 22 22 17" />
-        <polyline points="2 12 12 17 22 12" />
-      </svg>
-    ),
-  },
-  {
-    label: "API match",
-    href: "#apis",
-    icon: (
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 2v8" />
-        <path d="m4.93 10.93 4.24 4.24" />
-        <path d="M2 18h8" />
-        <path d="M20 18h2" />
-        <path d="m19.07 10.93-4.24 4.24" />
-        <circle cx="12" cy="14" r="2" />
-      </svg>
-    ),
-  },
-  {
-    label: "Sample idea",
-    href: "#sample",
-    icon: (
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5" />
-        <path d="M9 18h6" />
-        <path d="M10 22h4" />
-      </svg>
-    ),
-  },
-  {
-    label: "Pricing",
-    href: "#pricing",
-    icon: (
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <rect width="20" height="14" x="2" y="5" rx="2" />
-        <line x1="2" x2="22" y1="10" y2="10" />
-      </svg>
-    ),
-  },
-  {
-    label: "Feed",
-    href: "/feed",
-    icon: (
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="10" />
-        <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" />
-      </svg>
-    ),
-  },
-  {
-    label: "Methodology",
-    href: "/methodology",
-    icon: (
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z" />
-        <path d="M6 6h10" />
-        <path d="M6 10h10" />
-      </svg>
-    ),
-  },
-];
+const COVERS = ["cover-1", "cover-2", "cover-3", "cover-4", "cover-5", "cover-6"];
 
-export default function HomeClient({ userEmail, proofBar }: { userEmail: string | null; proofBar: ProofBarData }) {
-  const navRef = useRef<HTMLElement | null>(null);
+export default function HomeClient({
+  userEmail,
+  proofBar,
+  featuredIdeas,
+  sampleIdea,
+}: HomeClientProps) {
   const snippetRef = useRef<HTMLDivElement | null>(null);
   const [agentId, setAgentId] = useState("claude");
   const agent = agents.find((a) => a.id === agentId)!;
   const [checkoutPending, setCheckoutPending] = useState<PlanKey | null>(null);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
-  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [foundingRemaining, setFoundingRemaining] = useState<number | null>(null);
-  const [activeTab, setActiveTab] = useState<string>("How it works");
 
-  const accountItem: NavItem = userEmail
-    ? {
-        label: "Account",
-        href: "/account",
-        icon: (
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="8" r="4" />
-            <path d="M20 21a8 8 0 0 0-16 0" />
-          </svg>
-        ),
-      }
-    : {
-        label: "Log in",
-        href: "/login",
-        icon: (
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
-            <polyline points="10 17 15 12 10 7" />
-            <line x1="15" x2="3" y1="12" y2="12" />
-          </svg>
-        ),
-      };
-
-  const navItems = [...baseNavItems, accountItem];
+  const displayCards =
+    featuredIdeas && featuredIdeas.length > 0
+      ? featuredIdeas.slice(0, 6).map((idea, i) => ({
+          slug: idea.slug,
+          cover: COVERS[i % COVERS.length],
+          tag: idea.category,
+          h: 58,
+          title: idea.title,
+          apis: `${idea.matchedApis?.length ?? 0} APIs matched`,
+          signals: `${idea.evidence?.length ?? 0} signals`,
+          pct: idea.demandScore,
+          tier: idea.tier,
+          d: i * 0.08,
+        }))
+      : ideaCards.map((c) => ({ ...c, slug: "", tier: "builder" }));
 
   useEffect(() => {
     fetch("/api/founding-status")
@@ -264,33 +190,6 @@ export default function HomeClient({ userEmail, proofBar }: { userEmail: string 
   }, []);
 
   useEffect(() => {
-    const nav = navRef.current;
-    const onScroll = () => {
-      if (!nav) return;
-      if (window.scrollY > 12) nav.classList.add("scrolled");
-      else nav.classList.remove("scrolled");
-
-      const sections = [
-        { id: "how", label: "How it works" },
-        { id: "apis", label: "API match" },
-        { id: "sample", label: "Sample idea" },
-        { id: "pricing", label: "Pricing" },
-      ];
-
-      const scrollPos = window.scrollY + 220;
-      for (let i = sections.length - 1; i >= 0; i--) {
-        const sec = document.getElementById(sections[i].id);
-        if (sec && sec.offsetTop <= scrollPos) {
-          setActiveTab(sections[i].label);
-          return;
-        }
-      }
-      if (window.scrollY < 180) {
-        setActiveTab("How it works");
-      }
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-
     const revealEls = document.querySelectorAll(".reveal, .reveal-scale");
     const io = new IntersectionObserver(
       (entries) => {
@@ -320,7 +219,6 @@ export default function HomeClient({ userEmail, proofBar }: { userEmail: string 
     cards.forEach((c) => cardIO.observe(c));
 
     return () => {
-      window.removeEventListener("scroll", onScroll);
       io.disconnect();
       cardIO.disconnect();
     };
@@ -356,75 +254,6 @@ export default function HomeClient({ userEmail, proofBar }: { userEmail: string 
         />
       </div>
       <a href="#main-content" className="skip-link">Skip to content</a>
-      <nav ref={navRef} className="floating-nav" aria-label="Main navigation">
-        <div className="floating-nav-pill">
-          <a href="/" className="nav-brand" aria-label="Sourced home">
-            <div className="brand-mark">
-              <svg viewBox="0 0 24 24" fill="none">
-                <path d="M4 12L10 18L20 6" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </div>
-            <span className="brand-name">Sourced</span>
-          </a>
-
-          <div className="nav-dock" role="navigation" aria-label="Dock navigation">
-            {navItems.map((item) => (
-              <a
-                key={item.label}
-                href={item.href}
-                className={`nav-dock-item ${activeTab === item.label ? "is-active" : ""}`}
-                onClick={() => setActiveTab(item.label)}
-              >
-                <span className="dock-icon">{item.icon}</span>
-                <span className="dock-label">{item.label}</span>
-              </a>
-            ))}
-          </div>
-
-          <a className="nav-cta-pill" href="#pricing">
-            <span>Get started</span>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="5" y1="12" x2="19" y2="12" />
-              <polyline points="12 5 19 12 12 19" />
-            </svg>
-          </a>
-
-          <button
-            type="button"
-            className="nav-burger-pill"
-            aria-expanded={mobileNavOpen}
-            aria-label={mobileNavOpen ? "Close menu" : "Open menu"}
-            onClick={() => setMobileNavOpen((v) => !v)}
-          >
-            <MorphIcon icon={mobileNavOpen ? X : Menu} size={18} />
-          </button>
-        </div>
-
-        {mobileNavOpen && (
-          <div className="mobile-floating-drawer">
-            {navItems.map((item) => (
-              <a
-                key={item.label}
-                href={item.href}
-                onClick={() => {
-                  setActiveTab(item.label);
-                  setMobileNavOpen(false);
-                }}
-              >
-                <span className="dock-icon">{item.icon}</span>
-                <span>{item.label}</span>
-              </a>
-            ))}
-            <a
-              className="mobile-cta-btn"
-              href="#pricing"
-              onClick={() => setMobileNavOpen(false)}
-            >
-              Get started
-            </a>
-          </div>
-        )}
-      </nav>
 
       <main id="main-content">
       <header className="hero">
@@ -476,21 +305,52 @@ export default function HomeClient({ userEmail, proofBar }: { userEmail: string 
 
       <div className="masonry-peek">
         <div className="columns" id="masonry">
-          {ideaCards.map((c, i) => (
-            <div className="idea-card" key={i} style={{ ["--d" as string]: `${c.d}s` }}>
-              <div className={`idea-cover ${c.cover}`} style={{ height: c.h }}>
-                <span className="tag">{c.tag}</span>
-              </div>
-              <div className="idea-body">
-                <p className="idea-card-title">{c.title}</p>
-                <div className="idea-apis">⌁ {c.apis}</div>
-                <div className="idea-foot">
-                  <span>{c.signals}</span>
-                  <div className="signal-bar" style={{ ["--pct" as string]: c.pct / 100 }}><span></span></div>
+          {displayCards.map((c, i) => {
+            const href = c.slug ? `/feed/${c.slug}` : "/feed";
+            return (
+              <Link
+                href={href}
+                className="idea-card"
+                key={c.slug || i}
+                style={{ ["--d" as string]: `${c.d}s`, textDecoration: "none", color: "inherit" }}
+              >
+                <div
+                  className={`idea-cover ${c.cover}`}
+                  style={{
+                    height: c.h,
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    padding: "0 14px",
+                  }}
+                >
+                  <span className="tag">{c.tag}</span>
+                  {c.tier !== "free" ? (
+                    <span className="feed-badge" style={{ fontSize: 11, padding: "2px 7px", letterSpacing: "0.02em" }}>
+                      🔒 {c.tier}+
+                    </span>
+                  ) : (
+                    <span
+                      className="feed-badge"
+                      style={{ fontSize: 11, padding: "2px 7px", background: "rgba(198,255,61,0.2)", color: "#547e00" }}
+                    >
+                      Free
+                    </span>
+                  )}
                 </div>
-              </div>
-            </div>
-          ))}
+                <div className="idea-body">
+                  <p className="idea-card-title">{c.title}</p>
+                  <div className="idea-apis">⌁ {c.apis}</div>
+                  <div className="idea-foot">
+                    <span>{c.signals}</span>
+                    <div className="signal-bar" style={{ ["--pct" as string]: c.pct / 100 }}>
+                      <span></span>
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
         </div>
       </div>
 
@@ -524,7 +384,7 @@ export default function HomeClient({ userEmail, proofBar }: { userEmail: string 
             <Reveal delay={0} className="stage">
               <div className="stage-icon">01 / HARVEST</div>
               <h3>Pulled from real complaints</h3>
-              <p>Reddit threads, 1-star G2 reviews of paid tools, and recurring Upwork gigs: places people already describe what they&apos;d pay to fix.</p>
+              <p>Hacker News threads, GitHub and GitLab issues, Developer forums, and YouTube discussions: places people already describe what they&apos;d pay to fix.</p>
             </Reveal>
             <Reveal delay={0.08} className="stage">
               <div className="stage-icon">02 / VALIDATE</div>
@@ -577,25 +437,62 @@ export default function HomeClient({ userEmail, proofBar }: { userEmail: string 
           </Reveal>
           <Reveal scale className="feature-card">
             <div className="feature-cover">
-              <span className="tag">Micro-SaaS</span>
-              <span className="score">95% demand signal</span>
+              <span className="tag">{sampleIdea?.category ?? "Micro-SaaS"}</span>
+              <span className="score">{sampleIdea?.demandScore ?? 95}% demand signal</span>
             </div>
             <div className="feature-body">
-              <h3>Bookkeepers still hand-format P&amp;Ls in Excel for every client, every month.</h3>
+              <h3>{sampleIdea?.title ?? "Bookkeepers still hand-format P&Ls in Excel for every client, every month."}</h3>
               <p>
-                41 separate complaints across r/Bookkeeping and r/Accounting in the last 90
-                days, plus a cluster of one- and two-star G2 reviews on two mid-tier
-                bookkeeping tools naming this exact gap. Several already pay a VA
-                specifically to reformat exports by hand.
+                {sampleIdea?.problem.summary ??
+                  "41 separate complaints across developer forums and review sites in the last 90 days naming this exact gap. Several already pay a VA specifically to reformat exports by hand."}
               </p>
               <div className="feature-meta">
-                <div><div className="fm-label">Buyer</div><div className="fm-value">Solo bookkeepers</div></div>
-                <div><div className="fm-label">Build time</div><div className="fm-value">~1 weekend</div></div>
-                <div><div className="fm-label">Model</div><div className="fm-value">$10/mo per seat</div></div>
-                <div><div className="fm-label">Stack</div><div className="fm-value">Next.js + Supabase</div></div>
-                <div><div className="fm-label">APIs matched</div><div className="fm-value">Open Exchange Rates, PDFShift</div></div>
+                <div><div className="fm-label">Buyer</div><div className="fm-value">{sampleIdea?.problem.whoFeelsIt ?? "Solo bookkeepers"}</div></div>
+                <div>
+                  <div className="fm-label">Build time</div>
+                  <div className="fm-value">
+                    {sampleIdea?.difficulty
+                      ? sampleIdea.difficulty.soloWeekendProject
+                        ? "~1 weekend"
+                        : `~${sampleIdea.difficulty.estimatedHours} hrs`
+                      : "~1 weekend"}
+                  </div>
+                </div>
+                <div>
+                  <div className="fm-label">Model</div>
+                  <div className="fm-value">
+                    {sampleIdea?.category === "Micro-SaaS" ? "$10–29/mo" : "Freemium / Usage"}
+                  </div>
+                </div>
+                <div>
+                  <div className="fm-label">Stack</div>
+                  <div className="fm-value">
+                    {sampleIdea?.launchStack && sampleIdea.launchStack.length > 0
+                      ? sampleIdea.launchStack.map((s) => s.tool).slice(0, 2).join(" + ")
+                      : "Next.js + Supabase"}
+                  </div>
+                </div>
+                <div>
+                  <div className="fm-label">APIs matched</div>
+                  <div className="fm-value">
+                    {sampleIdea?.matchedApis && sampleIdea.matchedApis.length > 0
+                      ? sampleIdea.matchedApis.map((a) => a.name).slice(0, 2).join(", ")
+                      : "Open Exchange Rates, PDFShift"}
+                  </div>
+                </div>
                 <div><div className="fm-label">Opens in</div><div className="fm-value">{agent.label}</div></div>
               </div>
+              {sampleIdea?.slug && (
+                <div style={{ marginTop: 22 }}>
+                  <Link
+                    href={`/feed/${sampleIdea.slug}`}
+                    className="btn btn-primary"
+                    style={{ padding: "8px 18px", fontSize: 13, display: "inline-flex", alignItems: "center", gap: 6 }}
+                  >
+                    Read full free build brief →
+                  </Link>
+                </div>
+              )}
             </div>
           </Reveal>
         </div>
@@ -635,9 +532,17 @@ export default function HomeClient({ userEmail, proofBar }: { userEmail: string 
               {foundingActive ? (
                 <div className="plan-price">
                   <span className="plan-price-slash">₹399</span> ₹310<span>/mo</span>
+                  <span style={{ fontSize: 12, fontWeight: 400, color: "var(--ink-soft)", marginLeft: 6 }}>
+                    (~$3.70 USD)
+                  </span>
                 </div>
               ) : (
-                <div className="plan-price">₹399<span>/mo</span></div>
+                <div className="plan-price">
+                  ₹399<span>/mo</span>
+                  <span style={{ fontSize: 12, fontWeight: 400, color: "var(--ink-soft)", marginLeft: 6 }}>
+                    (~$4.80 USD)
+                  </span>
+                </div>
               )}
               <button
                 type="button"
@@ -668,9 +573,15 @@ export default function HomeClient({ userEmail, proofBar }: { userEmail: string 
             <Reveal delay={0.16} className="plan">
               <div className="plan-name">Studio</div>
               <div className="plan-tag">For your specific niche</div>
-              <div className="plan-price">₹999<span>/mo</span></div>
+              <div className="plan-price">
+                ₹999<span>/mo</span>
+                <span style={{ fontSize: 12, fontWeight: 400, color: "var(--ink-soft)", marginLeft: 6 }}>
+                  (~$12 USD)
+                </span>
+              </div>
               <ul className="plan-features">
                 <li>Everything in Builder</li>
+                <li>Instant dev database hosting bundle</li>
                 <li>One custom idea request / month</li>
                 <li>$0 launch stack: free-tier hosting, auth &amp; email picks per idea</li>
                 <li>48-hour early access to new cards</li>
@@ -684,6 +595,9 @@ export default function HomeClient({ userEmail, proofBar }: { userEmail: string 
                 {checkoutPending === "studio-monthly" ? "Starting…" : "Get Studio"}
               </button>
             </Reveal>
+          </div>
+          <div style={{ textAlign: "center", marginTop: 22, fontSize: 13, color: "var(--ink-soft)" }}>
+            Billed securely via Razorpay in INR · Accepts all international Visa, Mastercard, and Amex cards
           </div>
           {checkoutError && (
             <p style={{ textAlign: "center", color: "var(--coral, #e5533d)", marginTop: 16 }}>
@@ -740,7 +654,7 @@ export default function HomeClient({ userEmail, proofBar }: { userEmail: string 
       </section>
 
       <Reveal scale className="cta-band">
-        <h2>Your next build is already out there complaining on Reddit.</h2>
+        <h2>Your next build is already out there complaining on developer forums and issue trackers.</h2>
         <p>Go find it, or let Sourced bring it to you every Monday.</p>
         <a className="btn btn-primary" href="#pricing">Browse this week&apos;s ideas</a>
       </Reveal>

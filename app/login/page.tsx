@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useState } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { AppleIcon, GitHubIcon, GoogleIcon } from "./oauth-icons";
@@ -69,16 +70,13 @@ function LoginForm() {
       return;
     }
 
-    // signUp only returns a session immediately when email autoconfirm is
-    // on (no confirmation email needed); otherwise data.session is null and
-    // the account genuinely needs the email step before it can sign in.
     if (mode === "sign-up" && !data.session) {
-      setNotice("Check your email to confirm your account, then sign in.");
-      setMode("sign-in");
+      setNotice("Check your email for a confirmation link.");
       return;
     }
 
-    window.location.href = next;
+    router.push(next);
+    router.refresh();
   }
 
   async function handleOAuth(provider: OAuthProvider) {
@@ -101,6 +99,7 @@ function LoginForm() {
         alignItems: "center",
         justifyContent: "center",
         background: "var(--bg)",
+        padding: "24px 16px",
       }}
     >
       <div
@@ -114,6 +113,20 @@ function LoginForm() {
           padding: 32,
         }}
       >
+        <div style={{ marginBottom: 20, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <Link href="/" style={{ display: "inline-flex", alignItems: "center", gap: 8, textDecoration: "none", color: "var(--ink)" }}>
+            <div style={{ width: 26, height: 26, background: "var(--violet)", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                <path d="M4 12L10 18L20 6" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
+            <span className="display" style={{ fontWeight: 700, fontSize: 16 }}>Sourced</span>
+          </Link>
+          <Link href="/" style={{ fontSize: 13, color: "var(--ink-soft)", textDecoration: "none" }}>
+            ← Home
+          </Link>
+        </div>
+
         <h1 className="display" style={{ fontSize: 20, margin: "0 0 24px" }}>
           {mode === "sign-in" ? "Sign in" : "Create your account"}
         </h1>

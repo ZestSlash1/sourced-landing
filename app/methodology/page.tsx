@@ -38,14 +38,24 @@ const SOURCES = [
       "Posts and comments matching pain phrases like \"wish there was\" or \"looking for a tool\", above a minimum points threshold.",
   },
   {
+    label: "GitHub Issues",
+    description:
+      "Feature requests and complaints on a curated list of high-traffic dev-infrastructure and app-building repos.",
+  },
+  {
+    label: "GitLab Issues",
+    description:
+      "Unresolved tooling gaps and workflow requests from open-source repositories and engineering teams.",
+  },
+  {
     label: "StackExchange",
     description:
       "Barely-answered questions on Webmasters, Software Recs, UX, PM, and other workflow-focused sites. An unanswered question is often an unmet need.",
   },
   {
-    label: "GitHub Issues",
+    label: "YouTube Discussions",
     description:
-      "Feature requests and complaints on a curated list of high-traffic dev-infrastructure and app-building repos.",
+      "Developer comments and complaint threads beneath tool tutorials, comparisons, and product teardowns.",
   },
   {
     label: "Dev.to",
@@ -56,13 +66,27 @@ const SOURCES = [
     label: "Lobsters",
     description: "Stories above a minimum score and comment count, on the same complaint-prose register as Hacker News.",
   },
+  {
+    label: "Codeberg Issues",
+    description: "Pain points and tooling limitations logged across community-hosted open-source software.",
+  },
+  {
+    label: "Discourse Instances",
+    description: "Pain points and recurring user questions from active developer and tech community forums.",
+  },
+  {
+    label: "Mastodon",
+    description: "Filtered developer complaints and feature desires federated across tech-focused instances.",
+  },
+  {
+    label: "DevRant",
+    description: "Direct, unfiltered developer rants about tooling friction, broken APIs, and missing tools.",
+  },
+  {
+    label: "Bluesky",
+    description: "Real-time technical complaints and builder discussions indexed across the AT Protocol network.",
+  },
 ];
-
-const PENDING_SOURCE = {
-  label: "Reddit",
-  description:
-    "The poller is built and wired into the daily cron, but isn't live yet. It's waiting on Reddit API credentials before it starts contributing signals.",
-};
 
 export default async function MethodologyPage() {
   const [stats, pipelineRuns, adminCheck] = await Promise.all([
@@ -76,7 +100,7 @@ export default async function MethodologyPage() {
     <main>
       <MethodologyJsonLd />
 
-      <div className="wrap" style={{ paddingTop: 48 }}>
+      <div className="wrap" style={{ paddingTop: 86 }}>
         <Link href="/" className="back-link">
           ← Back to Sourced
         </Link>
@@ -93,7 +117,7 @@ export default async function MethodologyPage() {
       <section className="section">
         <div className="wrap">
           <div className="eyebrow">Where ideas come from</div>
-          <h2>Five sources, one more on the way</h2>
+          <h2>Twelve sources, zero hallucinations</h2>
           <p className="section-sub" style={{ maxWidth: 640, marginBottom: 28 }}>
             Every signal is a real post, question, issue, or article, pulled daily, deduped on URL, and never
             paraphrased before storage.
@@ -105,10 +129,6 @@ export default async function MethodologyPage() {
                 <p>{s.description}</p>
               </div>
             ))}
-            <div className="source-card is-pending">
-              <div className="stage-icon">{PENDING_SOURCE.label} · not active yet</div>
-              <p>{PENDING_SOURCE.description}</p>
-            </div>
           </div>
         </div>
       </section>

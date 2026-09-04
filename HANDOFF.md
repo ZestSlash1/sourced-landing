@@ -7,13 +7,23 @@
 **Date:** 2026-09-04
 
 ## Current state
-- Floating Expandable Icon Pill Navbar (Dynamic Island style):
-  - Overhauled navigation into a fixed, top-centered floating pill dock inspired by user reference video (`navbar-reference.mp4`).
-  - Left: Sourced brand mark and logo with subtle hover illumination.
-  - Center: Compact icon-only dock items with custom SVGs (`How it works`, `API match`, `Sample idea`, `Pricing`, `Feed`, `Methodology`, `Account`) that expand smoothly on hover revealing labels (`max-width: 120px; opacity: 1; margin-left: 6px;`).
-  - Active tab: Rendered with a solid white pill highlight (`#ffffff`) and dark text (`#12141a`) matching reference video, driven by real-time scroll-spy logic detecting the in-viewport section.
-  - Right: Violet gradient pill CTA (`Get started`) linking to `#pricing`.
-  - Mobile: Collapses cleanly into a compact pill with logo + menu burger that toggles a floating glassmorphism drawer.
+- Global Floating Expandable Icon Pill Navbar (Dynamic Island style):
+  - Extracted navigation into reusable `components/floating-navbar.tsx` mounted globally in `app/layout.tsx`.
+  - Context-aware active tab: smooth scroll-spy on `/` for `#how`, `#apis`, `#sample`, `#pricing`; route-aware active indicator on interior views (`/feed`, `/methodology`, `/account`, etc.).
+  - Excluded automatically from `/admin/*` routes to avoid overlapping the admin topband.
+  - Added brand logo and back-to-home navigation link to `/login`.
+- Real Published Idea Drops on Homepage:
+  - `app/page.tsx` now dynamically queries `listFeaturedIdeas()` and `listPublishedIdeas()`, passing real published ideas into `HomeClient`.
+  - The 6 hero masonry cards are now clickable `<Link href="/feed/[slug]">` elements displaying real category, demand score, signal count, matched API count, and tier badge (`🔒 Builder+` or `Free`).
+  - The `#sample` section now pulls dynamically from the live free drop (`Client-ready P&L exports for solo bookkeepers`) with a direct link to the full free build brief.
+- Instant Dev Database Bundle for Vibe Coders:
+  - Added a 4th tab ("⚡ Instant Dev Database") to `BuilderExportPanel` on `/feed/[slug]`.
+  - Provides a pre-configured `DATABASE_URL` with SSL enabled for `.env`, a 1-click copy button, a `.env.local` download action, and 1-command migration snippets (`npx prisma db push` and `psql $DATABASE_URL < schema.sql`).
+  - Created `/api/ideas/[id]/database` route returning database connection specifications.
+- Pipeline Transparency & Pricing Polish:
+  - Replaced outdated "Reddit" copy across hero, how-it-works, and CTA banner with real sources (Hacker News, GitHub Issues, GitLab Issues, Developer forums, YouTube).
+  - Updated `/methodology` to list all 12 live ingestion sources (HN, GitHub, GitLab, StackExchange, YouTube, Dev.to, Lobsters, Codeberg, Discourse, Mastodon, DevRant, Bluesky).
+  - Added USD dual-pricing indicators (`(~$4.80 USD)` on Builder, `(~$12 USD)` on Studio) and clear international card acceptance notice.
 - Homepage Layout Alignment & React Bits <DotField /> Integration:
   - Replaced legacy particle background with the interactive `<DotField />` component from React Bits (`components/DotField.jsx` + `DotField.css` + `DotField.d.ts`), creating the responsive dot grid motion with cursor bulging, dynamic engagement speed, and subtle violet radial glow.
   - Re-architected `.columns` from a CSS multi-column flow (`columns: 4 220px`) into a structured 3-column CSS Grid (`grid-template-columns: repeat(3, 1fr)` with 2-col and 1-col responsive breakpoints).

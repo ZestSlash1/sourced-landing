@@ -525,7 +525,7 @@
   /* ACCOUNT & FEED AREA — same system as the landing page (cards, chips,
      Space Grotesk/JetBrains Mono pairing, violet accent), applied to the
      signed-in app pages instead of the marketing page. */
-  .app-shell{max-width:720px; margin:0 auto; padding:52px 24px 80px;}
+  .app-shell{max-width:720px; margin:0 auto; padding:88px 24px 80px;}
   .app-shell.narrow{max-width:560px;}
   .app-header{display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap; margin-bottom:8px;}
   .app-title{font-family:'Space Grotesk'; font-weight:700; font-size:28px; letter-spacing:-0.02em; margin:0;}

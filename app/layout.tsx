@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { SITE_URL } from "@/lib/seo";
+import FloatingNavbar from "@/components/floating-navbar";
 import "./globals.css";
 
 const DESCRIPTION =
@@ -19,11 +20,13 @@ export const metadata: Metadata = {
     title: "Sourced · Real complaints, triangulated.",
     description: DESCRIPTION,
     url: SITE_URL,
+    images: [{ url: `${SITE_URL}/opengraph-image`, width: 1200, height: 630 }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Sourced · Real problems, sourced. Ready to build.",
     description: DESCRIPTION,
+    images: [`${SITE_URL}/opengraph-image`],
   },
 };
 
@@ -42,6 +45,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
+        <FloatingNavbar />
         {children}
         {umamiSrc && umamiWebsiteId && (
           <script defer src={umamiSrc} data-website-id={umamiWebsiteId} />

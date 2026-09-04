@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/auth/current-user";
 import { getMethodologyStats, getNearestPassingClusters } from "@/lib/ingest/pipeline-stats";
 import { listRecentPipelineRuns } from "@/lib/ingest/pipeline-runs-repository";
 import { MIN_CLUSTER_SIZE } from "@/lib/ingest/clustering";
+import { listFeaturedIdeas, listPublishedIdeas, getPublishedIdeaByIdOrSlug } from "@/lib/idea-drops/repository";
 import type { ProofBarData } from "./proof-bar";
 import HomeClient from "./home-client";
 
@@ -54,12 +55,30 @@ export const metadata: Metadata = {
 };
 
 export default async function Home() {
-  const [user, stats, nearMiss, latestRuns] = await Promise.all([
+  const [user, stats, nearMiss, latestRuns, featuredIdeas, publishedIdeas, sampleIdea] = await Promise.all([
     getCurrentUser(),
     getMethodologyStats(),
     getNearestPassingClusters(3),
     listRecentPipelineRuns(1),
+    listFeaturedIdeas().catch(() => []),
+    listPublishedIdeas().catch(() => []),
+    getPublishedIdeaByIdOrSlug("client-ready-pl-exports-for-solo-bookkeepers").catch(() => null),
   ]);
+
+  // Combine featured ideas up to 6, backfilling with published ideas
+  const ideasToShow = [...featuredIdeas];
+  for (const idea of publishedIdeas) {
+    if (ideasToShow.length >= 6) break;
+    if (!ideasToShow.some((item) => item.id === idea.id)) {
+      ideasToShow.push(idea);
+    }
+  }
+
+  const resolvedSample =
+    sampleIdea ??
+    publishedIdeas.find((i) => i.tier === "free") ??
+    ideasToShow[0] ??
+    null;
 
   const proofBar: ProofBarData = {
     signalsTracked: stats.signalsIngested,
@@ -72,7 +91,12 @@ export default async function Home() {
   return (
     <>
       <HomeFaqJsonLd />
-      <HomeClient userEmail={user?.email ?? null} proofBar={proofBar} />
+      <HomeClient
+        userEmail={user?.email ?? null}
+        proofBar={proofBar}
+        featuredIdeas={ideasToShow}
+        sampleIdea={resolvedSample}
+      />
     </>
   );
 }
