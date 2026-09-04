@@ -6,20 +6,26 @@ interface BuilderExportPanelProps {
   slug: string;
   contractMarkdown: string;
   cursorRules: string;
+  sqlSchema: string;
 }
 
 export default function BuilderExportPanel({
   slug,
   contractMarkdown,
   cursorRules,
+  sqlSchema,
 }: BuilderExportPanelProps) {
   const [copiedSpec, setCopiedSpec] = useState(false);
   const [copiedCursor, setCopiedCursor] = useState(false);
-  const [activeTab, setActiveTab] = useState<"claude" | "cursor">("claude");
+  const [copiedSchema, setCopiedSchema] = useState(false);
+  const [activeTab, setActiveTab] = useState<"claude" | "cursor" | "schema">("claude");
   const [copiedCurl, setCopiedCurl] = useState(false);
 
   const claudeCurl = `curl -s https://www.getsourced.dev/api/ideas/${slug}/spec > CLAUDE.md`;
   const cursorCurl = `curl -s https://www.getsourced.dev/api/ideas/${slug}/cursorrules > .cursorrules`;
+  const schemaCurl = `curl -s https://www.getsourced.dev/api/ideas/${slug}/schema > schema.sql`;
+  const currentCurl =
+    activeTab === "claude" ? claudeCurl : activeTab === "cursor" ? cursorCurl : schemaCurl;
 
   async function copyText(text: string, setter: (val: boolean) => void) {
     try {
@@ -127,6 +133,21 @@ export default function BuilderExportPanel({
           >
             <span>↓</span> Download .cursorrules
           </button>
+          <button
+            type="button"
+            onClick={() => downloadFile(sqlSchema, `${slug}-schema.sql`)}
+            className="prompt-copy-btn"
+            style={{
+              background: "var(--violet)",
+              color: "#fff",
+              borderColor: "var(--violet)",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+            }}
+          >
+            <span>↓</span> Download schema.sql
+          </button>
         </div>
       </div>
 
@@ -138,6 +159,7 @@ export default function BuilderExportPanel({
           borderBottom: "1px solid var(--line)",
           paddingBottom: 10,
           marginBottom: 14,
+          flexWrap: "wrap",
         }}
       >
         <button
@@ -174,6 +196,23 @@ export default function BuilderExportPanel({
         >
           Cursor & Windsurf (.cursorrules)
         </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("schema")}
+          style={{
+            background: activeTab === "schema" ? "var(--bg)" : "transparent",
+            color: activeTab === "schema" ? "var(--ink)" : "var(--ink-soft)",
+            border: activeTab === "schema" ? "1px solid var(--line)" : "1px solid transparent",
+            fontWeight: activeTab === "schema" ? 700 : 500,
+            fontSize: 13,
+            padding: "6px 14px",
+            borderRadius: "var(--r-sm)",
+            cursor: "pointer",
+            transition: "all 0.15s ease",
+          }}
+        >
+          Database Schema (schema.sql)
+        </button>
       </div>
 
       {/* Command & Quick Copy */}
@@ -195,14 +234,14 @@ export default function BuilderExportPanel({
             $
           </span>
           <code className="mono" style={{ fontSize: 12.5, color: "var(--ink)", whiteSpace: "nowrap" }}>
-            {activeTab === "claude" ? claudeCurl : cursorCurl}
+            {currentCurl}
           </code>
         </div>
 
         <div style={{ display: "flex", gap: 8 }}>
           <button
             type="button"
-            onClick={() => copyText(activeTab === "claude" ? claudeCurl : cursorCurl, setCopiedCurl)}
+            onClick={() => copyText(currentCurl, setCopiedCurl)}
             className={`prompt-copy-btn ${copiedCurl ? "is-copied" : ""}`}
             style={{ padding: "4px 10px", fontSize: 11.5 }}
           >
@@ -217,7 +256,7 @@ export default function BuilderExportPanel({
             >
               {copiedSpec ? "Copied Spec!" : "Copy CLAUDE.md"}
             </button>
-          ) : (
+          ) : activeTab === "cursor" ? (
             <button
               type="button"
               onClick={() => copyText(cursorRules, setCopiedCursor)}
@@ -225,6 +264,15 @@ export default function BuilderExportPanel({
               style={{ padding: "4px 10px", fontSize: 11.5 }}
             >
               {copiedCursor ? "Copied Rules!" : "Copy .cursorrules"}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => copyText(sqlSchema, setCopiedSchema)}
+              className={`prompt-copy-btn ${copiedSchema ? "is-copied" : ""}`}
+              style={{ padding: "4px 10px", fontSize: 11.5 }}
+            >
+              {copiedSchema ? "Copied Schema!" : "Copy schema.sql"}
             </button>
           )}
         </div>

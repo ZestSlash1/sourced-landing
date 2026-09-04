@@ -18,6 +18,7 @@ import { computeEconomicAssessment } from "@/lib/idea-drops/economic-severity";
 import { generateOutreachPack } from "@/lib/idea-drops/outreach";
 import { generateProductionContract } from "@/lib/idea-drops/production-contract";
 import { generateCursorRules } from "@/lib/idea-drops/cursorrules-generator";
+import { generateSqlSchema } from "@/lib/idea-drops/sql-schema-generator";
 import EconomicSeverityCard from "./economic-severity-card";
 import OutreachPackPanel from "./outreach-pack-panel";
 import BuilderExportPanel from "./builder-export-panel";
@@ -320,6 +321,7 @@ function FullBrief({ idea }: { idea: IdeaDrop }) {
   const outreachPack = generateOutreachPack(idea);
   const contractMarkdown = generateProductionContract(idea);
   const cursorRules = generateCursorRules(idea);
+  const sqlSchema = generateSqlSchema(idea);
 
   return (
     <>
@@ -386,6 +388,7 @@ function FullBrief({ idea }: { idea: IdeaDrop }) {
           slug={idea.slug}
           contractMarkdown={contractMarkdown}
           cursorRules={cursorRules}
+          sqlSchema={sqlSchema}
         />
       </div>
     </>
