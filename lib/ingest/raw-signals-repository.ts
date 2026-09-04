@@ -240,15 +240,26 @@ export async function listSignalsByIds(ids: string[]): Promise<RawSignal[]> {
 /** Signals not yet folded into a draft, newest first — clustering's input pool. */
 export async function listUndraftedSignals(): Promise<RawSignal[]> {
   const supabase = getSupabaseServerClient();
-  const { data, error } = await supabase
-    .from(TABLE)
-    .select("*")
-    .is("drafted_idea_id", null)
-    .range(0, 5000)
-    .order("fetched_at", { ascending: false });
+  const PAGE_SIZE = 1000;
+  let from = 0;
+  const allRows: RawSignalRow[] = [];
 
-  if (error) throw new Error(`listUndraftedSignals: ${error.message}`);
-  return (data as RawSignalRow[]).map(rowToSignal);
+  while (true) {
+    const { data, error } = await supabase
+      .from(TABLE)
+      .select("*")
+      .is("drafted_idea_id", null)
+      .range(from, from + PAGE_SIZE - 1)
+      .order("fetched_at", { ascending: false });
+
+    if (error) throw new Error(`listUndraftedSignals: ${error.message}`);
+    const rows = (data ?? []) as RawSignalRow[];
+    allRows.push(...rows);
+    if (rows.length < PAGE_SIZE) break;
+    from += PAGE_SIZE;
+  }
+
+  return allRows.map(rowToSignal);
 }
 
 /**
@@ -271,14 +282,23 @@ export async function persistClusterKeys(assignments: { signalId: string; cluste
   }
 
   let written = 0;
-  for (const [clusterKey, ids] of Array.from(byKey.entries())) {
-    const { error, count } = await supabase
-      .from(TABLE)
-      .update({ cluster_key: clusterKey }, { count: "exact" })
-      .in("id", ids)
-      .or(`cluster_key.is.null,cluster_key.neq.${clusterKey}`);
-    if (error) throw new Error(`persistClusterKeys: ${error.message}`);
-    written += count ?? 0;
+  const entries = Array.from(byKey.entries());
+  const BATCH_SIZE = 10;
+
+  for (let i = 0; i < entries.length; i += BATCH_SIZE) {
+    const chunk = entries.slice(i, i + BATCH_SIZE);
+    const results = await Promise.all(
+      chunk.map(async ([clusterKey, ids]) => {
+        const { error, count } = await supabase
+          .from(TABLE)
+          .update({ cluster_key: clusterKey }, { count: "exact" })
+          .in("id", ids)
+          .or(`cluster_key.is.null,cluster_key.neq.${clusterKey}`);
+        if (error) throw new Error(`persistClusterKeys: ${error.message}`);
+        return count ?? 0;
+      }),
+    );
+    written += results.reduce((acc, c) => acc + c, 0);
   }
   return written;
 }

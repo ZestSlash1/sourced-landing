@@ -24,9 +24,17 @@ export async function generateDraftViaOmniRoute(
       // Always explicit: omitting this returns SSE chunks instead of a
       // single JSON response, which breaks the JSON.parse below.
       stream: false,
-      messages: [{ role: "user", content: prompt }],
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are an automated backend API for Sourced (getsourced.dev). You must output ONLY a single valid JSON object following the schema, with no markdown fences, no preamble, and no conversational filler.",
+        },
+        { role: "user", content: prompt },
+      ],
     }),
-    signal: AbortSignal.timeout(60_000),
+    signal: AbortSignal.timeout(180_000),
   });
 
   if (!res.ok) {
@@ -40,6 +48,12 @@ export async function generateDraftViaOmniRoute(
   };
   const content = body.choices[0]?.message?.content;
   if (!content) throw new Error("OmniRoute draft request returned no message content.");
+
+  const start = content.indexOf("{");
+  const end = content.lastIndexOf("}");
+  if (start === -1 || end === -1 || end < start) {
+    throw new Error(`OmniRoute response did not contain a JSON object. Snippet: ${content.slice(0, 150)}`);
+  }
 
   return {
     content,

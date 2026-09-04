@@ -5,44 +5,53 @@
 // (one retry first), and uses OpenRouter directly when OMNIROUTE_URL is
 // unset (Vercel cron, laptop off the home LAN).
 import { generateDraftViaOmniRoute } from "./providers/omniroute";
+import { generateDraftViaOllama } from "./providers/ollama";
 import { generateDraftViaOpenRouter } from "./providers/openrouter";
 
 export interface DraftGenerationOutput {
   content: string;
-  provider: "omniroute" | "openrouter";
+  provider: "omniroute" | "ollama" | "openrouter";
   model: string;
   tokens: number;
   latencyMs: number;
-  /** True if OmniRoute was tried and failed, forcing the OpenRouter fallback. */
+  /** True if a primary provider failed, forcing fallback. */
   fellBack: boolean;
 }
 
-/** Throws at pipeline startup if neither provider is configured — call once before a run, not per-call. */
+/** Throws at pipeline startup if no provider is configured — call once before a run, not per-call. */
 export function assertDraftGeneratorConfigured(): void {
-  if (!process.env.OMNIROUTE_URL && !process.env.OPENROUTER_API_KEY) {
-    throw new Error("No draft-generation provider configured: set OMNIROUTE_URL or OPENROUTER_API_KEY.");
+  if (!process.env.OMNIROUTE_URL && !process.env.OLLAMA_URL && !process.env.OPENROUTER_API_KEY) {
+    throw new Error("No draft-generation provider configured: set OMNIROUTE_URL, OLLAMA_URL, or OPENROUTER_API_KEY.");
   }
 }
 
 /** Logs which provider(s) a run will use — call once at pipeline startup, not per-call. */
 export function logDraftGeneratorStartup(): void {
   const omniRouteUrl = process.env.OMNIROUTE_URL;
+  const ollamaUrl = process.env.OLLAMA_URL;
   if (omniRouteUrl) {
     const model = process.env.OMNIROUTE_DRAFT_MODEL ?? "auto";
     console.log(`[draft-generator] OmniRoute available at ${omniRouteUrl} (model: ${model})`);
     console.log(
-      process.env.OPENROUTER_API_KEY
+      ollamaUrl
+        ? `[draft-generator] Ollama configured as secondary fallback at ${ollamaUrl}`
+        : process.env.OPENROUTER_API_KEY
         ? "[draft-generator] OpenRouter configured as fallback (balance not checked at startup)"
-        : "[draft-generator] WARNING: no OpenRouter fallback configured — OmniRoute failures will hard-fail the cluster",
+        : "[draft-generator] WARNING: no fallback configured — OmniRoute failures will hard-fail the cluster",
     );
+  } else if (ollamaUrl) {
+    const model = process.env.OLLAMA_DRAFT_MODEL ?? process.env.OLLAMA_CLASSIFIER_MODEL ?? "gemma3:4b";
+    console.log(`[draft-generator] OmniRoute unavailable, using Ollama at ${ollamaUrl} (model: ${model})`);
   } else {
     const model = process.env.OPENROUTER_DRAFT_MODEL ?? "meta-llama/llama-3.3-70b-instruct:free";
-    console.log(`[draft-generator] OmniRoute unavailable, using OpenRouter (model: ${model})`);
+    console.log(`[draft-generator] OmniRoute and Ollama unavailable, using OpenRouter (model: ${model})`);
   }
 }
 
 export async function generateDraft(prompt: string): Promise<DraftGenerationOutput> {
   const omniRouteUrl = process.env.OMNIROUTE_URL;
+  const ollamaUrl = process.env.OLLAMA_URL;
+  let fellBack = false;
 
   if (omniRouteUrl) {
     const start = Date.now();
@@ -66,7 +75,29 @@ export async function generateDraft(prompt: string): Promise<DraftGenerationOutp
         );
       }
     }
-    console.error("[draft-generator] OmniRoute failed after retry, falling back to OpenRouter");
+    console.error("[draft-generator] OmniRoute failed after retry, falling back to Ollama / OpenRouter");
+    fellBack = true;
+  }
+
+  if (ollamaUrl) {
+    const start = Date.now();
+    try {
+      const result = await generateDraftViaOllama(prompt, ollamaUrl);
+      return {
+        content: result.content,
+        provider: "ollama",
+        model: result.model,
+        tokens: result.tokens,
+        latencyMs: Date.now() - start,
+        fellBack,
+      };
+    } catch (err) {
+      console.error(
+        "[draft-generator] Ollama draft failed, falling back to OpenRouter:",
+        err instanceof Error ? err.message : err,
+      );
+      fellBack = true;
+    }
   }
 
   const start = Date.now();
@@ -77,6 +108,6 @@ export async function generateDraft(prompt: string): Promise<DraftGenerationOutp
     model: result.model,
     tokens: result.tokens,
     latencyMs: Date.now() - start,
-    fellBack: Boolean(omniRouteUrl),
+    fellBack: Boolean(omniRouteUrl || ollamaUrl),
   };
 }

@@ -3,7 +3,7 @@
 // inside `options` — easy to get wrong, so it's asserted in the request body
 // below rather than left to a comment. Pure function, no top-level side
 // effects — lib/llm/classifier.ts owns the fallback-to-OpenRouter decision.
-import type { ProviderClassifyInput, ProviderClassifyResult } from "./types";
+import type { ProviderClassifyInput, ProviderClassifyResult, ProviderDraftResult } from "./types";
 import { buildClassificationPrompt, extractJson, normalizeClassification } from "./shared";
 
 const DEFAULT_MODEL = "qwen2.5:7b-instruct";
@@ -52,4 +52,37 @@ export async function classifyViaOllama(
     }
   }
   throw lastErr instanceof Error ? lastErr : new Error(String(lastErr));
+}
+
+/** One Ollama draft-generation call in JSON format mode. */
+export async function generateDraftViaOllama(
+  prompt: string,
+  ollamaUrl = process.env.OLLAMA_URL,
+): Promise<ProviderDraftResult> {
+  if (!ollamaUrl) throw new Error("Missing OLLAMA_URL environment variable.");
+  const model = process.env.OLLAMA_DRAFT_MODEL ?? process.env.OLLAMA_CLASSIFIER_MODEL ?? "gemma3:4b";
+
+  const res = await fetch(`${ollamaUrl}/api/generate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model,
+      prompt,
+      format: "json",
+      stream: false,
+      options: { temperature: 0.2, num_predict: 2048 },
+    }),
+    signal: AbortSignal.timeout(180_000),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Ollama draft request failed: ${res.status} ${await res.text()}`);
+  }
+
+  const body = (await res.json()) as { response: string };
+  return {
+    content: body.response,
+    model,
+    tokens: Math.ceil((prompt.length + body.response.length) / 4),
+  };
 }

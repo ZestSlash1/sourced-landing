@@ -161,7 +161,7 @@ export async function runDraftPass(): Promise<DraftPassResult> {
       if (provider === "omniroute") {
         omnirouteCalls++;
         omnirouteLatencyMsTotal += latencyMs;
-      } else {
+      } else if (provider === "openrouter") {
         draftOpenrouterCalls++;
         draftOpenrouterLatencyMsTotal += latencyMs;
       }

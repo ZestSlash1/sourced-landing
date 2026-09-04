@@ -154,7 +154,7 @@ function extractJson(text: string): DraftedFields {
 
 export interface DraftedIdea {
   idea: IdeaDrop;
-  provider: "omniroute" | "openrouter";
+  provider: "omniroute" | "ollama" | "openrouter";
   model: string;
   tokens: number;
   latencyMs: number;
