@@ -133,6 +133,7 @@ export async function checkCompetitiveLandscape(
       // this task only needs a short JSON verdict, not a long completion.
       max_tokens: 1000,
     }),
+    signal: AbortSignal.timeout(20_000),
   });
 
   if (!res.ok) {

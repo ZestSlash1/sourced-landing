@@ -6,7 +6,7 @@ import type { ProviderClassifyInput, ProviderClassifyResult, ProviderDraftResult
 import { buildClassificationPrompt, extractJson, normalizeClassification } from "./shared";
 
 const MODEL = process.env.OPENROUTER_CLASSIFY_MODEL ?? "google/gemini-3.5-flash-lite";
-const DRAFT_MODEL = process.env.OPENROUTER_DRAFT_MODEL ?? "meta-llama/llama-3.3-70b-instruct:free";
+const DRAFT_MODEL = process.env.OPENROUTER_DRAFT_MODEL ?? "meta-llama/llama-3.3-70b-instruct";
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 
 /** Pure function: one OpenRouter classification call. Throws on failure/malformed output — no top-level side effects. */
@@ -28,6 +28,7 @@ export async function classifyViaOpenRouter(input: ProviderClassifyInput): Promi
       temperature: 0,
       max_tokens: 300,
     }),
+    signal: AbortSignal.timeout(30_000),
   });
 
   if (!res.ok) {
@@ -67,6 +68,7 @@ export async function generateDraftViaOpenRouter(prompt: string): Promise<Provid
       messages: [{ role: "user", content: prompt }],
       temperature: 0.4,
     }),
+    signal: AbortSignal.timeout(60_000),
   });
 
   if (!res.ok) {

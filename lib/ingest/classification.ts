@@ -13,8 +13,10 @@ export const CLASSIFICATION_CONFIDENCE_FLOOR = 0.6;
 
 // Per-run cap (Part 2 cost control) — classification scales linearly with
 // the volume expansion already shipped, so bound how many signals one pass
-// classifies. Backfill runs override this via options.cap.
-export const CLASSIFICATION_RUN_CAP = 500;
+// classifies.
+export const CLASSIFICATION_RUN_CAP = process.env.CLASSIFICATION_RUN_CAP
+  ? Number(process.env.CLASSIFICATION_RUN_CAP)
+  : 25;
 
 // Rough per-token pricing for a small model at this class — good enough for
 // cost-tracking purposes, same rationale as embeddings.ts's USD_PER_TOKEN.

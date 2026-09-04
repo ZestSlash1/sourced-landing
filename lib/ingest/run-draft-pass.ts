@@ -122,8 +122,9 @@ export async function runDraftPass(): Promise<DraftPassResult> {
   // find_signal_neighbors RPC instead of the in-process O(n^2) cosine loop.
   // CLUSTERING_STRATEGY=jaccard keeps using the original in-process path,
   // same as before this migration.
+  const useSqlClustering = process.env.CLUSTERING_ENGINE === "sql";
   const { clusters, stats } =
-    CLUSTERING_STRATEGY === "embedding"
+    CLUSTERING_STRATEGY === "embedding" && useSqlClustering
       ? await clusterSignalsSQL(getSupabaseServerClient(), complaintSignals)
       : clusterSignals(complaintSignals);
 

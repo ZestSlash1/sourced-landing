@@ -187,6 +187,7 @@ export async function listUnclassifiedSignals(): Promise<RawSignal[]> {
     .select("*")
     .is("drafted_idea_id", null)
     .is("classified_as_complaint", null)
+    .range(0, 5000)
     .order("fetched_at", { ascending: false });
 
   if (error) throw new Error(`listUnclassifiedSignals: ${error.message}`);
@@ -243,6 +244,7 @@ export async function listUndraftedSignals(): Promise<RawSignal[]> {
     .from(TABLE)
     .select("*")
     .is("drafted_idea_id", null)
+    .range(0, 5000)
     .order("fetched_at", { ascending: false });
 
   if (error) throw new Error(`listUndraftedSignals: ${error.message}`);

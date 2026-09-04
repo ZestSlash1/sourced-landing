@@ -201,22 +201,28 @@ export async function findSimilarPairsSQL(
   const errors: string[] = [];
   let queried = 0;
 
-  for (const signal of signals) {
-    queried++;
-    const { data, error } = await supabase.rpc("find_signal_neighbors", { p_signal_id: signal.id, p_k: k });
-    if (error) {
-      errors.push(`${signal.id}: ${error.message}`);
-      continue;
-    }
-    const i = indexById.get(signal.id)!;
-    for (const row of (data as NeighborRow[]) ?? []) {
-      const j = indexById.get(row.id);
-      if (j === undefined || row.similarity < threshold) continue;
-      const key = i < j ? `${i}:${j}` : `${j}:${i}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      pairs.push(i < j ? [i, j] : [j, i]);
-    }
+  const CONCURRENCY = 20;
+  for (let idx = 0; idx < signals.length; idx += CONCURRENCY) {
+    const chunk = signals.slice(idx, idx + CONCURRENCY);
+    await Promise.all(
+      chunk.map(async (signal) => {
+        queried++;
+        const { data, error } = await supabase.rpc("find_signal_neighbors", { p_signal_id: signal.id, p_k: k });
+        if (error) {
+          errors.push(`${signal.id}: ${error.message}`);
+          return;
+        }
+        const i = indexById.get(signal.id)!;
+        for (const row of (data as NeighborRow[]) ?? []) {
+          const j = indexById.get(row.id);
+          if (j === undefined || row.similarity < threshold) continue;
+          const key = i < j ? `${i}:${j}` : `${j}:${i}`;
+          if (seen.has(key)) continue;
+          seen.add(key);
+          pairs.push(i < j ? [i, j] : [j, i]);
+        }
+      }),
+    );
   }
 
   return { pairs, queried, errors };

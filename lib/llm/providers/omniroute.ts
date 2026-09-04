@@ -6,7 +6,7 @@
 // the fallback-to-OpenRouter decision.
 import type { ProviderDraftResult } from "./types";
 
-const DEFAULT_MODEL = "auto";
+const DEFAULT_MODEL = "gemini/gemini-3.6-flash";
 
 /** Pure function: one OmniRoute draft-generation call. Throws on failure/malformed output — caller decides whether to fall back. */
 export async function generateDraftViaOmniRoute(
@@ -26,6 +26,7 @@ export async function generateDraftViaOmniRoute(
       stream: false,
       messages: [{ role: "user", content: prompt }],
     }),
+    signal: AbortSignal.timeout(60_000),
   });
 
   if (!res.ok) {
