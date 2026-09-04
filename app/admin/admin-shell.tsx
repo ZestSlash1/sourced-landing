@@ -58,11 +58,17 @@ export default function AdminShell({
                         transition={{ type: "spring", stiffness: 260, damping: 28 }}
                       />
                     )}
-                    <span style={{ position: "relative" }}>{tab.label}</span>
+                    <span style={{ position: "relative", display: "inline-flex", alignItems: "center" }}>
+                      {tab.href === "/admin/analytics" && <span className="admin-live-dot" />}
+                      {tab.label}
+                    </span>
                   </Link>
                 );
               })}
             </nav>
+            <Link href="/" target="_blank" rel="noreferrer" className="admin-view-site">
+              View Site ↗
+            </Link>
             <SignOutButton />
           </div>
         </div>

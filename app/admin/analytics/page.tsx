@@ -36,8 +36,29 @@ export default async function AnalyticsPage() {
   return (
     <AdminShell active="/admin/analytics">
       <div className="admin-page-head">
-        <h1 className="display admin-page-title">Analytics</h1>
-        <p className="mono admin-page-sub">Last {summary.windowDays} days · from the events table, live</p>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <h1 className="display admin-page-title" style={{ margin: 0 }}>Analytics</h1>
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              fontSize: 11.5,
+              fontWeight: 700,
+              fontFamily: "'JetBrains Mono'",
+              color: "#10B981",
+              background: "rgba(16,185,129,0.12)",
+              padding: "4px 10px",
+              borderRadius: "var(--r-chip)",
+              textTransform: "uppercase",
+              letterSpacing: "0.04em",
+            }}
+          >
+            <span className="admin-live-dot" /> Live Telemetry
+          </span>
+        </div>
+        <p className="mono admin-page-sub" style={{ marginTop: 6 }}>
+          Last {summary.windowDays} days · real-time 3D visitor globe & event breakdowns
+        </p>
       </div>
 
       <StatGrid>

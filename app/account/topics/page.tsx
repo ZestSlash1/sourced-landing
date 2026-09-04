@@ -16,7 +16,7 @@ export default async function TopicsPage() {
   const topics = await getSubscriberTopics(check.subscriber.id);
 
   return (
-    <main className="app-shell narrow">
+    <main className="app-shell narrow" style={{ maxWidth: 680 }}>
       <div className="app-header">
         <h1 className="app-title display">Pick your topics</h1>
         <SignOutButton />

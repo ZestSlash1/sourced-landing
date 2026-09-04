@@ -7,6 +7,13 @@
 **Date:** 2026-09-04
 
 ## Current state
+- Customer Account & Admin Suite Overhaul:
+  - Account Dashboard (`/account`): Redesigned with user avatar HUD, tier badge (`Free Plan`, `Builder Tier`, `Studio Tier`), active status pill, visual monthly quota meter (`used / quota`), topic preferences chip preview, and an **Unlocked Briefs Vault** allowing subscribers to jump back directly to their unlocked briefs.
+  - Topic Preferences (`/account/topics`): Added selected counter badge (`X of 6 topics selected`), "Select all" and "Clear" batch buttons, and interactive checkmarks.
+  - Admin Chrome (`AdminShell`): Added pulsing live emerald indicator to the `Analytics` tab and `"View Site ↗"` shortcut to preview the live customer site.
+  - Admin Dashboard (`/admin`): Added 4 Executive KPI cards (Total Ideas, Published Drops, Pending Review, Drafts/Backlog) and interactive search & filter toolbar (search by title/category/tag + status filter tabs with counts).
+  - Admin Pending Review (`/admin/pending`): Enhanced queue metrics with cross-platform indicators and high-contrast empty state.
+  - Admin Analytics (`/admin/analytics`): Maintained and preserved the 3D Live Visitor Globe canvas, rotation, and arc telemetry while elevating the telemetry header.
 - Global Floating Expandable Icon Pill Navbar (Dynamic Island style):
   - Extracted navigation into reusable `components/floating-navbar.tsx` mounted globally in `app/layout.tsx`.
   - Context-aware active tab: smooth scroll-spy on `/` for `#how`, `#apis`, `#sample`, `#pricing`; route-aware active indicator on interior views (`/feed`, `/methodology`, `/account`, etc.).
