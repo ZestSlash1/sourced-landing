@@ -17,9 +17,10 @@ import Breadcrumbs from "../../breadcrumbs";
 import { computeEconomicAssessment } from "@/lib/idea-drops/economic-severity";
 import { generateOutreachPack } from "@/lib/idea-drops/outreach";
 import { generateProductionContract } from "@/lib/idea-drops/production-contract";
+import { generateCursorRules } from "@/lib/idea-drops/cursorrules-generator";
 import EconomicSeverityCard from "./economic-severity-card";
 import OutreachPackPanel from "./outreach-pack-panel";
-import SpecContractPanel from "./spec-contract-panel";
+import BuilderExportPanel from "./builder-export-panel";
 
 export const dynamic = "force-dynamic";
 
@@ -318,6 +319,7 @@ function CompetitiveLandscapeSection({ idea }: { idea: IdeaDrop }) {
 function FullBrief({ idea }: { idea: IdeaDrop }) {
   const outreachPack = generateOutreachPack(idea);
   const contractMarkdown = generateProductionContract(idea);
+  const cursorRules = generateCursorRules(idea);
 
   return (
     <>
@@ -376,11 +378,15 @@ function FullBrief({ idea }: { idea: IdeaDrop }) {
       </div>
 
       <div className="brief-section">
-        <div className="eyebrow">Agent prompts & spec contract</div>
+        <div className="eyebrow">Agent prompts & builder export</div>
         <CopyPromptButton label="Claude Code" prompt={idea.agentPrompts.claudeCode} />
         <CopyPromptButton label="Cursor / Windsurf" prompt={idea.agentPrompts.cursorWindsurf} />
         <CopyPromptButton label="v0 / Bolt" prompt={idea.agentPrompts.v0Bolt} />
-        <SpecContractPanel slug={idea.slug} contractMarkdown={contractMarkdown} />
+        <BuilderExportPanel
+          slug={idea.slug}
+          contractMarkdown={contractMarkdown}
+          cursorRules={cursorRules}
+        />
       </div>
     </>
   );
