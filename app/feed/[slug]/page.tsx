@@ -19,6 +19,7 @@ import { generateOutreachPack } from "@/lib/idea-drops/outreach";
 import { generateProductionContract } from "@/lib/idea-drops/production-contract";
 import { generateCursorRules } from "@/lib/idea-drops/cursorrules-generator";
 import { generateSqlSchema } from "@/lib/idea-drops/sql-schema-generator";
+import { applyWatermark, generateLicenseFingerprint } from "@/lib/security/watermark";
 import EconomicSeverityCard from "./economic-severity-card";
 import OutreachPackPanel from "./outreach-pack-panel";
 import BuilderExportPanel from "./builder-export-panel";
@@ -187,7 +188,7 @@ export default async function IdeaDetailPage({ params }: { params: { slug: strin
                 </Link>
               </div>
             ) : (
-              <FullBrief idea={scoped as IdeaDrop} />
+              <FullBrief idea={scoped as IdeaDrop} subscriberId={viewer.subscriberId ?? undefined} />
             )}
           </div>
         </div>
@@ -317,11 +318,13 @@ function CompetitiveLandscapeSection({ idea }: { idea: IdeaDrop }) {
   );
 }
 
-function FullBrief({ idea }: { idea: IdeaDrop }) {
+function FullBrief({ idea, subscriberId }: { idea: IdeaDrop; subscriberId?: string }) {
   const outreachPack = generateOutreachPack(idea);
-  const contractMarkdown = generateProductionContract(idea);
-  const cursorRules = generateCursorRules(idea);
-  const sqlSchema = generateSqlSchema(idea);
+  const subId = subscriberId ?? "subscriber";
+  const contractMarkdown = applyWatermark(generateProductionContract(idea), subId, idea.slug, "markdown");
+  const cursorRules = applyWatermark(generateCursorRules(idea), subId, idea.slug, "javascript");
+  const sqlSchema = applyWatermark(generateSqlSchema(idea), subId, idea.slug, "sql");
+  const fingerprint = generateLicenseFingerprint(subId, idea.slug);
 
   return (
     <>
@@ -390,6 +393,23 @@ function FullBrief({ idea }: { idea: IdeaDrop }) {
           cursorRules={cursorRules}
           sqlSchema={sqlSchema}
         />
+        <div style={{
+          marginTop: 18,
+          padding: "10px 14px",
+          background: "rgba(0,0,0,0.03)",
+          border: "1px solid var(--line)",
+          borderRadius: "var(--r-sm)",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: 8,
+          fontSize: 11.5,
+          color: "var(--ink-soft)"
+        }}>
+          <span>🔒 Verified License Fingerprint: <span className="mono" style={{ color: "var(--ink)", fontWeight: 600 }}>{fingerprint}</span></span>
+          <span>Redistribution or automated scraping strictly prohibited</span>
+        </div>
       </div>
     </>
   );

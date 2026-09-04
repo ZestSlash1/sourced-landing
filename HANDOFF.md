@@ -7,6 +7,13 @@
 **Date:** 2026-09-04
 
 ## Current state
+- Security & IP Protection Hardening:
+  - Gated API Export Endpoints (`/api/ideas/[id]/schema`, `/spec`, `/cursorrules`, `/database`): Enforced authentication, tier checks, and quota unlocks via `verifyExportAccess()`. Anonymous/under-tier callers receive 401/403 responses rather than dumping raw code.
+  - Forensic Digital Watermarking (`lib/security/watermark.ts`): Injected deterministic cryptographic fingerprints and invisible zero-width Unicode steganography into all exported DDL schemas (`schema.sql`, `schema.prisma`), agent specs (`CLAUDE.md`), and `.cursorrules`. Leaked files can be forensically traced back to the exact subscriber account.
+  - AI Scraper & Bot Blocking (`app/robots.ts`): Explicitly disallowed major AI harvesting crawlers (`GPTBot`, `ChatGPT-User`, `ClaudeBot`, `Claude-Web`, `Bytespider`, `CCBot`, `PerplexityBot`, `Diffbot`, `FacebookBot`, `Amazonbot`) from indexing idea drops and feed content.
+  - Edge Anti-Scraping Rate Limiting (`middleware.ts` + `lib/security/rate-limit.ts`): Added sliding window IP/session rate limiter (60 req/min) for `/api/*` routes returning HTTP 429 Too Many Requests to prevent mass scraping.
+  - Legal & Anti-Scraping Notice: Added copyright protection and anti-scraping notice to `app/home-client.tsx` footer and `FullBrief` license badge.
+  - Unit & Integration Test Coverage: Added `lib/security/watermark.test.ts`, `lib/security/rate-limit.test.ts`, and `app/api/ideas/[id]/export-security.test.ts` (33 total test suites, 170 tests passing).
 - Customer Account & Admin Suite Overhaul:
   - Account Dashboard (`/account`): Redesigned with user avatar HUD, tier badge (`Free Plan`, `Builder Tier`, `Studio Tier`), active status pill, visual monthly quota meter (`used / quota`), topic preferences chip preview, and an **Unlocked Briefs Vault** allowing subscribers to jump back directly to their unlocked briefs.
   - Topic Preferences (`/account/topics`): Added selected counter badge (`X of 6 topics selected`), "Select all" and "Clear" batch buttons, and interactive checkmarks.

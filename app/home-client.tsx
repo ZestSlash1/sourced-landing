@@ -685,6 +685,9 @@ export default function HomeClient({
             <a href="/methodology">How the pipeline works</a>
             <a href="/rejected">Rejected clusters</a>
           </div>
+          <p style={{ fontSize: 11.5, color: "var(--ink-soft)", marginTop: 16 }}>
+            © {new Date().getFullYear()} Sourced. All rights reserved. Automated harvesting, wholesale scraping, and commercial resale of curated drops or database schemas is strictly prohibited.
+          </p>
         </div>
       </footer>
     </>

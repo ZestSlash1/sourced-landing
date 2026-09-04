@@ -1,6 +1,7 @@
 import { NextResponse, type NextFetchEvent, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { OPT_OUT_COOKIE, isExcludedTraffic } from "@/lib/analytics/exclusion";
+import { checkRateLimit } from "@/lib/security/rate-limit";
 
 /**
  * Three jobs: (1) mint the anonymous "sid" cookie used as `session_id` on
@@ -8,11 +9,7 @@ import { OPT_OUT_COOKIE, isExcludedTraffic } from "@/lib/analytics/exclusion";
  * sessions across server components and routes, and (3) fire a "page_view"
  * event for real page navigations.
  *
- * The service-role Supabase client isn't reliably edge-compatible, so the
- * actual insert happens in POST /api/track (Node runtime) — this just posts
- * to it via `event.waitUntil`, which keeps the function alive to finish that
- * fetch after the response has already gone out, so it can never add
- * latency to the page itself.
+ * Additionally enforces anti-scraping rate limits on public /api routes.
  */
 
 const SESSION_COOKIE = "sid";
@@ -27,10 +24,39 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
   const isNewSession = !request.cookies.get(SESSION_COOKIE)?.value;
   const sessionId = request.cookies.get(SESSION_COOKIE)?.value ?? crypto.randomUUID();
 
+  // Enforce anti-scraping rate limiting on /api endpoints (excluding cron, webhooks, tracking)
+  if (
+    pathname.startsWith("/api") &&
+    !pathname.startsWith("/api/cron") &&
+    !pathname.startsWith("/api/webhooks") &&
+    !pathname.startsWith("/api/track")
+  ) {
+    const callerIp =
+      request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      request.headers.get("x-real-ip") ||
+      sessionId;
+    const rl = checkRateLimit(`api:${callerIp}`, 60, 60_000);
+
+    if (!rl.success) {
+      return NextResponse.json(
+        {
+          error: "Too Many Requests",
+          message: "Rate limit exceeded. Automated scraping and bulk extraction are prohibited.",
+        },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": "60",
+            "X-RateLimit-Limit": "60",
+            "X-RateLimit-Remaining": "0",
+            "X-RateLimit-Reset": String(Math.ceil(rl.reset / 1000)),
+          },
+        }
+      );
+    }
+  }
+
   if (isNewSession) {
-    // Set it on the request too, so this same pass's downstream handlers
-    // (e.g. /auth/callback) see it via cookies() without waiting for the
-    // browser to send it back on a second request.
     request.cookies.set(SESSION_COOKIE, sessionId);
   }
 
