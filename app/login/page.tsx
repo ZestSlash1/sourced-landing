@@ -78,8 +78,7 @@ function LoginForm() {
       return;
     }
 
-    router.push(next);
-    router.refresh();
+    window.location.href = next;
   }
 
   async function handleOAuth(provider: OAuthProvider) {

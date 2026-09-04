@@ -23,24 +23,17 @@ export function getSupabaseAuthServerClient() {
 
   return createServerClient(url, anonKey, {
     cookies: {
-      get(name: string) {
-        return cookieStore.get(name)?.value;
+      getAll() {
+        return cookieStore.getAll();
       },
-      set(name: string, value: string, options) {
-        // Throws when called from a Server Component (cookies are
-        // read-only there) — safe to ignore, since middleware or the
-        // route handler that issued the session already persisted it.
+      setAll(cookiesToSet) {
         try {
-          cookieStore.set({ name, value, ...options });
+          cookiesToSet.forEach(({ name, value, options }) => {
+            cookieStore.set(name, value, options);
+          });
         } catch {
-          // no-op, see above
-        }
-      },
-      remove(name: string, options) {
-        try {
-          cookieStore.set({ name, value: "", ...options });
-        } catch {
-          // no-op, see above
+          // In Server Components, cookies are read-only.
+          // Ignored because middleware handles session refresh.
         }
       },
     },

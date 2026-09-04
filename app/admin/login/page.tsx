@@ -1,15 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 /**
- * Single-admin login. No admin routes exist yet to redirect into on success
- * (see sourced-phase3-db-auth-spec.md Track B); this just proves sign-in
- * works against the `admins` allowlist via requireAdmin() once something
- * calls it.
+ * Single-admin login. Authenticates against the `admins` allowlist via
+ * requireAdmin() once redirected to /admin.
  */
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -17,6 +15,16 @@ export default function AdminLoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [currentEmail, setCurrentEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    const supabase = getSupabaseBrowserClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user?.email) {
+        setCurrentEmail(user.email);
+      }
+    });
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -36,8 +44,13 @@ export default function AdminLoginPage() {
       return;
     }
 
-    router.push("/admin");
-    router.refresh();
+    window.location.href = "/admin";
+  }
+
+  async function handleSignOut() {
+    const supabase = getSupabaseBrowserClient();
+    await supabase.auth.signOut();
+    setCurrentEmail(null);
   }
 
   return (
@@ -62,6 +75,46 @@ export default function AdminLoginPage() {
           Admin sign in
         </h1>
         <p style={{ fontSize: 13, color: "var(--ink-soft)", margin: "0 0 24px" }}>Sourced operations</p>
+
+        {currentEmail && (
+          <div
+            style={{
+              padding: "10px 12px",
+              background: "rgba(91,79,247,0.08)",
+              border: "1px solid rgba(91,79,247,0.2)",
+              borderRadius: "var(--r-sm)",
+              fontSize: 13,
+              marginBottom: 20,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: 8,
+              flexWrap: "wrap",
+            }}
+          >
+            <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>
+              Active: <strong>{currentEmail}</strong>
+            </span>
+            <div style={{ display: "flex", gap: 6 }}>
+              <button
+                type="button"
+                onClick={() => { window.location.href = "/admin"; }}
+                className="admin-btn admin-btn-primary"
+                style={{ padding: "4px 10px", fontSize: 12, borderRadius: "var(--r-sm)" }}
+              >
+                Dashboard →
+              </button>
+              <button
+                type="button"
+                onClick={handleSignOut}
+                className="admin-btn"
+                style={{ padding: "4px 8px", fontSize: 12, borderRadius: "var(--r-sm)" }}
+              >
+                Sign out
+              </button>
+            </div>
+          </div>
+        )}
 
         <label className="admin-label">Email</label>
         <input

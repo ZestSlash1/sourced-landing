@@ -7,6 +7,16 @@
 **Date:** 2026-09-04
 
 ## Current state
+- Admin panel sign in fixed & Supabase SSR session synchronization complete:
+  - Upgraded cookie handling in `lib/supabase/auth-server.ts` to modern `@supabase/ssr` `getAll` and `setAll` methods, fixing chunked cookie retrieval (`sb-*-auth-token.0`, etc.) that previously returned null on `getUser()`.
+  - Added session synchronization into `middleware.ts` via `@supabase/ssr` `createServerClient`, ensuring auth tokens are refreshed and passed down into Server Components.
+  - Upgraded `app/admin/login/page.tsx`, `app/admin/sign-out-button.tsx`, `app/login/page.tsx`, and `app/account/sign-out-button.tsx` to use `window.location.href` for full-page navigation, eliminating Next.js App Router client cache race conditions. Added active session display and quick action controls on `/admin/login`.
+  - Added unit tests in `lib/auth/require-admin.test.ts` and `lib/supabase/auth-server.test.ts`. 27 test files (149 tests) passing in Vitest.
+- Full website audit completed & verified:
+  - Public routes: `/`, `/feed`, `/feed/[slug]`, `/category/[category]`, `/platform/[platform]`, `/stack/[technology]`, `/tools/[matched-api]`, `/signals`, `/rejected`, `/methodology`, `/account`, `/account/topics`.
+  - Admin routes: `/admin` (idea drops list), `/admin/pending` (pending reviews & competitive check), `/admin/ideas/[id]` (raw JSON & field editor), `/admin/analytics` (KPI summary, 3D live globe & real-time telemetry feed).
+  - Backend/API routes: `/api/newsletter`, `/api/track`, `/api/account/topics`, `/api/admin/analytics/live`, `/api/admin/ideas/[id]`, `/api/admin/ideas/[id]/recheck-competitive`, `/api/cron/*`.
+  - Database tables verified: `admins`, `idea_drops`, `sourced_subscribers`, `subscriber_topics`, `events`, `sourced_newsletter_signups`.
 - Phase 1 & 2 (evidence/build-brief gating, /methodology, /rejected pages)
   shipped. Programmatic SEO pages (`/category`, `/platform/[platform]`,
   `/stack/[technology]`, `/tools/[matched-api]`, `/signals` firehose,
@@ -34,7 +44,7 @@
   - Day-1 Customer Outreach Pack (`lib/idea-drops/outreach.ts`, `app/feed/[slug]/outreach-pack-panel.tsx`) generated from verified evidence links across GitHub, HN, Discourse, etc. with platform etiquette rules.
   - Economic Severity & Willingness-to-Pay Index (`lib/idea-drops/economic-severity.ts`, `app/feed/[slug]/economic-severity-card.tsx`) displaying buyer persona, pricing architecture, and net monthly ROI.
   - Spec-Driven Production Contract (`lib/idea-drops/production-contract.ts`, `app/feed/[slug]/spec-contract-panel.tsx`, `app/api/ideas/[id]/spec/route.ts`) providing full `CLAUDE.md` architecture specifications with Postgres DDL, Supabase RLS policies, API retry contracts, and acceptance criteria.
-- Test suites: 25 test files (142 tests) passing in Vitest. Full Next.js production build (`npm run build`) and typecheck verified clean.
+- Test suites: 27 test files (149 tests) passing in Vitest. Full Next.js production build (`npm run build`) and typecheck verified clean.
 - n8n workflow "Sourced — Weekly Drop Draft" is built but **inactive** — credentials not wired up, not yet manually tested.
 - Razorpay international payments (USD/EUR/GBP) available but not activated — needs KYC + purpose code in Razorpay dashboard.
 

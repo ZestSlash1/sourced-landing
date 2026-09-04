@@ -1,10 +1,12 @@
 import { NextResponse, type NextFetchEvent, type NextRequest } from "next/server";
+import { createServerClient } from "@supabase/ssr";
 import { OPT_OUT_COOKIE, isExcludedTraffic } from "@/lib/analytics/exclusion";
 
 /**
- * Two jobs: (1) mint the anonymous "sid" cookie used as `session_id` on
- * every events row (lib/track.ts), and (2) fire a "page_view" event for real
- * page navigations.
+ * Three jobs: (1) mint the anonymous "sid" cookie used as `session_id` on
+ * every events row (lib/track.ts), (2) refresh and synchronize Supabase Auth
+ * sessions across server components and routes, and (3) fire a "page_view"
+ * event for real page navigations.
  *
  * The service-role Supabase client isn't reliably edge-compatible, so the
  * actual insert happens in POST /api/track (Node runtime) — this just posts
@@ -19,7 +21,7 @@ const ONE_YEAR_SECONDS = 60 * 60 * 24 * 365;
 const SKIP_PREFIXES = ["/_next", "/api", "/admin"];
 const STATIC_FILE = /\.[a-zA-Z0-9]+$/;
 
-export function middleware(request: NextRequest, event: NextFetchEvent) {
+export async function middleware(request: NextRequest, event: NextFetchEvent) {
   const { pathname, searchParams } = request.nextUrl;
 
   const isNewSession = !request.cookies.get(SESSION_COOKIE)?.value;
@@ -32,7 +34,30 @@ export function middleware(request: NextRequest, event: NextFetchEvent) {
     request.cookies.set(SESSION_COOKIE, sessionId);
   }
 
-  const response = NextResponse.next({ request });
+  let response = NextResponse.next({ request });
+
+  // Refresh and sync Supabase Auth session so Server Components always see fresh tokens
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (supabaseUrl && supabaseAnonKey) {
+    const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+          response = NextResponse.next({ request });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options),
+          );
+        },
+      },
+    });
+
+    await supabase.auth.getUser();
+  }
 
   if (isNewSession) {
     response.cookies.set(SESSION_COOKIE, sessionId, {
