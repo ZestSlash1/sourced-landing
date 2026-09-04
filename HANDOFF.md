@@ -7,6 +7,11 @@
 **Date:** 2026-09-04
 
 ## Current state
+- Homepage Layout Alignment & React Bits <DotField /> Integration:
+  - Replaced legacy particle background with the interactive `<DotField />` component from React Bits (`components/DotField.jsx` + `DotField.css` + `DotField.d.ts`), creating the responsive dot grid motion with cursor bulging, dynamic engagement speed, and subtle violet radial glow.
+  - Re-architected `.columns` from a CSS multi-column flow (`columns: 4 220px`) into a structured 3-column CSS Grid (`grid-template-columns: repeat(3, 1fr)` with 2-col and 1-col responsive breakpoints).
+  - Fixed uneven card heights and staggered bottom edges: standardized card banner cover height to 58px across all 6 cards, enforced `min-height: 40px` on titles, and pinned card footers (`.idea-foot`) to the bottom with `margin-top: auto` for aligned baselines across rows.
+  - Centered and balanced the CLI agent snippet panel (`.agent-snippet`) under the builder tabs.
 - Live Visitor Globe UI Overhaul (`/admin/analytics`):
   - Fixed visual text and button collisions from overlapping absolute containers.
   - Relocated the live telemetry source tag (`source: live · getLiveAnalytics()`) into the header crumb bar.

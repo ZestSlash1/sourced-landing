@@ -6,7 +6,7 @@ import { Menu, X } from "lucide";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import dynamic from "next/dynamic";
-import AntigravityCanvas from "./antigravity-canvas";
+import DotField from "@/components/DotField";
 import NewsletterForm from "./newsletter-form";
 import type { ProofBarData } from "./proof-bar";
 import { trackEvent } from "@/lib/track-client";
@@ -35,12 +35,12 @@ function loadRazorpayScript(): Promise<void> {
 }
 
 const ideaCards = [
-  { cover: "cover-1", tag: "Micro-SaaS", h: 56, title: "Client-ready P&L exports for solo bookkeepers", apis: "3 APIs matched", signals: "41 signals found", pct: 88, d: 0 },
-  { cover: "cover-2", tag: "Chrome Ext", h: 80, title: "Auto-flag duplicate line items in shared Figma comment threads", apis: "1 API matched", signals: "19 signals", pct: 64, d: 0.08 },
-  { cover: "cover-3", tag: "API Tool", h: 56, title: "Merge duplicate contacts across 3 CRMs in one call", apis: "4 APIs matched", signals: "27 signals", pct: 71, d: 0.16 },
-  { cover: "cover-4", tag: "AI Wrapper", h: 80, title: "Turn a landlord's rent-roll spreadsheet into late-fee reminders, automatically", apis: "2 APIs matched", signals: "33 signals", pct: 80, d: 0.24 },
-  { cover: "cover-5", tag: "Marketplace", h: 56, title: "Booking waitlist tool for niche tattoo studios", apis: "2 APIs matched", signals: "15 signals", pct: 52, d: 0.32 },
-  { cover: "cover-6", tag: "Micro-SaaS", h: 56, title: "One-click GST invoice reconciliation for freelancers", apis: "3 APIs matched", signals: "52 signals", pct: 95, d: 0.4 },
+  { cover: "cover-1", tag: "Micro-SaaS", h: 58, title: "Client-ready P&L exports for solo bookkeepers", apis: "3 APIs matched", signals: "41 signals found", pct: 88, d: 0 },
+  { cover: "cover-2", tag: "Chrome Ext", h: 58, title: "Auto-flag duplicate line items in shared Figma comment threads", apis: "1 API matched", signals: "19 signals", pct: 64, d: 0.08 },
+  { cover: "cover-3", tag: "API Tool", h: 58, title: "Merge duplicate contacts across 3 CRMs in one call", apis: "4 APIs matched", signals: "27 signals", pct: 71, d: 0.16 },
+  { cover: "cover-4", tag: "AI Wrapper", h: 58, title: "Turn a landlord's rent-roll spreadsheet into late-fee reminders, automatically", apis: "2 APIs matched", signals: "33 signals", pct: 80, d: 0.24 },
+  { cover: "cover-5", tag: "Marketplace", h: 58, title: "Booking waitlist tool for niche tattoo studios", apis: "2 APIs matched", signals: "15 signals", pct: 52, d: 0.32 },
+  { cover: "cover-6", tag: "Micro-SaaS", h: 58, title: "One-click GST invoice reconciliation for freelancers", apis: "3 APIs matched", signals: "52 signals", pct: 95, d: 0.4 },
 ];
 
 const apiChips = [
@@ -221,7 +221,19 @@ export default function HomeClient({ userEmail, proofBar }: { userEmail: string 
 
   return (
     <>
-      <AntigravityCanvas />
+      <div className="hero-dotfield-wrapper" aria-hidden="true">
+        <DotField
+          dotRadius={1.5}
+          dotSpacing={14}
+          bulgeStrength={67}
+          glowRadius={160}
+          sparkle={false}
+          waveAmplitude={0}
+          gradientFrom="rgba(91, 79, 247, 0.35)"
+          gradientTo="rgba(168, 85, 247, 0.22)"
+          glowColor="rgba(91, 79, 247, 0.16)"
+        />
+      </div>
       <a href="#main-content" className="skip-link">Skip to content</a>
       <nav ref={navRef}>
         <div className="brand">
