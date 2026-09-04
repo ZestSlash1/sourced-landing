@@ -5,6 +5,7 @@ import AdminShell from "../admin-shell";
 import PendingList from "./pending-list";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 /** Part A4: the human check between an auto-drafted idea and it going live. */
 export default async function PendingReviewPage() {

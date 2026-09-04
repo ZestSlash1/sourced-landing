@@ -5,6 +5,7 @@ import AdminShell from "./admin-shell";
 import IdeasList from "./ideas-list";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 export default async function AdminDashboard() {
   const check = await requireAdmin();

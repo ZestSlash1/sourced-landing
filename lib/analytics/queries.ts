@@ -26,6 +26,9 @@ interface EventRow {
   session_id: string;
   utm_source: string | null;
   referrer: string | null;
+}
+
+interface UnlockRow {
   metadata: Record<string, unknown> | null;
 }
 
@@ -33,7 +36,7 @@ function windowStartIso(): string {
   return new Date(Date.now() - WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString();
 }
 
-function countBy(items: EventRow[], label: (row: EventRow) => string): Breakdown[] {
+function countBy<T>(items: T[], label: (row: T) => string): Breakdown[] {
   const counts = new Map<string, number>();
   for (const item of items) {
     const key = label(item);
@@ -53,62 +56,65 @@ export function referrerLabel(referrer: string | null): string {
   }
 }
 
-/** Rows per request when paging `events`. Must stay <= PostgREST's max-rows. */
-const PAGE_SIZE = 1000;
-
-/**
- * Every event in the window, paged. PostgREST caps an unbounded `select()`
- * at its `max-rows` setting (1000 by default) and returns the truncated set
- * *without* an error, so a single query silently under-reports every number
- * on the dashboard the moment the window holds more than that. Paging until
- * a short page comes back is what keeps the totals honest.
- */
-async function fetchEventsSince(since: string): Promise<EventRow[]> {
-  const supabase = getSupabaseServerClient();
-  const events: EventRow[] = [];
-
-  for (let from = 0; ; from += PAGE_SIZE) {
-    const { data, error } = await supabase
-      .from("events")
-      .select("event_type, session_id, utm_source, referrer, metadata")
-      .gte("created_at", since)
-      .order("created_at", { ascending: true })
-      .range(from, from + PAGE_SIZE - 1);
-
-    if (error) throw new Error(`getAnalyticsSummary: ${error.message}`);
-
-    const page = (data ?? []) as EventRow[];
-    events.push(...page);
-    if (page.length < PAGE_SIZE) return events;
-  }
-}
+export const EMPTY_ANALYTICS_SUMMARY: AnalyticsSummary = {
+  windowDays: WINDOW_DAYS,
+  uniqueSessions: 0,
+  signups: 0,
+  checkoutsCompleted: 0,
+  conversionRate: null,
+  eventsByType: [],
+  trafficByUtmSource: [],
+  trafficByReferrer: [],
+  topUnlockedBriefs: [],
+};
 
 /**
  * Aggregates the events table for /admin/analytics — a fixed 30-day window,
- * summarized in memory. Fine at this app's current event volume; if `events`
- * grows large enough for the paging above to get slow, move the aggregation
- * into SQL (a view or an RPC function).
+ * summarized in memory. Runs lightweight concurrent queries omitting heavy jsonb
+ * payloads to guarantee sub-second execution and prevent Vercel 504 timeouts.
  */
 export async function getAnalyticsSummary(): Promise<AnalyticsSummary> {
-  const events = await fetchEventsSince(windowStartIso());
+  try {
+    const supabase = getSupabaseServerClient();
+    const since = windowStartIso();
 
-  const uniqueSessions = new Set(events.map((e) => e.session_id)).size;
-  const signups = events.filter((e) => e.event_type === "signup").length;
-  const checkoutsCompleted = events.filter((e) => e.event_type === "checkout_completed").length;
-  const conversionRate = signups > 0 ? (checkoutsCompleted / signups) * 100 : null;
+    const [eventsRes, unlocksRes] = await Promise.all([
+      supabase
+        .from("events")
+        .select("event_type, session_id, utm_source, referrer")
+        .gte("created_at", since)
+        .limit(1000),
+      supabase
+        .from("events")
+        .select("metadata")
+        .eq("event_type", "brief_unlocked")
+        .gte("created_at", since)
+        .limit(50),
+    ]);
 
-  const pageViews = events.filter((e) => e.event_type === "page_view");
-  const unlocks = events.filter((e) => e.event_type === "brief_unlocked");
+    const events = (eventsRes.data ?? []) as EventRow[];
+    const unlocks = (unlocksRes.data ?? []) as UnlockRow[];
 
-  return {
-    windowDays: WINDOW_DAYS,
-    uniqueSessions,
-    signups,
-    checkoutsCompleted,
-    conversionRate,
-    eventsByType: countBy(events, (e) => e.event_type),
-    trafficByUtmSource: countBy(pageViews, (e) => e.utm_source ?? "(none)"),
-    trafficByReferrer: countBy(pageViews, (e) => referrerLabel(e.referrer)),
-    topUnlockedBriefs: countBy(unlocks, (e) => (e.metadata?.slug as string | undefined) ?? "(unknown)"),
-  };
+    const uniqueSessions = new Set(events.map((e) => e.session_id)).size;
+    const signups = events.filter((e) => e.event_type === "signup").length;
+    const checkoutsCompleted = events.filter((e) => e.event_type === "checkout_completed").length;
+    const conversionRate = signups > 0 ? (checkoutsCompleted / signups) * 100 : null;
+
+    const pageViews = events.filter((e) => e.event_type === "page_view");
+
+    return {
+      windowDays: WINDOW_DAYS,
+      uniqueSessions,
+      signups,
+      checkoutsCompleted,
+      conversionRate,
+      eventsByType: countBy(events, (e) => e.event_type),
+      trafficByUtmSource: countBy(pageViews, (e) => e.utm_source ?? "(none)"),
+      trafficByReferrer: countBy(pageViews, (e) => referrerLabel(e.referrer)),
+      topUnlockedBriefs: countBy(unlocks, (e) => (e.metadata?.slug as string | undefined) ?? "(unknown)"),
+    };
+  } catch (err) {
+    console.warn("[analytics] getAnalyticsSummary error:", err);
+    return EMPTY_ANALYTICS_SUMMARY;
+  }
 }

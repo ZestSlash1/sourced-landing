@@ -5,6 +5,7 @@ import AdminShell from "../../admin-shell";
 import IdeaEditForm from "./idea-edit-form";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 export default async function EditIdeaPage({ params }: { params: { id: string } }) {
   const check = await requireAdmin();

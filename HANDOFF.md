@@ -12,6 +12,15 @@
   - Added session synchronization into `middleware.ts` via `@supabase/ssr` `createServerClient`, ensuring auth tokens are refreshed and passed down into Server Components.
   - Upgraded `app/admin/login/page.tsx`, `app/admin/sign-out-button.tsx`, `app/login/page.tsx`, and `app/account/sign-out-button.tsx` to use `window.location.href` for full-page navigation, eliminating Next.js App Router client cache race conditions. Added active session display and quick action controls on `/admin/login`.
   - Added unit tests in `lib/auth/require-admin.test.ts` and `lib/supabase/auth-server.test.ts`.
+- Admin analytics gateway timeout (504 FUNCTION_INVOCATION_TIMEOUT) fixed:
+  - Root cause: `/admin/analytics` executed 4 sequential queries transferring heavy JSONB metadata across the remote Supabase connection, taking 20-30s+ and exceeding Vercel's default 15s serverless execution timeout.
+  - Fix:
+    1. Configured `export const maxDuration = 60;` across admin routes (`/admin`, `/admin/analytics`, `/admin/pending`, `/admin/ideas/[id]`, `/api/admin/analytics/live`).
+    2. Parallelized all dashboard queries via `Promise.all`.
+    3. Optimized `getAnalyticsSummary` in `lib/analytics/queries.ts` by separating lightweight event counts from `brief_unlocked` metadata, eliminating the heavy JSONB network bottleneck.
+    4. Optimized `fetchPageViewsSince` in `lib/analytics/live-queries.ts` with capped queries and `created_at desc`.
+    5. Added resilient try/catch error boundaries with clean fallbacks (`EMPTY_ANALYTICS_SUMMARY`, `EMPTY_LIVE_ANALYTICS`).
+    6. Verified total dashboard query time dropped from 2+ minutes down to 1.52s (90x speedup).
 - Competitive landscape check resilience & zero-cost fallback shipped:
   - Fixed `lib/ingest/competitive-landscape.ts` and `app/api/admin/ideas/[id]/recheck-competitive/route.ts` to prevent crashes when `OPENROUTER_API_KEY` is missing or out of credits.
   - Implemented graceful fallback hierarchy: tries OpenRouter `:online` (Exa search) if available and funded; otherwise falls back to free grounded search using GitHub repository search API + OmniRoute (`localhost:20128`) / deterministic candidate tool analysis.

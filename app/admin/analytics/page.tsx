@@ -10,6 +10,7 @@ import { LiveAnalyticsView } from "./live-analytics-view";
 import { StatGrid, BreakdownGrid, BreakdownCard, PipelineTableCard, ProviderMixCard } from "./analytics-client";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 export default async function AnalyticsPage() {
   const check = await requireAdmin();
@@ -25,9 +26,11 @@ export default async function AnalyticsPage() {
     );
   }
 
-  const summary = await getAnalyticsSummary();
-  const liveData = await getLiveAnalytics("24h");
-  const pipelineRuns = await listRecentPipelineRuns(10);
+  const [summary, liveData, pipelineRuns] = await Promise.all([
+    getAnalyticsSummary(),
+    getLiveAnalytics("24h"),
+    listRecentPipelineRuns(10),
+  ]);
   const conversionLabel = summary.conversionRate === null ? "—" : `${summary.conversionRate.toFixed(1)}%`;
 
   return (

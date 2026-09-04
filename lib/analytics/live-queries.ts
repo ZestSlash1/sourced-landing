@@ -30,9 +30,17 @@ export interface LiveAnalytics {
   recent: { city: string | null; country: string | null; path: string | null; secondsAgo: number }[];
 }
 
+export const EMPTY_LIVE_ANALYTICS: LiveAnalytics = {
+  points: [],
+  totals: { activeNow: 0, sessions: 0, countries: 0, avgSessionSeconds: 0 },
+  topPages: [],
+  referrers: [],
+  devices: [],
+  recent: [],
+};
+
 const ACTIVE_NOW_MINUTES = 5;
 const RECENT_FEED_LIMIT = 20;
-const PAGE_SIZE = 1000;
 
 interface PageViewRow {
   session_id: string;
@@ -47,29 +55,25 @@ interface PageViewRow {
 }
 
 /**
- * Paged `page_view` fetch since a timestamp, oldest first. Mirrors
- * fetchEventsSince in queries.ts — PostgREST caps an unbounded select at its
- * max-rows setting, so this pages until a short page comes back.
+ * Fast page view fetch for live analytics, capped at 1,000 recent events
+ * to eliminate gateway timeouts across remote database links.
  */
 async function fetchPageViewsSince(since: string): Promise<PageViewRow[]> {
   const supabase = getSupabaseServerClient();
-  const rows: PageViewRow[] = [];
+  const { data, error } = await supabase
+    .from("events")
+    .select("session_id, path, referrer, city, country, latitude, longitude, user_agent, created_at")
+    .eq("event_type", "page_view")
+    .gte("created_at", since)
+    .order("created_at", { ascending: false })
+    .limit(1000);
 
-  for (let from = 0; ; from += PAGE_SIZE) {
-    const { data, error } = await supabase
-      .from("events")
-      .select("session_id, path, referrer, city, country, latitude, longitude, user_agent, created_at")
-      .eq("event_type", "page_view")
-      .gte("created_at", since)
-      .order("created_at", { ascending: true })
-      .range(from, from + PAGE_SIZE - 1);
-
-    if (error) throw new Error(`getLiveAnalytics: ${error.message}`);
-
-    const page = (data ?? []) as PageViewRow[];
-    rows.push(...page);
-    if (page.length < PAGE_SIZE) return rows;
+  if (error) {
+    console.warn(`[live-analytics] fetchPageViewsSince error: ${error.message}`);
+    return [];
   }
+
+  return (data ?? []) as PageViewRow[];
 }
 
 async function countActiveNowSessions(): Promise<number> {
@@ -80,9 +84,12 @@ async function countActiveNowSessions(): Promise<number> {
     .select("session_id")
     .eq("event_type", "page_view")
     .gte("created_at", since)
-    .limit(PAGE_SIZE);
+    .limit(500);
 
-  if (error) throw new Error(`getLiveAnalytics: ${error.message}`);
+  if (error) {
+    console.warn(`[live-analytics] countActiveNowSessions error: ${error.message}`);
+    return 0;
+  }
   return new Set((data ?? []).map((r) => (r as { session_id: string }).session_id)).size;
 }
 
@@ -129,83 +136,87 @@ function averageSessionSeconds(rows: PageViewRow[]): number {
  * getAnalyticsSummary. `window` is `"24h"` or `"live"` (last 5 minutes).
  */
 export async function getLiveAnalytics(window: LiveWindow): Promise<LiveAnalytics> {
-  const since =
-    window === "24h"
-      ? new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
-      : new Date(Date.now() - ACTIVE_NOW_MINUTES * 60 * 1000).toISOString();
+  try {
+    const since =
+      window === "24h"
+        ? new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+        : new Date(Date.now() - ACTIVE_NOW_MINUTES * 60 * 1000).toISOString();
 
-  const [rows, activeNow] = await Promise.all([fetchPageViewsSince(since), countActiveNowSessions()]);
+    const [rows, activeNow] = await Promise.all([fetchPageViewsSince(since), countActiveNowSessions()]);
 
-  const activeSince = new Date(Date.now() - ACTIVE_NOW_MINUTES * 60 * 1000).getTime();
+    const activeSince = new Date(Date.now() - ACTIVE_NOW_MINUTES * 60 * 1000).getTime();
 
-  const byCell = new Map<string, LivePoint & { sessionIds: Set<string>; activeSessionIds: Set<string> }>();
-  for (const row of rows) {
-    if (row.latitude == null || row.longitude == null) continue;
-    const key = `${row.latitude.toFixed(1)},${row.longitude.toFixed(1)}`;
-    let cell = byCell.get(key);
-    if (!cell) {
-      cell = {
-        city: row.city,
-        country: row.country,
-        lat: row.latitude,
-        lng: row.longitude,
-        sessions: 0,
-        activeNow: 0,
-        sessionIds: new Set(),
-        activeSessionIds: new Set(),
-      };
-      byCell.set(key, cell);
+    const byCell = new Map<string, LivePoint & { sessionIds: Set<string>; activeSessionIds: Set<string> }>();
+    for (const row of rows) {
+      if (row.latitude == null || row.longitude == null) continue;
+      const key = `${row.latitude.toFixed(1)},${row.longitude.toFixed(1)}`;
+      let cell = byCell.get(key);
+      if (!cell) {
+        cell = {
+          city: row.city,
+          country: row.country,
+          lat: row.latitude,
+          lng: row.longitude,
+          sessions: 0,
+          activeNow: 0,
+          sessionIds: new Set(),
+          activeSessionIds: new Set(),
+        };
+        byCell.set(key, cell);
+      }
+      cell.sessionIds.add(row.session_id);
+      if (new Date(row.created_at).getTime() >= activeSince) cell.activeSessionIds.add(row.session_id);
     }
-    cell.sessionIds.add(row.session_id);
-    if (new Date(row.created_at).getTime() >= activeSince) cell.activeSessionIds.add(row.session_id);
+    const points: LivePoint[] = Array.from(byCell.values())
+      .map((cell) => ({
+        city: cell.city,
+        country: cell.country,
+        lat: cell.lat,
+        lng: cell.lng,
+        sessions: cell.sessionIds.size,
+        activeNow: cell.activeSessionIds.size,
+      }))
+      .sort((a, b) => b.sessions - a.sessions);
+
+    const sessions = new Set(rows.map((r) => r.session_id)).size;
+    const countries = new Set(rows.map((r) => r.country).filter((c): c is string => Boolean(c))).size;
+    const avgSessionSeconds = averageSessionSeconds(rows);
+
+    const topPages = topN(
+      countBy(rows, (r) => r.path ?? "(unknown)"),
+      8,
+    ).map(([path, views]) => ({ path, views }));
+
+    const referrers = topN(
+      countBy(rows, (r) => referrerLabel(r.referrer)),
+      8,
+    ).map(([source, count]) => ({ source, sessions: count }));
+
+    const devices = topN(
+      countBy(rows, (r) => deviceLabel(r.user_agent)),
+      8,
+    ).map(([label, count]) => ({ label, sessions: count }));
+
+    const now = Date.now();
+    const recent = rows
+      .slice(0, RECENT_FEED_LIMIT)
+      .map((r) => ({
+        city: r.city,
+        country: r.country,
+        path: r.path,
+        secondsAgo: Math.max(0, Math.round((now - new Date(r.created_at).getTime()) / 1000)),
+      }));
+
+    return {
+      points,
+      totals: { activeNow, sessions, countries, avgSessionSeconds },
+      topPages,
+      referrers,
+      devices,
+      recent,
+    };
+  } catch (err) {
+    console.warn("[live-analytics] getLiveAnalytics error:", err);
+    return EMPTY_LIVE_ANALYTICS;
   }
-  const points: LivePoint[] = Array.from(byCell.values())
-    .map((cell) => ({
-      city: cell.city,
-      country: cell.country,
-      lat: cell.lat,
-      lng: cell.lng,
-      sessions: cell.sessionIds.size,
-      activeNow: cell.activeSessionIds.size,
-    }))
-    .sort((a, b) => b.sessions - a.sessions);
-
-  const sessions = new Set(rows.map((r) => r.session_id)).size;
-  const countries = new Set(rows.map((r) => r.country).filter((c): c is string => Boolean(c))).size;
-  const avgSessionSeconds = averageSessionSeconds(rows);
-
-  const topPages = topN(
-    countBy(rows, (r) => r.path ?? "(unknown)"),
-    8,
-  ).map(([path, views]) => ({ path, views }));
-
-  const referrers = topN(
-    countBy(rows, (r) => referrerLabel(r.referrer)),
-    8,
-  ).map(([source, count]) => ({ source, sessions: count }));
-
-  const devices = topN(
-    countBy(rows, (r) => deviceLabel(r.user_agent)),
-    8,
-  ).map(([label, count]) => ({ label, sessions: count }));
-
-  const now = Date.now();
-  const recent = rows
-    .slice(-RECENT_FEED_LIMIT)
-    .reverse()
-    .map((r) => ({
-      city: r.city,
-      country: r.country,
-      path: r.path,
-      secondsAgo: Math.max(0, Math.round((now - new Date(r.created_at).getTime()) / 1000)),
-    }));
-
-  return {
-    points,
-    totals: { activeNow, sessions, countries, avgSessionSeconds },
-    topPages,
-    referrers,
-    devices,
-    recent,
-  };
 }

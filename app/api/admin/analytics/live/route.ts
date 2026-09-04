@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/auth/require-admin";
 import { getLiveAnalytics, type LiveWindow } from "@/lib/analytics/live-queries";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 /**
  * GET /api/admin/analytics/live?window=24h|live — polled by
