@@ -81,6 +81,82 @@ function Reveal({
   );
 }
 
+interface NavItem {
+  label: string;
+  href: string;
+  icon: ReactNode;
+}
+
+const baseNavItems: NavItem[] = [
+  {
+    label: "How it works",
+    href: "#how",
+    icon: (
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <polygon points="12 2 2 7 12 12 22 7 12 2" />
+        <polyline points="2 17 12 22 22 17" />
+        <polyline points="2 12 12 17 22 12" />
+      </svg>
+    ),
+  },
+  {
+    label: "API match",
+    href: "#apis",
+    icon: (
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 2v8" />
+        <path d="m4.93 10.93 4.24 4.24" />
+        <path d="M2 18h8" />
+        <path d="M20 18h2" />
+        <path d="m19.07 10.93-4.24 4.24" />
+        <circle cx="12" cy="14" r="2" />
+      </svg>
+    ),
+  },
+  {
+    label: "Sample idea",
+    href: "#sample",
+    icon: (
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5" />
+        <path d="M9 18h6" />
+        <path d="M10 22h4" />
+      </svg>
+    ),
+  },
+  {
+    label: "Pricing",
+    href: "#pricing",
+    icon: (
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect width="20" height="14" x="2" y="5" rx="2" />
+        <line x1="2" x2="22" y1="10" y2="10" />
+      </svg>
+    ),
+  },
+  {
+    label: "Feed",
+    href: "/feed",
+    icon: (
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10" />
+        <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" />
+      </svg>
+    ),
+  },
+  {
+    label: "Methodology",
+    href: "/methodology",
+    icon: (
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z" />
+        <path d="M6 6h10" />
+        <path d="M6 10h10" />
+      </svg>
+    ),
+  },
+];
+
 export default function HomeClient({ userEmail, proofBar }: { userEmail: string | null; proofBar: ProofBarData }) {
   const navRef = useRef<HTMLElement | null>(null);
   const snippetRef = useRef<HTMLDivElement | null>(null);
@@ -90,6 +166,32 @@ export default function HomeClient({ userEmail, proofBar }: { userEmail: string 
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [foundingRemaining, setFoundingRemaining] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState<string>("How it works");
+
+  const accountItem: NavItem = userEmail
+    ? {
+        label: "Account",
+        href: "/account",
+        icon: (
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="8" r="4" />
+            <path d="M20 21a8 8 0 0 0-16 0" />
+          </svg>
+        ),
+      }
+    : {
+        label: "Log in",
+        href: "/login",
+        icon: (
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+            <polyline points="10 17 15 12 10 7" />
+            <line x1="15" x2="3" y1="12" y2="12" />
+          </svg>
+        ),
+      };
+
+  const navItems = [...baseNavItems, accountItem];
 
   useEffect(() => {
     fetch("/api/founding-status")
@@ -167,6 +269,25 @@ export default function HomeClient({ userEmail, proofBar }: { userEmail: string 
       if (!nav) return;
       if (window.scrollY > 12) nav.classList.add("scrolled");
       else nav.classList.remove("scrolled");
+
+      const sections = [
+        { id: "how", label: "How it works" },
+        { id: "apis", label: "API match" },
+        { id: "sample", label: "Sample idea" },
+        { id: "pricing", label: "Pricing" },
+      ];
+
+      const scrollPos = window.scrollY + 220;
+      for (let i = sections.length - 1; i >= 0; i--) {
+        const sec = document.getElementById(sections[i].id);
+        if (sec && sec.offsetTop <= scrollPos) {
+          setActiveTab(sections[i].label);
+          return;
+        }
+      }
+      if (window.scrollY < 180) {
+        setActiveTab("How it works");
+      }
     };
     window.addEventListener("scroll", onScroll, { passive: true });
 
@@ -235,51 +356,75 @@ export default function HomeClient({ userEmail, proofBar }: { userEmail: string 
         />
       </div>
       <a href="#main-content" className="skip-link">Skip to content</a>
-      <nav ref={navRef}>
-        <div className="brand">
-          <div className="brand-mark">
-            <svg viewBox="0 0 24 24" fill="none">
-              <path d="M4 12L10 18L20 6" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </div>
-          <div className="brand-name">Sourced</div>
-        </div>
-        <div className="nav-links">
-          <a href="#how">How it works</a>
-          <a href="#apis">API match</a>
-          <a href="#sample">Sample idea</a>
-          <a href="#pricing">Pricing</a>
-          <a href="/feed">Feed</a>
-          <a href="/methodology">Methodology</a>
-          {userEmail ? <a href="/account">Account</a> : <a href="/login" aria-label="Log in to your account">Log in</a>}
-        </div>
-        <a className="nav-cta" href="#pricing">Get started</a>
-        <button
-          type="button"
-          className="nav-burger"
-          aria-expanded={mobileNavOpen}
-          aria-label={mobileNavOpen ? "Close menu" : "Open menu"}
-          onClick={() => setMobileNavOpen((v) => !v)}
-        >
-          <MorphIcon icon={mobileNavOpen ? X : Menu} size={22} />
-        </button>
-      </nav>
+      <nav ref={navRef} className="floating-nav" aria-label="Main navigation">
+        <div className="floating-nav-pill">
+          <a href="/" className="nav-brand" aria-label="Sourced home">
+            <div className="brand-mark">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M4 12L10 18L20 6" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
+            <span className="brand-name">Sourced</span>
+          </a>
 
-      {mobileNavOpen && (
-        <div className="mobile-nav">
-          <a href="#how" onClick={() => setMobileNavOpen(false)}>How it works</a>
-          <a href="#apis" onClick={() => setMobileNavOpen(false)}>API match</a>
-          <a href="#sample" onClick={() => setMobileNavOpen(false)}>Sample idea</a>
-          <a href="#pricing" onClick={() => setMobileNavOpen(false)}>Pricing</a>
-          <a href="/feed" onClick={() => setMobileNavOpen(false)}>Feed</a>
-          <a href="/methodology" onClick={() => setMobileNavOpen(false)}>Methodology</a>
-          {userEmail ? (
-            <a href="/account" onClick={() => setMobileNavOpen(false)}>Account</a>
-          ) : (
-            <a href="/login" aria-label="Log in to your account" onClick={() => setMobileNavOpen(false)}>Log in</a>
-          )}
+          <div className="nav-dock" role="navigation" aria-label="Dock navigation">
+            {navItems.map((item) => (
+              <a
+                key={item.label}
+                href={item.href}
+                className={`nav-dock-item ${activeTab === item.label ? "is-active" : ""}`}
+                onClick={() => setActiveTab(item.label)}
+              >
+                <span className="dock-icon">{item.icon}</span>
+                <span className="dock-label">{item.label}</span>
+              </a>
+            ))}
+          </div>
+
+          <a className="nav-cta-pill" href="#pricing">
+            <span>Get started</span>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12" />
+              <polyline points="12 5 19 12 12 19" />
+            </svg>
+          </a>
+
+          <button
+            type="button"
+            className="nav-burger-pill"
+            aria-expanded={mobileNavOpen}
+            aria-label={mobileNavOpen ? "Close menu" : "Open menu"}
+            onClick={() => setMobileNavOpen((v) => !v)}
+          >
+            <MorphIcon icon={mobileNavOpen ? X : Menu} size={18} />
+          </button>
         </div>
-      )}
+
+        {mobileNavOpen && (
+          <div className="mobile-floating-drawer">
+            {navItems.map((item) => (
+              <a
+                key={item.label}
+                href={item.href}
+                onClick={() => {
+                  setActiveTab(item.label);
+                  setMobileNavOpen(false);
+                }}
+              >
+                <span className="dock-icon">{item.icon}</span>
+                <span>{item.label}</span>
+              </a>
+            ))}
+            <a
+              className="mobile-cta-btn"
+              href="#pricing"
+              onClick={() => setMobileNavOpen(false)}
+            >
+              Get started
+            </a>
+          </div>
+        )}
+      </nav>
 
       <main id="main-content">
       <header className="hero">

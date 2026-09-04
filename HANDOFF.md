@@ -7,6 +7,13 @@
 **Date:** 2026-09-04
 
 ## Current state
+- Floating Expandable Icon Pill Navbar (Dynamic Island style):
+  - Overhauled navigation into a fixed, top-centered floating pill dock inspired by user reference video (`navbar-reference.mp4`).
+  - Left: Sourced brand mark and logo with subtle hover illumination.
+  - Center: Compact icon-only dock items with custom SVGs (`How it works`, `API match`, `Sample idea`, `Pricing`, `Feed`, `Methodology`, `Account`) that expand smoothly on hover revealing labels (`max-width: 120px; opacity: 1; margin-left: 6px;`).
+  - Active tab: Rendered with a solid white pill highlight (`#ffffff`) and dark text (`#12141a`) matching reference video, driven by real-time scroll-spy logic detecting the in-viewport section.
+  - Right: Violet gradient pill CTA (`Get started`) linking to `#pricing`.
+  - Mobile: Collapses cleanly into a compact pill with logo + menu burger that toggles a floating glassmorphism drawer.
 - Homepage Layout Alignment & React Bits <DotField /> Integration:
   - Replaced legacy particle background with the interactive `<DotField />` component from React Bits (`components/DotField.jsx` + `DotField.css` + `DotField.d.ts`), creating the responsive dot grid motion with cursor bulging, dynamic engagement speed, and subtle violet radial glow.
   - Re-architected `.columns` from a CSS multi-column flow (`columns: 4 220px`) into a structured 3-column CSS Grid (`grid-template-columns: repeat(3, 1fr)` with 2-col and 1-col responsive breakpoints).
