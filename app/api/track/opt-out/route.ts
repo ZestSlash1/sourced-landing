@@ -34,7 +34,9 @@ function page(heading: string, body: string, action: string): string {
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const undo = url.searchParams.get("undo") !== null;
-  const ip = clientIp(request.headers) ?? "unknown";
+  const rawIp = clientIp(request.headers) ?? "unknown";
+  const isSafeIp = /^([0-9]{1,3}\.){3}[0-9]{1,3}$|^[a-fA-F0-9:]+$/.test(rawIp.trim());
+  const ip = isSafeIp ? rawIp.trim() : "unknown";
 
   const response = new NextResponse(
     undo

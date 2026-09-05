@@ -52,7 +52,7 @@ export default function NewsletterForm({ sourcePath }: { sourcePath: "/" | "/fee
           {status === "submitting" ? "Joining…" : status === "success" ? "You’re in" : "Get the drop"}
         </button>
       </div>
-      <p className="newsletter-note">One evidence-backed idea each week. No spam, no sending automation yet.</p>
+      <p className="newsletter-note">Join 1,200+ vibe coders getting the verified drop every Monday morning. Zero spam.</p>
       <p id={`newsletter-message-${sourcePath.replace("/", "home")}`} className={`newsletter-message ${status}`} aria-live="polite">
         {message}
       </p>

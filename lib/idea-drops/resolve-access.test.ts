@@ -58,8 +58,15 @@ describe("previewAccess", () => {
     expect(getQuotaStatus).not.toHaveBeenCalled();
   });
 
-  it("returns signed-out (as a teaser) for an anonymous visitor, even on a tier-eligible idea", async () => {
+  it("returns full for an anonymous visitor on a free-tier idea", async () => {
     const idea = makeIdea({ tier: "free" });
+    const result = await previewAccess(idea, { subscriberId: null, userId: null, tier: "free" }, new Set());
+    expect(result.kind).toBe("full");
+    expect(getQuotaStatus).not.toHaveBeenCalled();
+  });
+
+  it("returns signed-out (as a teaser) for an anonymous visitor on a paid idea", async () => {
+    const idea = makeIdea({ tier: "builder" });
     const result = await previewAccess(idea, { subscriberId: null, userId: null, tier: "free" }, new Set());
     expect(result.kind).toBe("signed-out");
     expect("locked" in result.idea && result.idea.locked).toBe(true);
@@ -111,8 +118,15 @@ describe("resolveAndRecordAccess", () => {
     expect(canUnlockIdea).not.toHaveBeenCalled();
   });
 
-  it("returns signed-out without recording for an anonymous visitor", async () => {
+  it("returns full without recording for an anonymous visitor on a free idea", async () => {
     const idea = makeIdea({ tier: "free" });
+    const result = await resolveAndRecordAccess(idea, { subscriberId: null, userId: null, tier: "free" });
+    expect(result.kind).toBe("full");
+    expect(recordUnlock).not.toHaveBeenCalled();
+  });
+
+  it("returns signed-out without recording for an anonymous visitor on a paid idea", async () => {
+    const idea = makeIdea({ tier: "builder" });
     const result = await resolveAndRecordAccess(idea, { subscriberId: null, userId: null, tier: "free" });
     expect(result.kind).toBe("signed-out");
     expect(recordUnlock).not.toHaveBeenCalled();

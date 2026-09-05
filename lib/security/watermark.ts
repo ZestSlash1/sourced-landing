@@ -1,3 +1,4 @@
+import "server-only";
 import crypto from "crypto";
 
 const ZW_ZERO = "\u200B"; // Zero-width space represents bit 0
@@ -53,7 +54,10 @@ export function decodeZeroWidth(text: string): string | null {
  * Generates a cryptographic verification signature for this export.
  */
 export function generateLicenseFingerprint(subscriberId: string, ideaSlug: string): string {
-  const salt = process.env.SUPABASE_SERVICE_ROLE_KEY || "sourced-watermark-salt-key";
+  const salt =
+    process.env.WATERMARK_SIGNING_SECRET ||
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    "sourced-watermark-salt-key";
   return crypto
     .createHmac("sha256", salt)
     .update(`${subscriberId}:${ideaSlug}`)

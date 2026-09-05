@@ -4,7 +4,22 @@ import { getSessionId, track } from "@/lib/track";
 import { OPT_OUT_COOKIE, isExcludedTraffic } from "@/lib/analytics/exclusion";
 import { cookies, headers } from "next/headers";
 
+import { checkRateLimit } from "@/lib/security/rate-limit";
+import { clientIp } from "@/lib/analytics/exclusion";
+
 export const dynamic = "force-dynamic";
+
+const ALLOWED_EVENT_TYPES = new Set([
+  "page_view",
+  "signup",
+  "brief_unlocked",
+  "checkout_started",
+  "checkout_completed",
+  "topic_updated",
+  "oauth_login",
+  "quota_exhausted",
+  "export_accessed",
+]);
 
 /**
  * POST /api/track — the one write path into `events`, hit from two places:
@@ -16,10 +31,30 @@ export const dynamic = "force-dynamic";
  * trusting the client to supply it.
  */
 export async function POST(request: Request) {
+  const ip = clientIp(headers()) ?? "unknown";
+  const rateLimit = checkRateLimit(`track:${ip}`, 60, 60_000);
+  if (!rateLimit.success) {
+    return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
+  }
+
   const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
   const eventType = typeof body?.eventType === "string" ? body.eventType : null;
-  if (!eventType) {
-    return NextResponse.json({ error: "eventType is required" }, { status: 400 });
+  if (!eventType || !ALLOWED_EVENT_TYPES.has(eventType)) {
+    return NextResponse.json({ error: "Invalid or missing eventType" }, { status: 400 });
+  }
+
+  // Cap metadata payload to prevent unbounded storage abuse
+  const rawMetadata = body?.metadata;
+  let safeMetadata: Record<string, unknown> = {};
+  if (rawMetadata && typeof rawMetadata === "object") {
+    try {
+      const stringified = JSON.stringify(rawMetadata);
+      if (stringified.length <= 2048) {
+        safeMetadata = rawMetadata as Record<string, unknown>;
+      }
+    } catch {
+      safeMetadata = {};
+    }
   }
 
   // Checked here as well as in middleware.ts: client-fired events (e.g.
@@ -51,7 +86,7 @@ export async function POST(request: Request) {
     latitude: typeof body?.latitude === "number" ? body.latitude : null,
     longitude: typeof body?.longitude === "number" ? body.longitude : null,
     userAgent: typeof body?.userAgent === "string" ? body.userAgent : headers().get("user-agent"),
-    metadata: (body?.metadata as Record<string, unknown> | undefined) ?? {},
+    metadata: safeMetadata,
   });
 
   return NextResponse.json({ ok: true });

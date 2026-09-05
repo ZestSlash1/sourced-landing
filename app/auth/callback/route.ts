@@ -12,7 +12,11 @@ import { track } from "@/lib/track";
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
-  const next = url.searchParams.get("next") || "/account/topics";
+  const rawNext = url.searchParams.get("next");
+  const next =
+    rawNext && rawNext.startsWith("/") && !rawNext.startsWith("//") && !rawNext.includes("://")
+      ? rawNext
+      : "/account/topics";
 
   if (code) {
     const supabase = getSupabaseAuthServerClient();

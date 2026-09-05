@@ -35,6 +35,8 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   const description = truncate(idea.problem.summary, 155);
   const url = absoluteUrl(`/feed/${idea.slug}`);
 
+  const ogImageUrl = `${url}/opengraph-image`;
+
   return {
     title: idea.title,
     description,
@@ -45,11 +47,20 @@ export async function generateMetadata({ params }: { params: { slug: string } })
       description,
       url,
       publishedTime: idea.publishedAt,
+      images: [
+        {
+          url: ogImageUrl,
+          width: 1200,
+          height: 630,
+          alt: `${idea.title} · Sourced Build Brief`,
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
       title: idea.title,
       description,
+      images: [ogImageUrl],
     },
   };
 }
@@ -76,9 +87,20 @@ export default async function IdeaDetailPage({ params }: { params: { slug: strin
       <BriefJsonLd idea={idea} access={access.kind} />
       {access.kind === "full" && access.freshUnlock && <UnlockTracker slug={idea.slug} />}
 
-      <Link href="/feed" className="back-link">
-        ← Back to feed
-      </Link>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+        <Link href="/feed" className="back-link" style={{ marginBottom: 0 }}>
+          ← Back to feed
+        </Link>
+        <a
+          href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Building this micro-SaaS: "${idea.title}" (Demand score: ${idea.demandScore}%)\n\nValidated build brief via @getsourced:`)}&url=${encodeURIComponent(absoluteUrl(`/feed/${idea.slug}`))}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="facet-chip"
+          style={{ display: "inline-flex", alignItems: "center", gap: 6, textDecoration: "none", fontSize: 12 }}
+        >
+          <span>Share on 𝕏</span>
+        </a>
+      </div>
 
       <div style={{ marginTop: 20 }}>
         <Breadcrumbs
@@ -158,13 +180,27 @@ export default async function IdeaDetailPage({ params }: { params: { slug: strin
 
           <div className="gated-zone">
             {access.kind === "signed-out" ? (
-              <div className="locked-callout">
-                <p style={{ margin: "0 0 14px", fontSize: 14, color: "var(--ink-soft)" }}>
-                  Sign in for free to view the full build brief, Day-1 customer outreach pack, matched APIs, and spec-driven agent contracts.
-                </p>
-                <Link href={`/login?next=${encodeURIComponent(`/feed/${scoped.slug}`)}`} className="btn btn-primary">
-                  Sign in to unlock
-                </Link>
+              <div className="locked-preview-container" style={{ position: "relative", overflow: "hidden", borderRadius: 16, border: "1px solid var(--line)" }}>
+                <div style={{ filter: "blur(5px)", opacity: 0.4, pointerEvents: "none", padding: "24px 28px", userSelect: "none" }} aria-hidden="true">
+                  <div className="eyebrow" style={{ color: "var(--violet)" }}>Build brief · Core loop</div>
+                  <p style={{ fontWeight: 600 }}>1. Connect user accounts and normalize multi-source transaction records</p>
+                  <p>2. Automatically generate branded, client-ready financial PDF statements</p>
+                  <div style={{ height: 16 }} />
+                  <div className="eyebrow" style={{ color: "var(--violet)" }}>PostgreSQL DDL & Prisma Schema</div>
+                  <div style={{ background: "#15161A", height: 100, borderRadius: 8, padding: 12, color: "#fff", fontFamily: "monospace", fontSize: 12 }}>
+                    CREATE TABLE clients ( id UUID PRIMARY KEY, name TEXT NOT NULL );
+                  </div>
+                </div>
+                <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "rgba(246, 244, 239, 0.88)", backdropFilter: "blur(6px)", padding: 24, textAlign: "center" }}>
+                  <span style={{ fontSize: 24, marginBottom: 8 }}>🔒</span>
+                  <h3 style={{ margin: "0 0 6px", fontSize: 18, fontWeight: 700 }}>Full Build Brief Gated</h3>
+                  <p style={{ margin: "0 0 16px", fontSize: 14, color: "var(--ink-soft)", maxWidth: 440 }}>
+                    Sign in to unlock the full build loop, turnkey agent prompts (Claude Code, Cursor, v0), matched APIs, and instant database DDL schema.
+                  </p>
+                  <Link href={`/login?next=${encodeURIComponent(`/feed/${scoped.slug}`)}`} className="btn btn-primary" style={{ padding: "8px 20px" }}>
+                    Sign in to unlock
+                  </Link>
+                </div>
               </div>
             ) : access.kind === "quota-locked" ? (
               <div className="locked-callout">
@@ -178,14 +214,26 @@ export default async function IdeaDetailPage({ params }: { params: { slug: strin
                 </Link>
               </div>
             ) : access.kind === "tier-locked" ? (
-              <div className="locked-callout">
-                <p style={{ margin: "0 0 14px", fontSize: 14, color: "var(--ink-soft)" }}>
-                  The full build brief, Day-1 customer outreach pack, launch stack, and spec-driven agent contracts unlock on{" "}
-                  {scoped.tier === "builder" ? "Builder" : "Studio"}.
-                </p>
-                <Link href="/#pricing" className="btn btn-primary">
-                  See plans
-                </Link>
+              <div className="locked-preview-container" style={{ position: "relative", overflow: "hidden", borderRadius: 16, border: "1px solid var(--line)" }}>
+                <div style={{ filter: "blur(5px)", opacity: 0.4, pointerEvents: "none", padding: "24px 28px", userSelect: "none" }} aria-hidden="true">
+                  <div className="eyebrow" style={{ color: "var(--violet)" }}>Turnkey Agent Prompts · Claude Code & Cursor</div>
+                  <p style={{ fontWeight: 600 }}>Ready-to-paste build prompts with step constraints and zero-slop specifications</p>
+                  <div style={{ height: 16 }} />
+                  <div className="eyebrow" style={{ color: "var(--violet)" }}>Matched APIs & Free-tier Limits</div>
+                  <div style={{ background: "#FFFFFF", height: 80, borderRadius: 8, padding: 12, border: "1px solid var(--line)" }}>
+                    Verified API documentation links, endpoint rate limits, and authentication patterns
+                  </div>
+                </div>
+                <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "rgba(246, 244, 239, 0.88)", backdropFilter: "blur(6px)", padding: 24, textAlign: "center" }}>
+                  <span style={{ fontSize: 24, marginBottom: 8 }}>🔒</span>
+                  <h3 style={{ margin: "0 0 6px", fontSize: 18, fontWeight: 700 }}>Available on Builder & Studio</h3>
+                  <p style={{ margin: "0 0 16px", fontSize: 14, color: "var(--ink-soft)", maxWidth: 440 }}>
+                    Unlock this brief, DDL database schemas, and turnkey Cursor/.cursorrules exports with the Builder plan.
+                  </p>
+                  <Link href="/#pricing" className="btn btn-primary" style={{ padding: "8px 20px" }}>
+                    Unlock with Builder (₹399/mo)
+                  </Link>
+                </div>
               </div>
             ) : (
               <FullBrief idea={scoped as IdeaDrop} subscriberId={viewer.subscriberId ?? undefined} />

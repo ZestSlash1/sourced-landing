@@ -103,6 +103,56 @@ export default function HomeClient({
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [foundingRemaining, setFoundingRemaining] = useState<number | null>(null);
 
+  // Slatebase Free Tier Signup Flow (Phase 1)
+  const [freeEmail, setFreeEmail] = useState(userEmail || "");
+  const [freeHoneypot, setFreeHoneypot] = useState("");
+  const [freeStatus, setFreeStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [freeMessage, setFreeMessage] = useState<string | null>(null);
+  const [isFreeFormOpen, setIsFreeFormOpen] = useState(false);
+
+  async function handleFreeSignup(e?: React.FormEvent) {
+    if (e) e.preventDefault();
+    if (!isFreeFormOpen && !userEmail) {
+      setIsFreeFormOpen(true);
+      return;
+    }
+
+    const emailToSubmit = (userEmail || freeEmail).trim();
+    if (!emailToSubmit) {
+      setFreeStatus("error");
+      setFreeMessage("Please enter your email to get started.");
+      return;
+    }
+
+    setFreeStatus("loading");
+    setFreeMessage(null);
+
+    try {
+      const res = await fetch("/api/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: emailToSubmit,
+          tier: "free",
+          source: "pricing-card",
+          hp: freeHoneypot,
+        }),
+      });
+
+      const data = (await res.json()) as { ok?: boolean; error?: string; message?: string };
+      if (!res.ok) {
+        throw new Error(data.error || "We couldn't save your signup. Please try again.");
+      }
+
+      setFreeStatus("success");
+      setFreeMessage(data.message || "You're on the list! Free tier access granted.");
+      trackEvent("free_tier_signup", { source: "pricing-card" });
+    } catch (err: unknown) {
+      setFreeStatus("error");
+      setFreeMessage(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+    }
+  }
+
   const displayCards =
     featuredIdeas && featuredIdeas.length > 0
       ? featuredIdeas.slice(0, 6).map((idea, i) => ({
@@ -516,15 +566,117 @@ export default function HomeClient({
                 <li>API match: name only, no docs</li>
                 <li>No card required</li>
               </ul>
-              <button
-                type="button"
-                className="plan-btn"
-                onClick={() => {
-                  window.location.href = userEmail ? "/account/topics" : "/login";
-                }}
-              >
-                Start free
-              </button>
+              {freeStatus === "success" ? (
+                <div
+                  style={{
+                    padding: "12px 14px",
+                    borderRadius: "var(--r-sm)",
+                    background: "rgba(198, 255, 61, 0.25)",
+                    border: "1px solid rgba(198, 255, 61, 0.6)",
+                    color: "#3F6B00",
+                    fontSize: 13.5,
+                    fontWeight: 600,
+                    textAlign: "center",
+                    lineHeight: 1.4,
+                  }}
+                >
+                  ✓ {freeMessage || "You're in! Free tier access granted."}
+                </div>
+              ) : isFreeFormOpen && !userEmail ? (
+                <form
+                  onSubmit={handleFreeSignup}
+                  noValidate
+                  style={{ display: "flex", flexDirection: "column", gap: 8 }}
+                >
+                  <input
+                    type="text"
+                    name="company_hp"
+                    value={freeHoneypot}
+                    onChange={(e) => setFreeHoneypot(e.target.value)}
+                    style={{ display: "none" }}
+                    tabIndex={-1}
+                    autoComplete="off"
+                    aria-hidden="true"
+                  />
+                  <input
+                    type="email"
+                    placeholder="Enter your email"
+                    value={freeEmail}
+                    onChange={(e) => {
+                      setFreeEmail(e.target.value);
+                      if (freeStatus === "error") setFreeStatus("idle");
+                    }}
+                    required
+                    disabled={freeStatus === "loading"}
+                    autoFocus
+                    style={{
+                      width: "100%",
+                      padding: "10px 12px",
+                      borderRadius: "var(--r-sm)",
+                      border:
+                        freeStatus === "error"
+                          ? "1.5px solid var(--coral, #e5533d)"
+                          : "1.5px solid var(--line)",
+                      background: "#fff",
+                      color: "var(--ink)",
+                      fontSize: 13.5,
+                      fontFamily: "inherit",
+                      outline: "none",
+                      boxSizing: "border-box",
+                    }}
+                  />
+                  <button
+                    type="submit"
+                    className="plan-btn"
+                    disabled={freeStatus === "loading"}
+                    style={{
+                      background: "var(--violet)",
+                      borderColor: "var(--violet)",
+                      color: "#fff",
+                    }}
+                  >
+                    {freeStatus === "loading" ? "Claiming access…" : "Claim free access"}
+                  </button>
+                  {freeStatus === "error" && freeMessage && (
+                    <div
+                      style={{
+                        color: "var(--coral, #e5533d)",
+                        fontSize: 12,
+                        textAlign: "center",
+                      }}
+                    >
+                      {freeMessage}
+                    </div>
+                  )}
+                </form>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    className="plan-btn"
+                    onClick={() => handleFreeSignup()}
+                    disabled={freeStatus === "loading"}
+                  >
+                    {freeStatus === "loading"
+                      ? "Claiming access…"
+                      : userEmail
+                      ? `Claim free tier (${userEmail})`
+                      : "Start free"}
+                  </button>
+                  {freeStatus === "error" && freeMessage && (
+                    <div
+                      style={{
+                        color: "var(--coral, #e5533d)",
+                        fontSize: 12,
+                        textAlign: "center",
+                        marginTop: 6,
+                      }}
+                    >
+                      {freeMessage}
+                    </div>
+                  )}
+                </>
+              )}
             </Reveal>
             <Reveal delay={0.08} className="plan featured">
               <div className="plan-name">Builder</div>

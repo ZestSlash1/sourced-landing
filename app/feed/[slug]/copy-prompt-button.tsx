@@ -31,17 +31,32 @@ export default function CopyPromptButton({ label, prompt }: { label: string; pro
     setTimeout(() => setCopied(false), 2000);
   }
 
+  const isV0Bolt = label.toLowerCase().includes("v0") || label.toLowerCase().includes("bolt");
+
   return (
     <div className="prompt-card">
       <div className="prompt-card-head">
         <span>{label}</span>
-        <button
-          type="button"
-          onClick={handleCopy}
-          className={`prompt-copy-btn ${copied ? "is-copied" : failed ? "is-failed" : ""}`}
-        >
-          {copied ? "Copied!" : failed ? "Couldn't copy" : "Copy"}
-        </button>
+        <div style={{ display: "flex", gap: 8 }}>
+          {isV0Bolt ? (
+            <a
+              href={`https://v0.dev/chat?q=${encodeURIComponent(prompt)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="prompt-copy-btn"
+              style={{ textDecoration: "none", color: "var(--violet)", borderColor: "var(--violet)" }}
+            >
+              Open in v0 ↗
+            </a>
+          ) : null}
+          <button
+            type="button"
+            onClick={handleCopy}
+            className={`prompt-copy-btn ${copied ? "is-copied" : failed ? "is-failed" : ""}`}
+          >
+            {copied ? "Copied!" : failed ? "Couldn't copy" : "Copy"}
+          </button>
+        </div>
       </div>
       <pre className="prompt-pre">
         <span className="prompt-prefix">$</span>

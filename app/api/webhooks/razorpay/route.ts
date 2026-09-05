@@ -40,6 +40,8 @@ interface RazorpayWebhookPayload {
  * subscriber, is a silent 200 no-op rather than an error — Razorpay retries
  * on non-2xx, and there's nothing to retry into existing here.
  */
+const processedPaymentIds = new Set<string>();
+
 export async function POST(request: Request) {
   const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
   if (!secret) {
@@ -70,22 +72,34 @@ export async function POST(request: Request) {
       if (tier) {
         await updateSubscriberTier(subscriber.id, tier, "active");
         const payment = body.payload.payment?.entity;
-        await track({
-          eventType: "checkout_completed",
-          sessionId: `webhook:${subscriptionEntity.id}`,
-          userId: subscriber.userId ?? null,
-          metadata: {
-            tier,
-            amount: payment?.amount ?? null,
-            razorpay_payment_id: payment?.id ?? null,
-          },
-        });
-        await notify({
-          title: "Payment received",
-          message: `${subscriber.email} — ${tier} — ${formatAmount(payment)}`,
-          tags: ["moneybag"],
-          priority: 4,
-        });
+        const paymentId = payment?.id;
+        const isDuplicate = paymentId && processedPaymentIds.has(paymentId);
+        if (paymentId) {
+          processedPaymentIds.add(paymentId);
+          if (processedPaymentIds.size > 1000) {
+            const first = processedPaymentIds.values().next().value;
+            if (first) processedPaymentIds.delete(first);
+          }
+        }
+
+        if (!isDuplicate) {
+          await track({
+            eventType: "checkout_completed",
+            sessionId: `webhook:${subscriptionEntity.id}`,
+            userId: subscriber.userId ?? null,
+            metadata: {
+              tier,
+              amount: payment?.amount ?? null,
+              razorpay_payment_id: payment?.id ?? null,
+            },
+          });
+          await notify({
+            title: "Payment received",
+            message: `${subscriber.email} — ${tier} — ${formatAmount(payment)}`,
+            tags: ["moneybag"],
+            priority: 4,
+          });
+        }
       }
       break;
     }

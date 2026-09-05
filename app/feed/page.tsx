@@ -10,6 +10,7 @@ import { getSubscriberTopics } from "@/lib/subscriptions/subscriber-topics";
 import { absoluteUrl } from "@/lib/seo";
 import TriangulationBadge from "./triangulation-badge";
 import NewsletterForm from "../newsletter-form";
+import FeedBrowser, { type FeedCardData } from "@/components/feed-browser";
 
 export const dynamic = "force-dynamic";
 
@@ -33,8 +34,6 @@ export const metadata: Metadata = {
   },
 };
 
-const COVERS = ["cover-1", "cover-2", "cover-3", "cover-4", "cover-5", "cover-6"];
-
 export default async function FeedPage() {
   const viewer = await resolveViewerContext();
 
@@ -45,10 +44,27 @@ export default async function FeedPage() {
     if (subscriber) topics = await getSubscriberTopics(subscriber.id);
   }
 
-  const ideas = topics.length > 0 ? await listPublishedIdeas(topics) : await listFeaturedIdeas();
+  const ideas = await listPublishedIdeas(topics.length > 0 ? topics : undefined);
   const alreadyUnlocked = viewer.subscriberId ? await unlockedIdeaIds(viewer.subscriberId) : new Set<string>();
   const access = await Promise.all(ideas.map((idea) => previewAccess(idea, viewer, alreadyUnlocked)));
   const triangulationByIdeaId = await getTriangulationMap(ideas);
+
+  const cardItems: FeedCardData[] = access.map((result) => {
+    const idea = result.idea;
+    const triangulation = triangulationByIdeaId.get(idea.id);
+    return {
+      id: idea.id,
+      slug: idea.slug,
+      title: idea.title,
+      category: idea.category,
+      demandScore: idea.demandScore,
+      problemSummary: idea.problem.summary,
+      tier: idea.tier,
+      soloWeekendProject: "difficulty" in idea ? Boolean(idea.difficulty?.soloWeekendProject) : false,
+      kind: result.kind,
+      triangulationStats: triangulation?.stats,
+    };
+  });
 
   return (
     <main className="app-shell">
@@ -61,58 +77,13 @@ export default async function FeedPage() {
       <p className="app-sub">
         {topics.length > 0
           ? "Filtered to your picked topics."
-          : "The admin-curated set. Pick topics in your account to personalize this."}
+          : "All published validated drops. Filter by category, stack, or weekend scope."}
       </p>
       <Link href="/methodology" className="feed-methodology-link">
         How are these sourced? →
       </Link>
 
-      {access.length === 0 ? (
-        <div className="empty-state">New ideas drop every Monday. Check back soon.</div>
-      ) : (
-        <div className="feed-grid">
-          {access.map((result, i) => {
-            const idea = result.idea;
-            const triangulation = triangulationByIdeaId.get(idea.id);
-            const badge =
-              result.kind === "tier-locked" ? (
-                <span className="feed-badge">🔒 {idea.tier}+</span>
-              ) : result.kind === "quota-locked" ? (
-                <span className="feed-badge">⏳ Limit reached</span>
-              ) : result.kind === "signed-out" ? (
-                <span className="feed-badge">🔒 Sign in</span>
-              ) : null;
-
-            const href =
-              result.kind === "tier-locked"
-                ? "/#pricing"
-                : result.kind === "quota-locked"
-                  ? "/account"
-                  : `/feed/${idea.slug}`;
-
-            return (
-              <Link key={idea.id} href={href} className="feed-card">
-                <div className={`feed-card-cover ${COVERS[i % COVERS.length]}`}>
-                  <span className="tag">{idea.category}</span>
-                  <span className="score">{idea.demandScore}% demand</span>
-                </div>
-                <div className="feed-card-body">
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
-                    <h2>{idea.title}</h2>
-                    {badge}
-                  </div>
-                  <p>{idea.problem.summary}</p>
-                  {triangulation ? (
-                    <div style={{ marginTop: 10 }}>
-                      <TriangulationBadge stats={triangulation.stats} />
-                    </div>
-                  ) : null}
-                </div>
-              </Link>
-            );
-          })}
-        </div>
-      )}
+      <FeedBrowser items={cardItems} />
       <section className="newsletter-inline" aria-labelledby="feed-newsletter-heading">
         <h2 id="feed-newsletter-heading">Get the next proof drop</h2>
         <p>One evidence-backed opportunity each week.</p>

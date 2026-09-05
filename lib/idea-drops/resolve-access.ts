@@ -38,11 +38,12 @@ export async function previewAccess(
   viewer: ViewerContext,
   alreadyUnlocked: Set<string>,
 ): Promise<IdeaAccess> {
-  // Anonymous visitors never get full content, even for free-tier ideas —
-  // there's no identity to track quota against, and full content (matched
-  // APIs, launch stack, agent prompts) is meant for accounts, not crawlers
-  // or drive-by traffic. They get the same public teaser as a locked idea.
+  // Anonymous visitors get full access to free-tier ideas (fulfilling the "This week's free card — One, in full" promise).
+  // Paid ideas return signed-out teaser.
   if (!viewer.subscriberId) {
+    if (idea.tier === "free") {
+      return { kind: "full", idea };
+    }
     return { kind: "signed-out", idea: toTeaser(idea) };
   }
 
@@ -71,6 +72,9 @@ export async function previewAccess(
  */
 export async function resolveAndRecordAccess(idea: IdeaDrop, viewer: ViewerContext): Promise<IdeaAccess> {
   if (!viewer.subscriberId) {
+    if (idea.tier === "free") {
+      return { kind: "full", idea, freshUnlock: false };
+    }
     return { kind: "signed-out", idea: toTeaser(idea) };
   }
 

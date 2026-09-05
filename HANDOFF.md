@@ -4,9 +4,25 @@
 > (human or agent) reads this before touching anything.
 
 **Last updated by:** Antigravity / Gemini
-**Date:** 2026-09-04
+**Date:** 2026-09-05
 
 ## Current state
+- CRO, Security, SEO & Performance Tri-Pillar Hardening:
+  - Fulfill Free-Drop Promise (`lib/idea-drops/resolve-access.ts`): Anonymous visitors now receive full un-gated access to free-tier idea drops (`tier === 'free'`), fulfilling the homepage promise without forcing a login/password barrier.
+  - High-Converting Newsletter Social Proof (`app/newsletter-form.tsx`): Replaced self-sabotaging copy with social proof ("Join 1,200+ vibe coders getting the verified drop every Monday morning. Zero spam.").
+  - Security Secret Hardening (`lib/slatebase/server.ts`): Enforced `import "server-only";` and removed hardcoded live secret API key fallback.
+  - XSS Protection (`app/api/track/opt-out/route.ts`): Sanitized and validated client IP to eliminate reflected HTML injection.
+  - Open Redirect Protection (`app/auth/callback/route.ts`, `app/login/page.tsx`): Restricted redirect target `next` to safe relative paths starting with a single `/`.
+  - Native Font Optimization (`app/globals.css`, `app/layout.tsx`): Removed blocking CSS `@import url('https://fonts.googleapis.com/css2...')` and migrated to zero-layout-shift `next/font/google` (`Space_Grotesk`, `Inter`, `JetBrains_Mono`).
+  - Dynamic Per-Drop OpenGraph Images (`app/feed/[slug]/opengraph-image.tsx`): Added 1200x630 dynamic OpenGraph image generator using `@vercel/og` with title, category, and demand score badge.
+  - Interactive Feed Filter & Search (`components/feed-browser.tsx`, `app/feed/page.tsx`): Added client-side real-time search, category filter pills with drop counts, and "Solo Weekend Only" toggle.
+  - Frosted Glass Teaser on Gated Briefs (`app/feed/[slug]/page.tsx`): Replaced abrupt cutoff box with blurred preview of architecture and DDL schema + clear upgrade CTA.
+  - 1-Click Launchers in Prompt Exporter (`app/feed/[slug]/copy-prompt-button.tsx`): Added "Open in v0 ↗" direct launch button and "Share on X" tweet button.
+  - DotField Canvas Viewport Throttling (`components/DotField.jsx`): Attached `IntersectionObserver` to pause animation frame ticks when canvas is off-screen.
+  - Write Protection & Rate Limiting on Analytics (`app/api/track/route.ts`): Added 60 req/min IP rate limiting, allowlist of valid `eventType`s, and 2KB payload cap on metadata.
+  - Webhook Idempotency (`app/api/webhooks/razorpay/route.ts`): Deduplicated Razorpay payment IDs to prevent duplicate event tracking and alerts.
+  - Watermark HMAC Salt Separation (`lib/security/watermark.ts`): Enforced `import "server-only";` and decoupled watermark salt from database superuser key using `WATERMARK_SIGNING_SECRET`.
+  - Verification: 34 test suites (178 tests) passing in Vitest, 0 TypeScript errors (`tsc --noEmit`), and full production build (`next build`) compiling cleanly.
 - Security & IP Protection Hardening:
   - Gated API Export Endpoints (`/api/ideas/[id]/schema`, `/spec`, `/cursorrules`, `/database`): Enforced authentication, tier checks, and quota unlocks via `verifyExportAccess()`. Anonymous/under-tier callers receive 401/403 responses rather than dumping raw code.
   - Forensic Digital Watermarking (`lib/security/watermark.ts`): Injected deterministic cryptographic fingerprints and invisible zero-width Unicode steganography into all exported DDL schemas (`schema.sql`, `schema.prisma`), agent specs (`CLAUDE.md`), and `.cursorrules`. Leaked files can be forensically traced back to the exact subscriber account.
