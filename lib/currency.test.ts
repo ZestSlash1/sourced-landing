@@ -28,10 +28,10 @@ describe("formatPlanPrice", () => {
     const usd = formatPlanPrice("builder-monthly", "USD");
     expect(usd.primary).toBe("$4.80");
     expect(usd.period).toBe("/mo");
-    expect(usd.equivalentNote).toBe("Billed as ?399 INR via Razorpay");
+    expect(usd.equivalentNote).toBe("Billed as ₹399 INR via Razorpay");
 
     const inr = formatPlanPrice("builder-monthly", "INR");
-    expect(inr.primary).toBe("?399");
+    expect(inr.primary).toBe("₹399");
     expect(inr.period).toBe("/mo");
     expect(inr.approx).toBe("(~$4.80 USD)");
   });
@@ -43,8 +43,8 @@ describe("formatPlanPrice", () => {
     expect(usd.period).toBe("/mo");
 
     const inr = formatPlanPrice("builder-founding", "INR");
-    expect(inr.primary).toBe("?310");
-    expect(inr.slash).toBe("?399");
+    expect(inr.primary).toBe("₹310");
+    expect(inr.slash).toBe("₹399");
     expect(inr.period).toBe("/mo");
   });
 
@@ -54,7 +54,7 @@ describe("formatPlanPrice", () => {
     expect(usd.period).toBe("/mo");
 
     const inr = formatPlanPrice("studio-monthly", "INR");
-    expect(inr.primary).toBe("?999");
+    expect(inr.primary).toBe("₹999");
     expect(inr.period).toBe("/mo");
     expect(inr.approx).toBe("(~$12 USD)");
   });
@@ -64,6 +64,6 @@ describe("formatPlanPrice", () => {
     expect(usd.yearlyButtonText).toBe("or $42/yr (save $15.60)");
 
     const inr = formatPlanPrice("builder-yearly", "INR");
-    expect(inr.yearlyButtonText).toBe("or ?3,499/yr (save ?1,289)");
+    expect(inr.yearlyButtonText).toBe("or ₹3,499/yr (save ₹1,289)");
   });
 });
