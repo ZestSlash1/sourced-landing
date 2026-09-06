@@ -26,22 +26,33 @@ export function Meteors({ number = 20, className = "" }: MeteorsProps) {
   }, [number]);
 
   return (
-    <div className={`meteors-container pointer-events-none absolute inset-0 overflow-hidden ${className}`}>
+    <div
+      className={`meteors-container ${className}`}
+      style={{
+        position: "absolute",
+        inset: 0,
+        overflow: "hidden",
+        pointerEvents: "none",
+        zIndex: 0,
+      }}
+    >
       {meteorStyles.map((style, idx) => (
         <span
           key={`meteor-${idx}`}
-          className="meteor-streak pointer-events-none absolute h-0.5 w-0.5 rotate-[215deg] animate-[meteor_linear_infinite] rounded-[9999px] bg-slate-400 shadow-[0_0_0_1px_#ffffff10]"
+          className="meteor-streak"
           style={
             {
               ...style,
               position: "absolute",
+              pointerEvents: "none",
               height: "2px",
               width: "2px",
               borderRadius: "9999px",
-              background: "linear-gradient(90deg, #fff, #8A2BE2, transparent)",
-              boxShadow: "0 0 8px rgba(138, 43, 226, 0.8)",
-              animation: `meteor ${style.animationDuration} linear infinite`,
-              animationDelay: style.animationDelay,
+              background: "linear-gradient(90deg, rgba(255, 255, 255, 0.9), rgba(167, 139, 250, 0.7), transparent)",
+              boxShadow: "0 0 6px rgba(124, 58, 237, 0.5)",
+              transform: "rotate(215deg)",
+              animation: `meteor ${style.animationDuration}s linear infinite`,
+              animationDelay: `${style.animationDelay}s`,
             } as CSSProperties
           }
         >
@@ -52,9 +63,9 @@ export function Meteors({ number = 20, className = "" }: MeteorsProps) {
               position: "absolute",
               top: "50%",
               transform: "translateY(-50%)",
-              width: "50px",
+              width: "42px",
               height: "1px",
-              background: "linear-gradient(90deg, rgba(138, 43, 226, 0.8), rgba(0, 240, 255, 0.4), transparent)",
+              background: "linear-gradient(90deg, rgba(167, 139, 250, 0.5), rgba(56, 189, 248, 0.25), transparent)",
             }}
           />
         </span>

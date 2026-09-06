@@ -13,19 +13,23 @@ interface BorderBeamProps {
 }
 
 export function BorderBeam({
-  size = 150,
-  duration = 12,
+  size = 160,
+  duration = 14,
   delay = 0,
-  colorFrom = "#8A2BE2",
-  colorTo = "#00F0FF",
+  colorFrom = "rgba(138, 43, 226, 0.65)",
+  colorTo = "rgba(6, 182, 212, 0.45)",
   className = "",
-  borderWidth = 1.5,
+  borderWidth = 1.25,
 }: BorderBeamProps) {
   return (
     <div
       aria-hidden="true"
-      className={`border-beam pointer-events-none absolute inset-0 rounded-[inherit] ${className}`}
+      className={`border-beam ${className}`}
       style={{
+        position: "absolute",
+        inset: 0,
+        pointerEvents: "none",
+        borderRadius: "inherit",
         borderWidth: `${borderWidth}px`,
         borderStyle: "solid",
         borderColor: "transparent",

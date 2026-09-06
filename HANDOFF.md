@@ -7,20 +7,16 @@
 **Date:** 2026-09-06
 
 ## Current state
-- Magic UI & Dynamic RGB Visual Overhaul:
-  - Deep Obsidian & RGB Design System Tokens (`app/globals.css`, `tests/theme-tokens.test.ts`): Shifted canvas to deep obsidian (`--bg: #08090E`, `--surface: #10121A`, `--surface-elevated: #161824`, `--ink: #F4F4F6`, `--ink-soft: #9496A6`) to maximize dynamic range and high-contrast glow. Defined RGB gradient tokens (`--rgb-rainbow`, `--rgb-conic-rainbow`, `--rgb-beam-violet-cyan`, `--rgb-card-glow`) and hardware-accelerated keyframe animations (`border-beam`, `shine-rotate`, `rainbow-cycle`, `marquee`, `meteor`).
-  - Magic UI Primitives Suite (`components/magicui/*`, `tests/magicui-primitives.test.ts`): Built zero-dependency, accessible React primitives with strict `prefers-reduced-motion` compliance: `BorderBeam` (traveling ray of light along card perimeter via `offset-path`), `ShineBorder` (rotating 360° chromatic conic gradient aura), `MagicCard` (interactive pointer spotlight tracking cursor coordinates), `RainbowButton` (continuous cycling neon rainbow CTA button), `AnimatedGradientText` (chromatic text fill + pulsating neon eyebrow badge), `Marquee` (infinite looping ticker ribbons with pause-on-hover), and `Meteors` (cosmic shooting stars across hero canvas).
-  - Homepage Transformation (`app/home-client.tsx`, `tests/home-client-visuals.test.ts`):
-    - Hero: Animated rainbow gradient pill badge, ambient shooting star meteors behind headline, chromatic gradient text on `.accent`, and `RainbowButton` primary CTA.
-    - Masonry & How-it-Works: Wrapped cards in cursor-tracking `MagicCard` spotlight; added traveling `BorderBeam` to top card.
-    - Public APIs & Sources: Upgraded static tags into dual bidirectional infinite `Marquee` ribbons with smooth edge masking.
-    - Sample Drop: Enclosed in 360° rotating `ShineBorder` chromatic perimeter glow.
-    - Pricing: Added radiant `BorderBeam` around the Builder plan, an iridescent "Most Popular" badge, and `RainbowButton` checkout.
-    - Bottom CTA: Obsidian glass panel with glowing rainbow top hairline and dual action buttons.
-  - Navigation & Feed Polish (`components/floating-navbar.tsx`, `components/feed-browser.tsx`, `app/feed/[slug]/page.tsx`, `tests/navigation-feed-visuals.test.ts`):
-    - Floating Nav: Enhanced active tab with obsidian pill backdrop and soft RGB violet-cyan glow.
-    - Feed Browser: Wrapped idea cards in responsive `MagicCard` spotlights.
-    - Gated Brief Teaser: Replaced cream cutoffs with dark obsidian glass (`rgba(10, 12, 18, 0.88)`), preserving blurred architecture preview and unlock CTA.
+- Magic UI & Subtle Dynamic RGB Visual Refinements & Layout Fixes:
+  - Fixed `#apis` Marquee Layout Bug (`components/magicui/marquee.tsx`, `app/globals.css`): Resolved 16 vertically stacked block items by providing complete vanilla CSS flex rules (`.marquee-container`, `.marquee-content`, `white-space: nowrap`) and inline fallbacks, eliminating Tailwind class reliance in vanilla Next.js setup.
+  - Fixed Tag Contrast Bug (`app/globals.css`): Changed category tag text color on card covers (`.idea-cover .tag`, `.feed-card-cover .tag`) from `var(--ink)` (white) to `#0A0C14` (dark ink) for crystal-clear readability against pastel badge backgrounds.
+  - Fixed Hero Clearance (`app/globals.css`): Increased `.hero` top padding to `clamp(116px, 13vw, 140px)` so the fixed floating navbar never cuts off or crowds the eyebrow badge.
+  - Subtle, Sophisticated RGB Palette (`components/magicui/*`, `app/globals.css`, `app/home-client.tsx`):
+    - Replaced garish 7-color neon candy cycling on `RainbowButton` with an elegant violet-indigo-cyan shimmer (`linear-gradient(135deg, rgba(124, 58, 237, 0.85), rgba(99, 102, 241, 0.8), rgba(56, 189, 248, 0.7))` at 8s).
+    - Refined `ShineBorder` on sample card and `BorderBeam` on Builder plan to atmospheric violet-sky tones at 16s-18s rotations.
+    - Removed forceful `BorderBeam` from masonry card #1 to let native card covers and `MagicCard` hover spotlight speak naturally.
+    - Calmed `AnimatedGradientText` and hero `.accent` text to high-end iridescent violet-sky-slate at 12s transitions.
+    - Toned down `Meteors` and pointer spotlights to subtle celestial ambient accents.
   - Test suites: 41 test files (207 tests) passing in Vitest (`npm run test`). Full TypeScript check (`npm run typecheck`) and Next.js production build (`npm run build`) passing with 0 errors.
 - Native CSS Scroll-Driven Animations & Lenis Momentum Scrolling:
   - Skill added: `.agents/skills/scroll-driven-animations/SKILL.md` (and `~/.gemini/skills/scroll-driven-animations/SKILL.md`) incorporating Josh W. Comeau's Animation Timeline patterns, animation ranges, linked timelines, Lenis integration, and progressive enhancement.

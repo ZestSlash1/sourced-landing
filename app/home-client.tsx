@@ -396,12 +396,9 @@ export default function HomeClient({
               <MagicCard
                 key={c.slug || i}
                 className="idea-card"
-                gradientColor="rgba(124, 58, 237, 0.22)"
+                gradientColor="rgba(124, 58, 237, 0.16)"
                 style={{ ["--d" as string]: `${c.d}s` }}
               >
-                {i === 0 && (
-                  <BorderBeam size={180} duration={12} colorFrom="#FF0055" colorTo="#00F0FF" />
-                )}
                 <Link
                   href={href}
                   style={{ textDecoration: "none", color: "inherit", display: "flex", flexDirection: "column", height: "100%" }}
@@ -554,7 +551,16 @@ export default function HomeClient({
             <h2>One, in full. The rest are in your feed.</h2>
           </Reveal>
           <Reveal scale style={{ maxWidth: 740, margin: "0 auto" }}>
-            <ShineBorder borderRadius={20} duration={12} color={["#ff0055", "#00f0ff", "#8A2BE2", "#10B981"]}>
+            <ShineBorder
+              borderRadius={20}
+              duration={18}
+              color={[
+                "rgba(124, 58, 237, 0.55)",
+                "rgba(56, 189, 248, 0.45)",
+                "rgba(16, 185, 129, 0.35)",
+                "rgba(139, 92, 246, 0.5)",
+              ]}
+            >
               <div className="feature-card" style={{ maxWidth: "100%", margin: 0, border: "none", boxShadow: "none" }}>
                 <div className="feature-cover">
                   <span className="tag">{sampleIdea?.category ?? "Micro-SaaS"}</span>
@@ -802,7 +808,7 @@ export default function HomeClient({
               )}
             </Reveal>
             <Reveal delay={0.08} className="plan featured" style={{ position: "relative" }}>
-              <BorderBeam size={200} duration={10} colorFrom="#8A2BE2" colorTo="#00F0FF" />
+              <BorderBeam size={220} duration={16} colorFrom="rgba(138, 43, 226, 0.65)" colorTo="rgba(6, 182, 212, 0.45)" />
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
                 <div className="plan-name" style={{ margin: 0 }}>Builder</div>
                 <span

@@ -16,8 +16,8 @@ export function MagicCard({
   children,
   className = "",
   gradientSize = 260,
-  gradientColor = "rgba(138, 43, 226, 0.2)",
-  gradientOpacity = 0.8,
+  gradientColor = "rgba(124, 58, 237, 0.12)",
+  gradientOpacity = 0.65,
   style = {},
   onClick,
 }: MagicCardProps) {
@@ -43,20 +43,27 @@ export function MagicCard({
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       onClick={onClick}
-      className={`magic-card relative overflow-hidden ${className}`}
+      className={`magic-card ${className}`}
       style={{
-        ...style,
         position: "relative",
+        overflow: "hidden",
+        ...style,
       }}
     >
       {/* Pointer Spotlight Overlay */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 z-10 transition-opacity duration-300"
+        className="magic-card-spotlight"
         style={{
+          position: "absolute",
+          inset: 0,
+          pointerEvents: "none",
+          zIndex: 2,
+          borderRadius: "inherit",
+          transition: "opacity 0.24s ease",
           opacity: position ? gradientOpacity : 0,
           background: position
-            ? `radial-gradient(${gradientSize}px circle at ${position.x}px ${position.y}px, ${gradientColor}, rgba(0, 240, 255, 0.08) 40%, transparent 80%)`
+            ? `radial-gradient(${gradientSize}px circle at ${position.x}px ${position.y}px, ${gradientColor}, rgba(56, 189, 248, 0.04) 40%, transparent 80%)`
             : "none",
         }}
       />
