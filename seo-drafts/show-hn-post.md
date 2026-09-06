@@ -20,10 +20,10 @@ vents about a broken workflow on HN, someone else hits the same wall on a
 GitHub issue thread, a third person asks about it on StackExchange — and
 nobody connects the three as evidence of the same underlying problem.
 
-Sourced polls Hacker News, GitHub Issues, and StackExchange (recently added
-Codeberg, Discourse, Mastodon, and YouTube comments too), embeds every
-complaint, and clusters near-duplicates across sources. When enough
-independent people are hitting the same wall, that cluster becomes an "idea
+Sourced polls 12 complaint sources (Hacker News, GitHub Issues, GitLab,
+StackExchange, Dev.to, Lobsters, DevRant, Bluesky, Codeberg, Discourse,
+Mastodon, and YouTube comments), embeds every complaint via nomic-embed-text,
+and clusters near-duplicates across sources. When enough independent people are hitting the same wall, that cluster becomes an "idea
 drop" — a short brief with the evidence (raw signal links, not summarized
 away), the shape of the problem, and a starting point for a build.
 

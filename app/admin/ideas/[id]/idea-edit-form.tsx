@@ -47,6 +47,28 @@ export default function IdeaEditForm({ idea }: { idea: IdeaDrop }) {
 
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [broadcasting, setBroadcasting] = useState(false);
+  const [broadcastResult, setBroadcastResult] = useState<{ recipientCount: number } | null>(null);
+
+  async function handleBroadcast() {
+    if (!confirm(`Broadcast drop "${idea.title}" to all active subscribers?`)) return;
+    setBroadcasting(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/ideas/${idea.id}/dispatch`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dryRun: false }),
+      });
+      const data = (await res.json()) as { ok?: boolean; error?: string; recipientCount?: number };
+      if (!res.ok) throw new Error(data.error || "Broadcast failed");
+      setBroadcastResult({ recipientCount: data.recipientCount ?? 0 });
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to broadcast");
+    } finally {
+      setBroadcasting(false);
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -93,13 +115,42 @@ export default function IdeaEditForm({ idea }: { idea: IdeaDrop }) {
 
   return (
     <form onSubmit={handleSubmit}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 24, flexWrap: "wrap", gap: 8 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24, flexWrap: "wrap", gap: 8 }}>
         <h1 className="display" style={{ fontSize: 22, margin: 0 }}>
           Edit idea
         </h1>
-        <Link href="/admin" style={{ fontSize: 13, color: "var(--ink-soft)" }}>
-          Back to list
-        </Link>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          {idea.status === "published" && (
+            <button
+              type="button"
+              onClick={handleBroadcast}
+              disabled={broadcasting}
+              className="admin-btn"
+              style={{
+                background: broadcastResult ? "rgba(52, 211, 153, 0.12)" : "rgba(124, 58, 237, 0.1)",
+                color: broadcastResult ? "#059669" : "var(--violet, #7c3aed)",
+                border: broadcastResult ? "1px solid rgba(52, 211, 153, 0.4)" : "1px solid rgba(124, 58, 237, 0.3)",
+                fontSize: 12,
+                padding: "6px 12px",
+                borderRadius: "var(--r-sm)",
+                cursor: "pointer",
+                fontWeight: 600,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              {broadcasting
+                ? "Broadcasting..."
+                : broadcastResult
+                ? `✓ Broadcast to ${broadcastResult.recipientCount} subscriber(s)`
+                : "📢 Broadcast to Subscribers"}
+            </button>
+          )}
+          <Link href="/admin" style={{ fontSize: 13, color: "var(--ink-soft)" }}>
+            Back to list
+          </Link>
+        </div>
       </div>
 
       <label className="admin-label">Title</label>

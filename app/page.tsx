@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { getMethodologyStats, getNearestPassingClusters } from "@/lib/ingest/pipeline-stats";
 import { listRecentPipelineRuns } from "@/lib/ingest/pipeline-runs-repository";
@@ -88,6 +89,9 @@ export default async function Home() {
     nearMiss,
   };
 
+  const headerList = headers();
+  const country = headerList.get("x-vercel-ip-country");
+
   return (
     <>
       <HomeFaqJsonLd />
@@ -96,6 +100,7 @@ export default async function Home() {
         proofBar={proofBar}
         featuredIdeas={ideasToShow}
         sampleIdea={resolvedSample}
+        country={country}
       />
     </>
   );

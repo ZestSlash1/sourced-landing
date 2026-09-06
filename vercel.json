@@ -13,6 +13,7 @@
     { "path": "/api/cron/ingest-mastodon", "schedule": "10 7 * * *" },
     { "path": "/api/cron/ingest-bluesky", "schedule": "13 7 * * *" },
     { "path": "/api/cron/ingest-devrant", "schedule": "16 7 * * *" },
-    { "path": "/api/cron/draft-ideas", "schedule": "20 7 * * *" }
+    { "path": "/api/cron/draft-ideas", "schedule": "20 7 * * *" },
+    { "path": "/api/cron/dispatch-weekly-drop", "schedule": "0 8 * * 1" }
   ]
 }

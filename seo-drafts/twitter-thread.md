@@ -15,9 +15,9 @@ each time — that's real evidence, not a guess.
 
 3/
 So the pipeline:
-→ poll 5+ complaint sources (HN, GitHub Issues, StackExchange, Codeberg,
-Discourse, Mastodon, YouTube comments)
-→ embed every complaint
+→ poll 12 complaint sources (HN, GitHub, GitLab, StackExchange, Codeberg,
+Discourse, Mastodon, YouTube, Dev.to, Lobsters, DevRant, Bluesky)
+→ embed every complaint via nomic-embed-text
 → cluster near-duplicates *across* sources
 → draft a brief from clusters that clear a signal threshold
 
@@ -32,8 +32,10 @@ falls apart.
 5/
 Root cause: embedding normalization + a similarity threshold that had
 effectively been tuned on same-source pairs — it fell apart once
-cross-community phrasing differences got folded in. [fill in your actual
-fix / numbers here]
+cross-community phrasing differences got folded in.
+
+The fix: calibrated cosine similarity to 0.82 with a strict 3+ signals
+across 2+ platforms gate. Immediately connected 40+ multi-source clusters.
 
 6/
 Also just moved the ingest pipeline off a metered API by default. Ollama

@@ -15,12 +15,13 @@ independently of each other.
 So instead of another AI-idea-generator that hallucinates a market, I built
 a pipeline that:
 
-1. Polls real complaint sources — Hacker News, GitHub Issues, StackExchange,
-   and (as of the latest expansion) Codeberg, Discourse, Mastodon, and
-   YouTube comments.
-2. Embeds every scraped complaint.
-3. Clusters near-duplicate complaints across sources — the same underlying
-   problem showing up on three different platforms is much stronger
+1. Polls 12 real complaint sources — Hacker News, GitHub Issues, GitLab,
+   StackExchange, Dev.to, Lobsters, DevRant, Bluesky, Codeberg, Discourse,
+   Mastodon, and YouTube comments.
+2. Embeds every scraped complaint using `nomic-embed-text` (768 dimensions).
+3. Clusters near-duplicate complaints across sources using cosine similarity —
+   requiring at least 3 signals across 2+ distinct platforms with similarity >= 0.82.
+   The same underlying problem showing up across platforms is much stronger
    evidence than one loud thread.
 4. Classifies and drafts a build brief from each cluster that clears a
    signal threshold, ready to paste into Claude Code, Cursor, Windsurf, v0,
@@ -43,9 +44,12 @@ product falls apart.
 
 Root cause was a combination of embedding normalization and a similarity
 threshold tuned on same-source pairs, which happened to be near-orthogonal
-across platforms once phrasing style differences got folded in. Fixing it
-took [a normalization pass + threshold retune — happy to go deeper on this
-in the comments if people want the specifics].
+across platforms once phrasing style differences got folded in.
+
+Fixing it took L2 normalization and recalibrating the threshold to 0.82
+with a minimum requirement of 3 signals across 2+ distinct platforms.
+Immediately, 40+ cross-platform clusters connected, linking Hacker News
+gripes to active GitHub issue threads and StackExchange queries.
 
 ## Keeping the pipeline free to run
 

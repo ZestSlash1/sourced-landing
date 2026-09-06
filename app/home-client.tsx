@@ -10,6 +10,7 @@ import NewsletterForm from "./newsletter-form";
 import type { ProofBarData } from "./proof-bar";
 import type { IdeaDrop } from "@/types/idea-drop";
 import { trackEvent } from "@/lib/track-client";
+import { resolveCurrency, formatPlanPrice, type Currency } from "@/lib/currency";
 
 const ProofBar = dynamic(() => import("./proof-bar"), { loading: () => null });
 
@@ -86,6 +87,7 @@ interface HomeClientProps {
   proofBar: ProofBarData;
   featuredIdeas?: IdeaDrop[];
   sampleIdea?: IdeaDrop | null;
+  country?: string | null;
 }
 
 const COVERS = ["cover-1", "cover-2", "cover-3", "cover-4", "cover-5", "cover-6"];
@@ -95,6 +97,7 @@ export default function HomeClient({
   proofBar,
   featuredIdeas,
   sampleIdea,
+  country,
 }: HomeClientProps) {
   const snippetRef = useRef<HTMLDivElement | null>(null);
   const [agentId, setAgentId] = useState("claude");
@@ -102,6 +105,7 @@ export default function HomeClient({
   const [checkoutPending, setCheckoutPending] = useState<PlanKey | null>(null);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [foundingRemaining, setFoundingRemaining] = useState<number | null>(null);
+  const [currency, setCurrency] = useState<Currency>(() => resolveCurrency(country));
 
   // Slatebase Free Tier Signup Flow (Phase 1)
   const [freeEmail, setFreeEmail] = useState(userEmail || "");
@@ -554,6 +558,57 @@ export default function HomeClient({
             <div className="eyebrow">Pricing</div>
             <h2>Less than a coffee run, per idea</h2>
             <p className="section-sub">Cancel anytime. Every paid plan comes with a 7-day refund, no questions.</p>
+            <div
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 4,
+                background: "var(--surface-sunken, #edeae3)",
+                padding: "3px 4px",
+                borderRadius: "999px",
+                marginTop: 14,
+                border: "1px solid var(--line)",
+              }}
+              role="group"
+              aria-label="Currency selection"
+            >
+              <button
+                type="button"
+                onClick={() => setCurrency("USD")}
+                style={{
+                  padding: "4px 12px",
+                  borderRadius: "999px",
+                  fontSize: 12,
+                  fontFamily: "var(--mono)",
+                  fontWeight: 600,
+                  border: "none",
+                  cursor: "pointer",
+                  background: currency === "USD" ? "var(--ink)" : "transparent",
+                  color: currency === "USD" ? "#fff" : "var(--ink-soft)",
+                  transition: "all 0.15s ease",
+                }}
+              >
+                USD ($)
+              </button>
+              <button
+                type="button"
+                onClick={() => setCurrency("INR")}
+                style={{
+                  padding: "4px 12px",
+                  borderRadius: "999px",
+                  fontSize: 12,
+                  fontFamily: "var(--mono)",
+                  fontWeight: 600,
+                  border: "none",
+                  cursor: "pointer",
+                  background: currency === "INR" ? "var(--ink)" : "transparent",
+                  color: currency === "INR" ? "#fff" : "var(--ink-soft)",
+                  transition: "all 0.15s ease",
+                }}
+              >
+                INR (₹)
+              </button>
+            </div>
           </Reveal>
           <div className="pricing-grid">
             <Reveal delay={0} className="plan">
@@ -681,30 +736,43 @@ export default function HomeClient({
             <Reveal delay={0.08} className="plan featured">
               <div className="plan-name">Builder</div>
               <div className="plan-tag">The full weekly feed · most common pick</div>
-              {foundingActive ? (
-                <div className="plan-price">
-                  <span className="plan-price-slash">₹399</span> ₹310<span>/mo</span>
-                  <span style={{ fontSize: 12, fontWeight: 400, color: "var(--ink-soft)", marginLeft: 6 }}>
-                    (~$3.70 USD)
-                  </span>
-                </div>
-              ) : (
-                <div className="plan-price">
-                  ₹399<span>/mo</span>
-                  <span style={{ fontSize: 12, fontWeight: 400, color: "var(--ink-soft)", marginLeft: 6 }}>
-                    (~$4.80 USD)
-                  </span>
-                </div>
-              )}
-              <button
-                type="button"
-                className="plan-old"
-                style={{ background: "none", border: "none", cursor: "pointer", padding: 0, font: "inherit" }}
-                onClick={() => startCheckout("builder-yearly")}
-                disabled={checkoutPending !== null}
-              >
-                or ₹3,499/yr (save ₹1,289)
-              </button>
+              {(() => {
+                const builderMonthly = formatPlanPrice("builder-monthly", currency);
+                const builderFounding = formatPlanPrice("builder-founding", currency);
+                const builderYearly = formatPlanPrice("builder-yearly", currency);
+                return (
+                  <>
+                    {foundingActive ? (
+                      <div className="plan-price">
+                        <span className="plan-price-slash">{builderFounding.slash}</span> {builderFounding.primary}<span>{builderFounding.period}</span>
+                        {currency === "INR" && builderFounding.approx && (
+                          <span style={{ fontSize: 12, fontWeight: 400, color: "var(--ink-soft)", marginLeft: 6 }}>
+                            {builderFounding.approx}
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="plan-price">
+                        {builderMonthly.primary}<span>{builderMonthly.period}</span>
+                        {currency === "INR" && builderMonthly.approx && (
+                          <span style={{ fontSize: 12, fontWeight: 400, color: "var(--ink-soft)", marginLeft: 6 }}>
+                            {builderMonthly.approx}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      className="plan-old"
+                      style={{ background: "none", border: "none", cursor: "pointer", padding: 0, font: "inherit" }}
+                      onClick={() => startCheckout("builder-yearly")}
+                      disabled={checkoutPending !== null}
+                    >
+                      {builderYearly.yearlyButtonText}
+                    </button>
+                  </>
+                );
+              })()}
               <ul className="plan-features">
                 <li>4 full idea cards every month</li>
                 <li>Full searchable archive</li>
@@ -725,12 +793,19 @@ export default function HomeClient({
             <Reveal delay={0.16} className="plan">
               <div className="plan-name">Studio</div>
               <div className="plan-tag">For your specific niche</div>
-              <div className="plan-price">
-                ₹999<span>/mo</span>
-                <span style={{ fontSize: 12, fontWeight: 400, color: "var(--ink-soft)", marginLeft: 6 }}>
-                  (~$12 USD)
-                </span>
-              </div>
+              {(() => {
+                const studioMonthly = formatPlanPrice("studio-monthly", currency);
+                return (
+                  <div className="plan-price">
+                    {studioMonthly.primary}<span>{studioMonthly.period}</span>
+                    {currency === "INR" && studioMonthly.approx && (
+                      <span style={{ fontSize: 12, fontWeight: 400, color: "var(--ink-soft)", marginLeft: 6 }}>
+                        {studioMonthly.approx}
+                      </span>
+                    )}
+                  </div>
+                );
+              })()}
               <ul className="plan-features">
                 <li>Everything in Builder</li>
                 <li>Instant dev database hosting bundle</li>
@@ -749,7 +824,9 @@ export default function HomeClient({
             </Reveal>
           </div>
           <div style={{ textAlign: "center", marginTop: 22, fontSize: 13, color: "var(--ink-soft)" }}>
-            Billed securely via Razorpay in INR · Accepts all international Visa, Mastercard, and Amex cards
+            {currency === "USD"
+              ? "Billed securely in equivalent INR (~₹399 / ₹999) via Razorpay · Accepts all international Visa, Mastercard, and Amex cards with automatic bank conversion"
+              : "Billed securely via Razorpay in INR · Accepts all international Visa, Mastercard, and Amex cards"}
           </div>
           {checkoutError && (
             <p style={{ textAlign: "center", color: "var(--coral, #e5533d)", marginTop: 16 }}>
@@ -761,11 +838,11 @@ export default function HomeClient({
               <span className="founding-label">Founding rate</span>
               {foundingActive ? (
                 <span>
-                  <b>{foundingRemaining}</b> of 100 founding spots left. Keep <b>₹310/mo</b> on Builder for
+                  <b>{foundingRemaining}</b> of 100 founding spots left. Keep <b>{currency === "USD" ? "$3.70/mo" : "₹310/mo"}</b> on Builder for
                   life. No expiry games, just first 100.
                 </span>
               ) : (
-                <span>All 100 founding spots are taken. Builder is now ₹399/mo for new subscribers.</span>
+                <span>All 100 founding spots are taken. Builder is now {currency === "USD" ? "$4.80/mo" : "₹399/mo"} for new subscribers.</span>
               )}
             </Reveal>
           )}

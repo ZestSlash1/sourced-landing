@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { headers } from "next/headers";
 import type { Metadata } from "next";
+import { resolveCurrency } from "@/lib/currency";
 import { getPublishedIdeaByIdOrSlug, listPublishedIdeasByCategory } from "@/lib/idea-drops/repository";
 import { nextQuotaResetIso } from "@/lib/idea-drops/quota";
 import { resolveAndRecordAccess, resolveViewerContext } from "@/lib/idea-drops/resolve-access";
@@ -81,6 +83,10 @@ export default async function IdeaDetailPage({ params }: { params: { slug: strin
   const platformSlugs = Array.from(new Set(idea.evidence.map((e) => e.platform)));
 
   const economicAssessment = computeEconomicAssessment(idea);
+
+  const headerList = headers();
+  const country = headerList.get("x-vercel-ip-country");
+  const isUsd = resolveCurrency(country) === "USD";
 
   return (
     <main className="app-shell">
@@ -231,7 +237,7 @@ export default async function IdeaDetailPage({ params }: { params: { slug: strin
                     Unlock this brief, DDL database schemas, and turnkey Cursor/.cursorrules exports with the Builder plan.
                   </p>
                   <Link href="/#pricing" className="btn btn-primary" style={{ padding: "8px 20px" }}>
-                    Unlock with Builder (₹399/mo)
+                    {isUsd ? "Unlock with Builder ($4.80/mo)" : "Unlock with Builder (₹399/mo)"}
                   </Link>
                 </div>
               </div>

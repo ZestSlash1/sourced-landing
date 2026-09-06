@@ -4,9 +4,22 @@
 > (human or agent) reads this before touching anything.
 
 **Last updated by:** Antigravity / Gemini
-**Date:** 2026-09-05
+**Date:** 2026-09-06
 
 ## Current state
+- Dynamic International Currency & Conversion UX:
+  - Geo-Detection via `x-vercel-ip-country` (`lib/currency.ts`): Server Components (`app/page.tsx`, `app/feed/[slug]/page.tsx`) inspect visitor country and resolve default currency to `USD` for international visitors and `INR` for India.
+  - Interactive Currency Toggle: Embedded `[USD ($) | INR (₹)]` toggle in `#pricing` header in `app/home-client.tsx`, allowing visitors to switch currencies instantly.
+  - Localized Pricing: Displays $4.80/mo (founding $3.70/mo) and $42/yr for Builder, $12/mo for Studio, with transparent disclosure that Razorpay bills in equivalent INR with automatic card bank conversion.
+  - Feed CTA Localization: Unlock button in `app/feed/[slug]/page.tsx` dynamically displays `"Unlock with Builder ($4.80/mo)"` or `"Unlock with Builder (₹399/mo)"`.
+- Automated Weekly Drop Dispatcher:
+  - Broadcast Engine (`lib/email/dispatcher.ts`): Deduplicates recipients across `sourced_subscribers` and `sourced_newsletter_signups`.
+  - Responsive Email Templates: Generates branded HTML and plain-text emails with drop title, demand signal badge, core problem, matched APIs preview, and direct link to `/feed/[slug]`.
+  - Transport & Fallback: Uses `RESEND_API_KEY` when configured; logs previews and dispatches phone push notifications via `lib/notify.ts` (ntfy) in dry-run/unconfigured environments.
+  - Admin & Cron Triggers: Added `POST /api/admin/ideas/[id]/dispatch` with dry-run support, a `"📢 Broadcast to Subscribers"` button in `app/admin/ideas/[id]/idea-edit-form.tsx`, and a weekly cron job at `0 8 * * 1` in `vercel.json` (`/api/cron/dispatch-weekly-drop`).
+- Off-Page Distribution Runbook (Tier 1 SEO):
+  - Updated all assets in `seo-drafts/` (`show-hn-post.md`, `devto-article.md`, `directory-listings.md`, `twitter-thread.md`) reflecting 12 active sources, `nomic-embed-text` embeddings, and the 0.82 cosine similarity clustering threshold.
+- Test suites: 37 test files (194 tests) passing in Vitest (`npm run test`). Full TypeScript check (`npm run typecheck`) and Next.js production build verified clean.
 - CRO, Security, SEO & Performance Tri-Pillar Hardening:
   - Fulfill Free-Drop Promise (`lib/idea-drops/resolve-access.ts`): Anonymous visitors now receive full un-gated access to free-tier idea drops (`tier === 'free'`), fulfilling the homepage promise without forcing a login/password barrier.
   - High-Converting Newsletter Social Proof (`app/newsletter-form.tsx`): Replaced self-sabotaging copy with social proof ("Join 1,200+ vibe coders getting the verified drop every Monday morning. Zero spam.").
@@ -88,9 +101,10 @@
 - Test suites: 30 test files (162 tests) passing in Vitest. Full Next.js production build (`npm run build`) and typecheck verified clean.
 
 ## In progress / next up
-- Automated Newsletter & Drop Dispatcher: wire up weekly broadcast of newly published drops to `sourced_subscribers`.
-- Execute Tier 1 from `sourced-off-page-seo-checklist.md` using drafts in `seo-drafts/` (Show HN, Dev.to, directory submissions).
-- Set `BLUESKY_HANDLE` and `BLUESKY_APP_PASSWORD` in `.env.local` / Vercel env to activate live Bluesky searching.
+- Complete KYC + purpose code P0802/P0807 in Razorpay dashboard to activate native international multi-currency processing.
+- Submit Tier 1 launch posts from `seo-drafts/` to Hacker News (Show HN) and Dev.to during the optimal Tuesday-Thursday 8-10am PT window.
+- Set `RESEND_API_KEY` in Vercel environment variables to switch drop broadcasts from simulation/ntfy alerts to live inbox delivery.
+- Set `BLUESKY_HANDLE` and `BLUESKY_APP_PASSWORD` in `.env.local` / Vercel env to activate live Bluesky polling.
 
 ## Watch out for
 - Embeddings are 768 dimensions (`nomic-embed-text`).
