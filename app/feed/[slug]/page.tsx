@@ -197,7 +197,7 @@ export default async function IdeaDetailPage({ params }: { params: { slug: strin
                     CREATE TABLE clients ( id UUID PRIMARY KEY, name TEXT NOT NULL );
                   </div>
                 </div>
-                <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "rgba(246, 244, 239, 0.88)", backdropFilter: "blur(6px)", padding: 24, textAlign: "center" }}>
+                <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "rgba(10, 12, 18, 0.88)", backdropFilter: "blur(6px)", padding: 24, textAlign: "center" }}>
                   <span style={{ fontSize: 24, marginBottom: 8 }}>🔒</span>
                   <h3 style={{ margin: "0 0 6px", fontSize: 18, fontWeight: 700 }}>Full Build Brief Gated</h3>
                   <p style={{ margin: "0 0 16px", fontSize: 14, color: "var(--ink-soft)", maxWidth: 440 }}>
@@ -226,11 +226,11 @@ export default async function IdeaDetailPage({ params }: { params: { slug: strin
                   <p style={{ fontWeight: 600 }}>Ready-to-paste build prompts with step constraints and zero-slop specifications</p>
                   <div style={{ height: 16 }} />
                   <div className="eyebrow" style={{ color: "var(--violet)" }}>Matched APIs & Free-tier Limits</div>
-                  <div style={{ background: "#FFFFFF", height: 80, borderRadius: 8, padding: 12, border: "1px solid var(--line)" }}>
+                  <div style={{ background: "var(--surface-elevated)", height: 80, borderRadius: 8, padding: 12, border: "1px solid var(--line)" }}>
                     Verified API documentation links, endpoint rate limits, and authentication patterns
                   </div>
                 </div>
-                <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "rgba(246, 244, 239, 0.88)", backdropFilter: "blur(6px)", padding: 24, textAlign: "center" }}>
+                <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "rgba(10, 12, 18, 0.88)", backdropFilter: "blur(6px)", padding: 24, textAlign: "center" }}>
                   <span style={{ fontSize: 24, marginBottom: 8 }}>🔒</span>
                   <h3 style={{ margin: "0 0 6px", fontSize: 18, fontWeight: 700 }}>Available on Builder & Studio</h3>
                   <p style={{ margin: "0 0 16px", fontSize: 14, color: "var(--ink-soft)", maxWidth: 440 }}>

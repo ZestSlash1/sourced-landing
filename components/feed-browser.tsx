@@ -1,9 +1,10 @@
-﻿"use client";
+"use client";
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import TriangulationBadge from "@/app/feed/triangulation-badge";
 import type { TriangulationStats } from "@/types/idea-drop";
+import { MagicCard } from "@/components/magicui/magic-card";
 
 export interface FeedCardData {
   id: string;
@@ -230,24 +231,26 @@ export default function FeedBrowser({ items }: { items: FeedCardData[] }) {
                   : `/feed/${item.slug}`;
 
             return (
-              <Link key={item.id} href={href} className="feed-card">
-                <div className={`feed-card-cover ${COVERS[i % COVERS.length]}`}>
-                  <span className="tag">{item.category}</span>
-                  <span className="score">{item.demandScore}% demand</span>
-                </div>
-                <div className="feed-card-body">
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
-                    <h2>{item.title}</h2>
-                    {badge}
+              <MagicCard key={item.id} className="feed-card" gradientColor="rgba(124, 58, 237, 0.2)">
+                <Link href={href} style={{ textDecoration: "none", color: "inherit", display: "block" }}>
+                  <div className={`feed-card-cover ${COVERS[i % COVERS.length]}`}>
+                    <span className="tag">{item.category}</span>
+                    <span className="score">{item.demandScore}% demand</span>
                   </div>
-                  <p>{item.problemSummary}</p>
-                  {item.triangulationStats ? (
-                    <div style={{ marginTop: 10 }}>
-                      <TriangulationBadge stats={item.triangulationStats} />
+                  <div className="feed-card-body">
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
+                      <h2>{item.title}</h2>
+                      {badge}
                     </div>
-                  ) : null}
-                </div>
-              </Link>
+                    <p>{item.problemSummary}</p>
+                    {item.triangulationStats ? (
+                      <div style={{ marginTop: 10 }}>
+                        <TriangulationBadge stats={item.triangulationStats} />
+                      </div>
+                    ) : null}
+                  </div>
+                </Link>
+              </MagicCard>
             );
           })}
         </div>
