@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, ReactNode } from "react";
+import { useEffect, useRef, useState, ReactNode, CSSProperties } from "react";
 import Link from "next/link";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
@@ -11,6 +11,13 @@ import type { ProofBarData } from "./proof-bar";
 import type { IdeaDrop } from "@/types/idea-drop";
 import { trackEvent } from "@/lib/track-client";
 import { resolveCurrency, formatPlanPrice, type Currency } from "@/lib/currency";
+import { BorderBeam } from "@/components/magicui/border-beam";
+import { ShineBorder } from "@/components/magicui/shine-border";
+import { MagicCard } from "@/components/magicui/magic-card";
+import { RainbowButton } from "@/components/magicui/rainbow-button";
+import { AnimatedGradientText } from "@/components/magicui/animated-gradient-text";
+import { Marquee } from "@/components/magicui/marquee";
+import { Meteors } from "@/components/magicui/meteors";
 
 const ProofBar = dynamic(() => import("./proof-bar"), { loading: () => null });
 
@@ -50,6 +57,20 @@ const apiChips = [
   { name: "Numverify", cat: "Phone" },
   { name: "PDFShift", cat: "Documents" },
   { name: "IPify", cat: "Geolocation" },
+  { name: "Stripe", cat: "Billing" },
+  { name: "Twilio", cat: "SMS & Voice" },
+  { name: "Cloudinary", cat: "Media CDN" },
+];
+
+const sourceChips = [
+  { name: "Hacker News", cat: "Show HN & Ask HN" },
+  { name: "GitHub Issues", cat: "Open Source Signals" },
+  { name: "GitLab Issues", cat: "DevOps & Tooling" },
+  { name: "YouTube", cat: "Dev Discussions" },
+  { name: "Bluesky", cat: "Tech Skepticism" },
+  { name: "DevRant", cat: "Developer Rants" },
+  { name: "Lobsters", cat: "Systems Architecture" },
+  { name: "Codeberg", cat: "FLOSS Community" },
 ];
 
 const agents = [
@@ -66,16 +87,18 @@ function Reveal({
   delay = 0,
   scale = false,
   className = "",
+  style = {},
 }: {
   children: ReactNode;
   delay?: number;
   scale?: boolean;
   className?: string;
+  style?: CSSProperties;
 }) {
   return (
     <div
       className={`${scale ? "reveal-scale" : "reveal"} ${className}`}
-      style={{ ["--d" as string]: `${delay}s` }}
+      style={{ ["--d" as string]: `${delay}s`, ...style }}
     >
       {children}
     </div>
@@ -306,13 +329,19 @@ export default function HomeClient({
           gradientTo="rgba(168, 85, 247, 0.22)"
           glowColor="rgba(91, 79, 247, 0.16)"
         />
+        <Meteors number={16} />
       </div>
       <a href="#main-content" className="skip-link">Skip to content</a>
 
       <main id="main-content">
       <header className="hero">
         <div className="wrap">
-          <div className="hero-badge"><span className="dot"></span> New ideas dropped every Monday</div>
+          <div style={{ marginBottom: 20 }}>
+            <AnimatedGradientText badge>
+              <span className="dot" style={{ width: 7, height: 7, borderRadius: "50%", background: "#10B981", display: "inline-block", boxShadow: "0 0 8px #10B981" }}></span>
+              <span>⚡ VERIFIED DROPS EVERY MONDAY MORNING</span>
+            </AnimatedGradientText>
+          </div>
           <h1 className="hero-title">
             <span className="line"><span>Real complaints,</span></span>
             <span className="line"><span className="accent">triangulated.</span></span>
@@ -322,7 +351,9 @@ export default function HomeClient({
             evidence-backed build brief, ready to paste into Claude Code, Cursor, or v0.
           </p>
           <div className="hero-cta-row">
-            <a className="btn btn-primary" href="#pricing">Browse this week&apos;s ideas</a>
+            <RainbowButton href="#pricing">
+              Browse this week&apos;s ideas ⚡
+            </RainbowButton>
             <a className="btn btn-ghost" href="#sample">See a free one ↓</a>
           </div>
 
@@ -362,47 +393,55 @@ export default function HomeClient({
           {displayCards.map((c, i) => {
             const href = c.slug ? `/feed/${c.slug}` : "/feed";
             return (
-              <Link
-                href={href}
-                className="idea-card"
+              <MagicCard
                 key={c.slug || i}
-                style={{ ["--d" as string]: `${c.d}s`, textDecoration: "none", color: "inherit" }}
+                className="idea-card"
+                gradientColor="rgba(124, 58, 237, 0.22)"
+                style={{ ["--d" as string]: `${c.d}s` }}
               >
-                <div
-                  className={`idea-cover ${c.cover}`}
-                  style={{
-                    height: c.h,
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    padding: "0 14px",
-                  }}
+                {i === 0 && (
+                  <BorderBeam size={180} duration={12} colorFrom="#FF0055" colorTo="#00F0FF" />
+                )}
+                <Link
+                  href={href}
+                  style={{ textDecoration: "none", color: "inherit", display: "flex", flexDirection: "column", height: "100%" }}
                 >
-                  <span className="tag">{c.tag}</span>
-                  {c.tier !== "free" ? (
-                    <span className="feed-badge" style={{ fontSize: 11, padding: "2px 7px", letterSpacing: "0.02em" }}>
-                      🔒 {c.tier}+
-                    </span>
-                  ) : (
-                    <span
-                      className="feed-badge"
-                      style={{ fontSize: 11, padding: "2px 7px", background: "rgba(198,255,61,0.2)", color: "#547e00" }}
-                    >
-                      Free
-                    </span>
-                  )}
-                </div>
-                <div className="idea-body">
-                  <p className="idea-card-title">{c.title}</p>
-                  <div className="idea-apis">⌁ {c.apis}</div>
-                  <div className="idea-foot">
-                    <span>{c.signals}</span>
-                    <div className="signal-bar" style={{ ["--pct" as string]: c.pct / 100 }}>
-                      <span></span>
+                  <div
+                    className={`idea-cover ${c.cover}`}
+                    style={{
+                      height: c.h,
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      padding: "0 14px",
+                    }}
+                  >
+                    <span className="tag">{c.tag}</span>
+                    {c.tier !== "free" ? (
+                      <span className="feed-badge" style={{ fontSize: 11, padding: "2px 7px", letterSpacing: "0.02em" }}>
+                        🔒 {c.tier}+
+                      </span>
+                    ) : (
+                      <span
+                        className="feed-badge"
+                        style={{ fontSize: 11, padding: "2px 7px", background: "rgba(16, 185, 129, 0.2)", color: "#10B981" }}
+                      >
+                        Free
+                      </span>
+                    )}
+                  </div>
+                  <div className="idea-body">
+                    <p className="idea-card-title">{c.title}</p>
+                    <div className="idea-apis">⌁ {c.apis}</div>
+                    <div className="idea-foot">
+                      <span>{c.signals}</span>
+                      <div className="signal-bar" style={{ ["--pct" as string]: c.pct / 100 }}>
+                        <span></span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </Link>
+                </Link>
+              </MagicCard>
             );
           })}
         </div>
@@ -435,20 +474,26 @@ export default function HomeClient({
             <p className="section-sub">Every idea earns its place before it reaches your feed.</p>
           </Reveal>
           <div className="stages">
-            <Reveal delay={0} className="stage">
-              <div className="stage-icon">01 / HARVEST</div>
-              <h3>Pulled from real complaints</h3>
-              <p>Hacker News threads, GitHub and GitLab issues, Developer forums, and YouTube discussions: places people already describe what they&apos;d pay to fix.</p>
+            <Reveal delay={0}>
+              <MagicCard className="stage" gradientColor="rgba(124, 58, 237, 0.16)">
+                <div className="stage-icon">01 / HARVEST</div>
+                <h3>Pulled from real complaints</h3>
+                <p>Hacker News threads, GitHub and GitLab issues, Developer forums, and YouTube discussions: places people already describe what they&apos;d pay to fix.</p>
+              </MagicCard>
             </Reveal>
-            <Reveal delay={0.08} className="stage">
-              <div className="stage-icon">02 / VALIDATE</div>
-              <h3>Scored before it ships</h3>
-              <p>Ranked on repetition, an existing (mediocre) paid competitor, and whether a solo builder can actually ship it in weeks, not months.</p>
+            <Reveal delay={0.08}>
+              <MagicCard className="stage" gradientColor="rgba(0, 240, 255, 0.14)">
+                <div className="stage-icon">02 / VALIDATE</div>
+                <h3>Scored before it ships</h3>
+                <p>Ranked on repetition, an existing (mediocre) paid competitor, and whether a solo builder can actually ship it in weeks, not months.</p>
+              </MagicCard>
             </Reveal>
-            <Reveal delay={0.16} className="stage">
-              <div className="stage-icon">03 / PACKAGE</div>
-              <h3>Handed to you build-ready</h3>
-              <p>Buyer profile, proof-of-demand quote, MVP scope, matched APIs, and a step brief, formatted for the tool you picked above.</p>
+            <Reveal delay={0.16}>
+              <MagicCard className="stage" gradientColor="rgba(16, 185, 129, 0.16)">
+                <div className="stage-icon">03 / PACKAGE</div>
+                <h3>Handed to you build-ready</h3>
+                <p>Buyer profile, proof-of-demand quote, MVP scope, matched APIs, and a step brief, formatted for the tool you picked above.</p>
+              </MagicCard>
             </Reveal>
           </div>
         </div>
@@ -466,11 +511,30 @@ export default function HomeClient({
               actually powers it.
             </p>
           </Reveal>
-          <Reveal className="api-chip-row">
-            {apiChips.map((a, i) => (
-              <div className="api-chip" key={i}>{a.name} <span>· {a.cat}</span></div>
-            ))}
-          </Reveal>
+          <div style={{ margin: "32px 0 28px", display: "flex", flexDirection: "column", gap: 14 }}>
+            <Marquee pauseOnHover speed={30} gap="12px">
+              {apiChips.map((a, i) => (
+                <div className="api-chip" key={`api-${i}`}>
+                  {a.name} <span>· {a.cat}</span>
+                </div>
+              ))}
+            </Marquee>
+            <Marquee pauseOnHover reverse speed={34} gap="12px">
+              {sourceChips.map((s, i) => (
+                <div
+                  className="api-chip"
+                  key={`src-${i}`}
+                  style={{
+                    borderColor: "rgba(124, 58, 237, 0.25)",
+                    background: "rgba(16, 18, 26, 0.8)",
+                  }}
+                >
+                  <span style={{ color: "var(--violet-deep)", fontWeight: 600 }}>⚡ {s.name}</span>{" "}
+                  <span>· {s.cat}</span>
+                </div>
+              ))}
+            </Marquee>
+          </div>
           <Reveal className="source-note">
             <p>
               Full match list, auth type, and free-tier limits ship with every Builder+
@@ -489,65 +553,69 @@ export default function HomeClient({
             <div className="eyebrow">This week&apos;s free card</div>
             <h2>One, in full. The rest are in your feed.</h2>
           </Reveal>
-          <Reveal scale className="feature-card">
-            <div className="feature-cover">
-              <span className="tag">{sampleIdea?.category ?? "Micro-SaaS"}</span>
-              <span className="score">{sampleIdea?.demandScore ?? 95}% demand signal</span>
-            </div>
-            <div className="feature-body">
-              <h3>{sampleIdea?.title ?? "Bookkeepers still hand-format P&Ls in Excel for every client, every month."}</h3>
-              <p>
-                {sampleIdea?.problem.summary ??
-                  "41 separate complaints across developer forums and review sites in the last 90 days naming this exact gap. Several already pay a VA specifically to reformat exports by hand."}
-              </p>
-              <div className="feature-meta">
-                <div><div className="fm-label">Buyer</div><div className="fm-value">{sampleIdea?.problem.whoFeelsIt ?? "Solo bookkeepers"}</div></div>
-                <div>
-                  <div className="fm-label">Build time</div>
-                  <div className="fm-value">
-                    {sampleIdea?.difficulty
-                      ? sampleIdea.difficulty.soloWeekendProject
-                        ? "~1 weekend"
-                        : `~${sampleIdea.difficulty.estimatedHours} hrs`
-                      : "~1 weekend"}
-                  </div>
+          <Reveal scale style={{ maxWidth: 740, margin: "0 auto" }}>
+            <ShineBorder borderRadius={20} duration={12} color={["#ff0055", "#00f0ff", "#8A2BE2", "#10B981"]}>
+              <div className="feature-card" style={{ maxWidth: "100%", margin: 0, border: "none", boxShadow: "none" }}>
+                <div className="feature-cover">
+                  <span className="tag">{sampleIdea?.category ?? "Micro-SaaS"}</span>
+                  <span className="score">{sampleIdea?.demandScore ?? 95}% demand signal</span>
                 </div>
-                <div>
-                  <div className="fm-label">Model</div>
-                  <div className="fm-value">
-                    {sampleIdea?.category === "Micro-SaaS" ? "$10–29/mo" : "Freemium / Usage"}
+                <div className="feature-body">
+                  <h3>{sampleIdea?.title ?? "Bookkeepers still hand-format P&Ls in Excel for every client, every month."}</h3>
+                  <p>
+                    {sampleIdea?.problem.summary ??
+                      "41 separate complaints across developer forums and review sites in the last 90 days naming this exact gap. Several already pay a VA specifically to reformat exports by hand."}
+                  </p>
+                  <div className="feature-meta">
+                    <div><div className="fm-label">Buyer</div><div className="fm-value">{sampleIdea?.problem.whoFeelsIt ?? "Solo bookkeepers"}</div></div>
+                    <div>
+                      <div className="fm-label">Build time</div>
+                      <div className="fm-value">
+                        {sampleIdea?.difficulty
+                          ? sampleIdea.difficulty.soloWeekendProject
+                            ? "~1 weekend"
+                            : `~${sampleIdea.difficulty.estimatedHours} hrs`
+                          : "~1 weekend"}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="fm-label">Model</div>
+                      <div className="fm-value">
+                        {sampleIdea?.category === "Micro-SaaS" ? "$10–29/mo" : "Freemium / Usage"}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="fm-label">Stack</div>
+                      <div className="fm-value">
+                        {sampleIdea?.launchStack && sampleIdea.launchStack.length > 0
+                          ? sampleIdea.launchStack.map((s) => s.tool).slice(0, 2).join(" + ")
+                          : "Next.js + Supabase"}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="fm-label">APIs matched</div>
+                      <div className="fm-value">
+                        {sampleIdea?.matchedApis && sampleIdea.matchedApis.length > 0
+                          ? sampleIdea.matchedApis.map((a) => a.name).slice(0, 2).join(", ")
+                          : "Open Exchange Rates, PDFShift"}
+                      </div>
+                    </div>
+                    <div><div className="fm-label">Opens in</div><div className="fm-value">{agent.label}</div></div>
                   </div>
+                  {sampleIdea?.slug && (
+                    <div style={{ marginTop: 22 }}>
+                      <Link
+                        href={`/feed/${sampleIdea.slug}`}
+                        className="btn btn-primary"
+                        style={{ padding: "8px 18px", fontSize: 13, display: "inline-flex", alignItems: "center", gap: 6 }}
+                      >
+                        Read full free build brief →
+                      </Link>
+                    </div>
+                  )}
                 </div>
-                <div>
-                  <div className="fm-label">Stack</div>
-                  <div className="fm-value">
-                    {sampleIdea?.launchStack && sampleIdea.launchStack.length > 0
-                      ? sampleIdea.launchStack.map((s) => s.tool).slice(0, 2).join(" + ")
-                      : "Next.js + Supabase"}
-                  </div>
-                </div>
-                <div>
-                  <div className="fm-label">APIs matched</div>
-                  <div className="fm-value">
-                    {sampleIdea?.matchedApis && sampleIdea.matchedApis.length > 0
-                      ? sampleIdea.matchedApis.map((a) => a.name).slice(0, 2).join(", ")
-                      : "Open Exchange Rates, PDFShift"}
-                  </div>
-                </div>
-                <div><div className="fm-label">Opens in</div><div className="fm-value">{agent.label}</div></div>
               </div>
-              {sampleIdea?.slug && (
-                <div style={{ marginTop: 22 }}>
-                  <Link
-                    href={`/feed/${sampleIdea.slug}`}
-                    className="btn btn-primary"
-                    style={{ padding: "8px 18px", fontSize: 13, display: "inline-flex", alignItems: "center", gap: 6 }}
-                  >
-                    Read full free build brief →
-                  </Link>
-                </div>
-              )}
-            </div>
+            </ShineBorder>
           </Reveal>
         </div>
       </section>
@@ -733,8 +801,27 @@ export default function HomeClient({
                 </>
               )}
             </Reveal>
-            <Reveal delay={0.08} className="plan featured">
-              <div className="plan-name">Builder</div>
+            <Reveal delay={0.08} className="plan featured" style={{ position: "relative" }}>
+              <BorderBeam size={200} duration={10} colorFrom="#8A2BE2" colorTo="#00F0FF" />
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                <div className="plan-name" style={{ margin: 0 }}>Builder</div>
+                <span
+                  style={{
+                    fontSize: 10.5,
+                    fontFamily: "var(--mono)",
+                    fontWeight: 700,
+                    padding: "3px 9px",
+                    borderRadius: "999px",
+                    background: "rgba(124, 58, 237, 0.22)",
+                    color: "var(--violet-deep)",
+                    border: "1px solid rgba(124, 58, 237, 0.4)",
+                    letterSpacing: "0.04em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  ⚡ Most Popular
+                </span>
+              </div>
               <div className="plan-tag">The full weekly feed · most common pick</div>
               {(() => {
                 const builderMonthly = formatPlanPrice("builder-monthly", currency);
@@ -779,16 +866,15 @@ export default function HomeClient({
                 <li>Buyer profile + build brief on every card</li>
                 <li>Full API match: auth type, free-tier limits, docs links</li>
               </ul>
-              <button
-                type="button"
-                className="plan-btn"
+              <RainbowButton
                 onClick={() => startCheckout(foundingActive ? "builder-founding" : "builder-monthly")}
                 disabled={checkoutPending !== null}
+                style={{ width: "100%" }}
               >
                 {checkoutPending === "builder-monthly" || checkoutPending === "builder-founding"
                   ? "Starting…"
-                  : "Get Builder"}
-              </button>
+                  : "Get Builder ⚡"}
+              </RainbowButton>
             </Reveal>
             <Reveal delay={0.16} className="plan">
               <div className="plan-name">Studio</div>
@@ -885,7 +971,9 @@ export default function HomeClient({
       <Reveal scale className="cta-band">
         <h2>Your next build is already out there complaining on developer forums and issue trackers.</h2>
         <p>Go find it, or let Sourced bring it to you every Monday.</p>
-        <a className="btn btn-primary" href="#pricing">Browse this week&apos;s ideas</a>
+        <RainbowButton href="#pricing">
+          Browse this week&apos;s ideas ⚡
+        </RainbowButton>
       </Reveal>
 
       <section className="newsletter-section" aria-labelledby="newsletter-heading">
