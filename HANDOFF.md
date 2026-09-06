@@ -7,6 +7,12 @@
 **Date:** 2026-09-06
 
 ## Current state
+- Ingest & Clustering Yield Optimization (Phase 1 Shipped):
+  - Clustering Math Tuning (`lib/ingest/clustering.ts`): Lowered `EMBEDDING_SIMILARITY_THRESHOLD` baseline from 0.82 to 0.74. Empirical dry-run analysis on 943 classified signals demonstrated that 0.82 produced 0 passing clusters (97.4% singletons), whereas 0.74 cleanly formed 12 high-cohesion multi-signal clusters (9 multi-platform, 3 single-platform) around real pain points (AI model quota limits, token burn, auth/OTP failures, spatial GIS support).
+  - Apple App Store Review RSS Poller (`lib/ingest/pollers/app-store.ts`, `app/api/cron/ingest-appstore/route.ts`): Created keyless customer review RSS poller pulling 1★ and 2★ concentrated negative reviews for 12 curated B2B/freelance SaaS products (QuickBooks, Shopify, Expensify, Notion, Stripe Dashboard, Asana, Linear, Trello, FreshBooks, Airtable, Slack, HubSpot). Live dry-run verified: pulled 232 customer complaints in 9 seconds with zero API spend and zero auth.
+  - Discourse Expansion (`lib/ingest/poller-sources.ts`): Added 11 verified live developer and SaaS Discourse instances (`community.retool.com`, `forum.bubble.io`, `community.auth0.com`, `discourse.getdbt.com`, `forum.ghost.org`, `forums.docker.com`, `discourse.gohugo.io`, `discourse.nixos.org`, `discourse.julialang.org`, `discuss.kotlinlang.org`, `discuss.pytorch.org`), expanding from 14 to 25 instances.
+  - Types & Model Mapping (`lib/ingest/types.ts`, `types/idea-drop.ts`, `lib/ingest/draft-model.ts`): Added `"appstore"` to `SignalSource`, `Evidence["platform"]`, and draft model mappings with full TypeScript exhaustiveness.
+  - Test Suites: 42 test files (209 tests) passing in Vitest (`npm run test`). Full TypeScript check (`npm run typecheck`) and Next.js production build (`npm run build`) passing with 0 errors.
 - Magic UI & Subtle Dynamic RGB Visual Refinements & Layout Fixes:
   - Fixed `#apis` Marquee Layout Bug (`components/magicui/marquee.tsx`, `app/globals.css`): Resolved 16 vertically stacked block items by providing complete vanilla CSS flex rules (`.marquee-container`, `.marquee-content`, `white-space: nowrap`) and inline fallbacks, eliminating Tailwind class reliance in vanilla Next.js setup.
   - Fixed Tag Contrast Bug (`app/globals.css`): Changed category tag text color on card covers (`.idea-cover .tag`, `.feed-card-cover .tag`) from `var(--ink)` (white) to `#0A0C14` (dark ink) for crystal-clear readability against pastel badge backgrounds.

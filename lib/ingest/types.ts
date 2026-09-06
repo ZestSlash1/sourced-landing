@@ -11,7 +11,8 @@ export type SignalSource =
   | "codeberg"
   | "discourse"
   | "mastodon"
-  | "bluesky";
+  | "bluesky"
+  | "appstore";
 
 /** What a poller (Part A1) produces before it's ever written to the DB. */
 export interface RawSignalInput {

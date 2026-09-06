@@ -26,11 +26,11 @@ function jaccard(a: Set<string>, b: Set<string>): number {
 // words on different platforms. Not used unless CLUSTERING_STRATEGY=jaccard.
 export const JACCARD_SIMILARITY_THRESHOLD = 0.15;
 
-// Cosine similarity on openai/text-embedding-3-small vectors. 0.82 is a
-// commonly-cited starting point for that model, not a converted-from-Jaccard
-// number — the two metrics aren't comparable, so this is the independent
-// baseline to tune from (see scripts/cluster-dry-run.ts --threshold).
-export const EMBEDDING_SIMILARITY_THRESHOLD = 0.82;
+// Cosine similarity on embeddings (nomic-embed-text 768 dims / text-embedding-3-small).
+// Tuned down from 0.82 to 0.74 based on empirical dry-run verification: 0.82 is a retrieval
+// threshold that produces 97%+ singletons on short canonicalized problem statements, while
+// 0.74 forms high-cohesion multi-signal clusters (see scripts/cluster-dry-run.ts).
+export const EMBEDDING_SIMILARITY_THRESHOLD = 0.74;
 
 export const MIN_CLUSTER_SIZE = 3;
 // Relaxed from 2 to 1 (sourced-pipeline-quality-spec.md Part 4): near-miss

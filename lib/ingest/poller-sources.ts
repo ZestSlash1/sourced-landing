@@ -60,6 +60,18 @@ export const DISCOURSE_INSTANCES = [
   "https://community.openai.com",
   "https://forum.cockroachlabs.com",
   "https://forum.asana.com",
+  // Verified live on 2026-09-06:
+  "https://community.retool.com",
+  "https://forum.bubble.io",
+  "https://community.auth0.com",
+  "https://discourse.getdbt.com",
+  "https://forum.ghost.org",
+  "https://forums.docker.com",
+  "https://discourse.gohugo.io",
+  "https://discourse.nixos.org",
+  "https://discourse.julialang.org",
+  "https://discuss.kotlinlang.org",
+  "https://discuss.pytorch.org",
 ];
 
 /** Politeness delay between requests to the same Discourse instance (ms). */
@@ -95,3 +107,32 @@ export const BLUESKY_SEARCH_QUERIES = [
   "#indiehackers",
   "#saas",
 ];
+
+export interface AppStoreTarget {
+  id: string;
+  name: string;
+  country?: string;
+}
+
+/**
+ * Curated list of B2B, developer, and freelance SaaS products with active mobile apps.
+ * Used by pollAppStoreReviews to fetch keyless customer review RSS feeds.
+ */
+export const APPLE_APP_STORE_TARGETS: AppStoreTarget[] = [
+  { id: "584606479", name: "Intuit QuickBooks for Business" },
+  { id: "471713959", name: "Expensify" },
+  { id: "371294472", name: "Shopify" },
+  { id: "1232780281", name: "Notion" },
+  { id: "978516833", name: "Stripe Dashboard" },
+  { id: "489969512", name: "Asana" },
+  { id: "1645587184", name: "Linear Mobile" },
+  { id: "461504587", name: "Trello" },
+  { id: "1052884030", name: "FreshBooks Invoicing App" },
+  { id: "914172636", name: "Airtable" },
+  { id: "618783545", name: "Slack" },
+  { id: "1107711722", name: "HubSpot" },
+];
+
+export const APP_STORE_REQUEST_DELAY_MS = 500;
+export const APP_STORE_MAX_RATING = 2; // only 1★ and 2★ negative reviews
+export const APP_STORE_USER_AGENT = "sourced-ingest-bot/1.0 (+https://sourced.app; devtool signal poller)";
