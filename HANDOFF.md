@@ -7,6 +7,16 @@
 **Date:** 2026-09-06
 
 ## Current state
+- 8 Fresh High-Demand Drops Harvested & Drafted to `/admin/pending`:
+  - Executed `runDraftPass()` over the newly unlocked 0.74 clusters using local Ollama (`gemma3:4b`) and OmniRoute (`big-pickle`). Drafted 8 complete build briefs now sitting in `pending_review`:
+    1. **`TokenGuard: AI Agent Cost Control & Observability`** (Dev Tools, demand: 85): AI agent runaway token burn & subagent recursion protection.
+    2. **`Anthropic API & Account Proxy Router`** (Dev Tools, demand: 85): Multi-key quota pooling and account rotation for Claude Code / Claude Max limits.
+    3. **`FlexMigrate: Programmable Migration Layer for TypeScript ORMs`** (Dev Tools, demand: 85): Programmatic migration execution for Prisma and Drizzle in serverless/VPC environments.
+    4. **`PostGIS DX Bridge`** (Dev Tools, demand: 92): First-class geospatial spatial query integration for TypeScript ORMs.
+    5. **`Verification Flow Guardrails`** (Dev Tools, demand: 78): Drop-in passwordless/OTP delivery fallback and rate-limit guardrails.
+    6. **`Autonomous Agent Status Dashboard`** (Dev Tools, demand: 70): Centralized status, cycles, and spend dashboard for autonomous agents.
+    7. **`Multi-Cursor & Column-Selection Enhancement Toolkit`** (Dev Tools, demand: 65): Keyboard-first multi-cursor manipulation.
+    8. **`Universal Deep-Link Bridge for Self-Hosted Tools`** (Dev Tools, demand: 65): Server-side assetlinks/apple-app-site-association generator for custom domains.
 - Ingest & Clustering Yield Optimization (Phase 1 Shipped):
   - Clustering Math Tuning (`lib/ingest/clustering.ts`): Lowered `EMBEDDING_SIMILARITY_THRESHOLD` baseline from 0.82 to 0.74. Empirical dry-run analysis on 943 classified signals demonstrated that 0.82 produced 0 passing clusters (97.4% singletons), whereas 0.74 cleanly formed 12 high-cohesion multi-signal clusters (9 multi-platform, 3 single-platform) around real pain points (AI model quota limits, token burn, auth/OTP failures, spatial GIS support).
   - Apple App Store Review RSS Poller (`lib/ingest/pollers/app-store.ts`, `app/api/cron/ingest-appstore/route.ts`): Created keyless customer review RSS poller pulling 1★ and 2★ concentrated negative reviews for 12 curated B2B/freelance SaaS products (QuickBooks, Shopify, Expensify, Notion, Stripe Dashboard, Asana, Linear, Trello, FreshBooks, Airtable, Slack, HubSpot). Live dry-run verified: pulled 232 customer complaints in 9 seconds with zero API spend and zero auth.
