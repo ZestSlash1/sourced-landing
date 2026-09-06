@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { Space_Grotesk, Inter, JetBrains_Mono } from "next/font/google";
 import { SITE_URL } from "@/lib/seo";
 import FloatingNavbar from "@/components/floating-navbar";
+import SmoothScrollProvider from "@/components/smooth-scroll-provider";
+import ScrollProgressBar from "@/components/scroll-progress-bar";
 import "./globals.css";
 
 const inter = Inter({
@@ -64,8 +66,11 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable}`}>
       <body>
-        <FloatingNavbar />
-        {children}
+        <SmoothScrollProvider>
+          <ScrollProgressBar />
+          <FloatingNavbar />
+          {children}
+        </SmoothScrollProvider>
         {umamiSrc && umamiWebsiteId && (
           <script defer src={umamiSrc} data-website-id={umamiWebsiteId} />
         )}

@@ -7,6 +7,13 @@
 **Date:** 2026-09-06
 
 ## Current state
+- Native CSS Scroll-Driven Animations & Lenis Momentum Scrolling:
+  - Skill added: `.agents/skills/scroll-driven-animations/SKILL.md` (and `~/.gemini/skills/scroll-driven-animations/SKILL.md`) incorporating Josh W. Comeau's Animation Timeline patterns, animation ranges, linked timelines, Lenis integration, and progressive enhancement.
+  - Native Compositor Animations (`app/globals.css`): Gated behind `@supports (animation-timeline: view())` and `@media (prefers-reduced-motion: no-preference)`. Hardware-accelerated 120fps entrance for `.reveal` (`entry 8% cover 28%`), `.reveal-scale` (`entry 5% cover 32%`), and `#masonry .idea-card` (`entry 5% cover 25%`). Uses CSS individual transform properties (`translate` and `scale`) to avoid conflicts with card hover physics.
+  - Zero-JS Reading/Scroll Progress Bar (`components/scroll-progress-bar.tsx`): Pinned 2.5px violet-to-lime hairline progress bar driven natively via `animation-timeline: scroll()`, with smooth rAF fallback for older browser engines.
+  - Floating Pill Nav Elevation: Smoothly deepens shadow and pill tint over `0px 140px` scroll distance via `animation-timeline: scroll()`.
+  - Inertial Momentum Scrolling (`components/smooth-scroll-provider.tsx`): Mounted Lenis at root layout with `smoothWheel: true`, `touchMultiplier: 1.5`, preserving native mobile touch scrolling and strictly respecting `prefers-reduced-motion: reduce`.
+  - Progressive Enhancement: Existing `IntersectionObserver` in `app/home-client.tsx` remains active for older browsers (e.g. Firefox stable) with zero layout shifts.
 - Dynamic International Currency & Conversion UX:
   - Geo-Detection via `x-vercel-ip-country` (`lib/currency.ts`): Server Components (`app/page.tsx`, `app/feed/[slug]/page.tsx`) inspect visitor country and resolve default currency to `USD` for international visitors and `INR` for India.
   - Interactive Currency Toggle: Embedded `[USD ($) | INR (₹)]` toggle in `#pricing` header in `app/home-client.tsx`, allowing visitors to switch currencies instantly.

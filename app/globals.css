@@ -36,10 +36,116 @@
   a{color:inherit;}
   .wrap{max-width:1180px; margin:0 auto; padding:0 28px;}
 
+  /* READING / SCROLL PROGRESS BAR */
+  .scroll-progress-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 2.5px;
+    background: linear-gradient(90deg, var(--violet) 0%, #8E84FC 45%, var(--lime) 100%);
+    transform-origin: 0 50%;
+    transform: scaleX(0);
+    z-index: 9999;
+    pointer-events: none;
+    box-shadow: 0 0 8px rgba(91, 79, 247, 0.45);
+  }
+
   .reveal{opacity:0; transform:translateY(24px); transition:opacity .6s var(--ease), transform .6s var(--ease); transition-delay:var(--d, 0s);}
   .reveal.in-view{opacity:1; transform:translateY(0);}
   .reveal-scale{opacity:0; transform:scale(0.96); transition:opacity .55s var(--ease), transform .55s var(--ease); transition-delay:var(--d, 0s);}
   .reveal-scale.in-view{opacity:1; transform:scale(1);}
+
+  @keyframes scroll-progress {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
+  }
+
+  @keyframes scrollReveal {
+    from {
+      opacity: 0;
+      translate: 0 22px;
+    }
+    to {
+      opacity: 1;
+      translate: 0 0;
+    }
+  }
+
+  @keyframes scrollRevealScale {
+    from {
+      opacity: 0;
+      scale: 0.96;
+      translate: 0 16px;
+    }
+    to {
+      opacity: 1;
+      scale: 1;
+      translate: 0 0;
+    }
+  }
+
+  @keyframes scrollRevealCard {
+    from {
+      opacity: 0;
+      translate: 0 20px;
+    }
+    to {
+      opacity: 1;
+      translate: 0 0;
+    }
+  }
+
+  @keyframes navbarPillElevate {
+    from {
+      background: rgba(18, 20, 26, 0.88);
+      border-color: rgba(255, 255, 255, 0.12);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22), 0 2px 8px rgba(0, 0, 0, 0.12);
+    }
+    to {
+      background: rgba(14, 16, 22, 0.98);
+      border-color: rgba(255, 255, 255, 0.2);
+      box-shadow: 0 16px 44px rgba(0, 0, 0, 0.38), 0 4px 14px rgba(0, 0, 0, 0.22);
+    }
+  }
+
+  /* NATIVE CSS SCROLL-DRIVEN ANIMATIONS (Compositor thread, 120fps) */
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .reveal {
+        animation: scrollReveal linear both;
+        animation-timeline: view();
+        animation-range: entry 8% cover 28%;
+        transition: none;
+      }
+      .reveal-scale {
+        animation: scrollRevealScale linear both;
+        animation-timeline: view();
+        animation-range: entry 5% cover 32%;
+        transition: none;
+      }
+      #masonry .idea-card {
+        animation: scrollRevealCard linear both;
+        animation-timeline: view();
+        animation-range: entry 5% cover 25%;
+        transition: none;
+      }
+    }
+  }
+
+  @supports (animation-timeline: scroll()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .scroll-progress-bar {
+        animation: scroll-progress linear both;
+        animation-timeline: scroll();
+      }
+      .floating-nav-pill {
+        animation: navbarPillElevate linear both;
+        animation-timeline: scroll();
+        animation-range: 0px 140px;
+      }
+    }
+  }
 
   @keyframes fadeUpIn{ from{opacity:0; transform:translateY(18px);} to{opacity:1; transform:translateY(0);} }
   @keyframes popIn{ from{opacity:0; transform:translateY(14px) scale(0.97);} to{opacity:1; transform:translateY(0) scale(1);} }
@@ -48,7 +154,8 @@
 
   @media (prefers-reduced-motion: reduce){
     *{animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important;}
-    .reveal, .reveal-scale{opacity:1 !important; transform:none !important;}
+    .reveal, .reveal-scale, #masonry .idea-card{opacity:1 !important; transform:none !important; animation:none !important;}
+    .scroll-progress-bar{display:none !important;}
     .antigravity-bg, .hero-dotfield-wrapper, .dot-field-container{display:none !important;}
   }
 
