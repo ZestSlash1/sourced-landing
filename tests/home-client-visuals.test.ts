@@ -28,5 +28,6 @@ describe("Homepage Visual Overhaul Integration", () => {
     expect(html).toContain("border-beam");
     expect(html).toContain("shine-border");
     expect(html).toContain("meteors-container");
+    expect(html).toContain("procedural-text-mask");
   });
 });

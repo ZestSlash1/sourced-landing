@@ -7,6 +7,12 @@
 **Date:** 2026-09-08
 
 ## Current state
+- Procedural Signal Text Mask on Hero Wordmark (`components/procedural-text-mask.tsx`, `app/home-client.tsx`, `app/globals.css`):
+  - Created zero-download procedural signal canvas text mask on `triangulated.` in the hero title, inspired by Framer's `TextVideoMask` but adapted for Sourced's aesthetic and zero-latency performance.
+  - Architecture: Uses HTML5 Canvas 2D with `ctx.globalCompositeOperation = 'destination-in'` to mask high-DPI streaming telemetry particles (violet, sky cyan, emerald glyphs) and radar sweep line into the exact letterforms of `triangulated.` (`Space Grotesk`).
+  - Accessibility & SEO: Semantic text remains in the DOM with `opacity: 0` for screen readers and search engines.
+  - Performance & A11y: Automatically detects `prefers-reduced-motion: reduce` and falls back to static iridescent CSS gradient without launching the canvas loop. `IntersectionObserver` halts animation when scrolled out of viewport.
+  - Test coverage: Added `tests/procedural-text-mask.test.ts` and updated `tests/home-client-visuals.test.ts`. All 47 test suites (228 tests) passing in Vitest, 0 TypeScript errors (`tsc --noEmit`), and full production build (`next build`) compiling cleanly.
 - Full 7-Pillar Platform Security Hardening Shipped & Verified:
   1. **HTTP Security Headers** (`next.config.mjs`): Enforced `Strict-Transport-Security: max-age=63072000; includeSubDomains; preload`, `Cross-Origin-Opener-Policy: same-origin-allow-popups`, `Cross-Origin-Resource-Policy: same-origin`, and `X-DNS-Prefetch-Control: on`.
   2. **Framework Vulnerability Patching** (`package.json`): Upgraded `next` to `14.2.35`, eliminating critical SSRF and cache poisoning CVEs without breaking App Router compatibility.

@@ -18,6 +18,7 @@ import { RainbowButton } from "@/components/magicui/rainbow-button";
 import { AnimatedGradientText } from "@/components/magicui/animated-gradient-text";
 import { Marquee } from "@/components/magicui/marquee";
 import { Meteors } from "@/components/magicui/meteors";
+import { ProceduralTextMask } from "@/components/procedural-text-mask";
 
 const ProofBar = dynamic(() => import("./proof-bar"), { loading: () => null });
 
@@ -344,7 +345,7 @@ export default function HomeClient({
           </div>
           <h1 className="hero-title">
             <span className="line"><span>Real complaints,</span></span>
-            <span className="line"><span className="accent">triangulated.</span></span>
+            <span className="line"><ProceduralTextMask text="triangulated." /></span>
           </h1>
           <p className="hero-sub">
             Three or more independent complaints about the same problem become an
