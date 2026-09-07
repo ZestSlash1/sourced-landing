@@ -1,7 +1,7 @@
 import { NextResponse, type NextFetchEvent, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { OPT_OUT_COOKIE, isExcludedTraffic } from "@/lib/analytics/exclusion";
-import { checkRateLimit } from "@/lib/security/rate-limit";
+import { checkRateLimitAsync } from "@/lib/security/rate-limit";
 
 /**
  * Three jobs: (1) mint the anonymous "sid" cookie used as `session_id` on
@@ -35,7 +35,7 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
       request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
       request.headers.get("x-real-ip") ||
       sessionId;
-    const rl = checkRateLimit(`api:${callerIp}`, 60, 60_000);
+    const rl = await checkRateLimitAsync(`api:${callerIp}`, 60, 60_000);
 
     if (!rl.success) {
       return NextResponse.json(

@@ -4,6 +4,7 @@ import { getSubscriberByRazorpaySubscriptionId, updateSubscriberTier } from "@/l
 import { track } from "@/lib/track";
 import { notify } from "@/lib/notify";
 import { verifyRazorpayWebhookSignature } from "@/lib/razorpay/webhook-signature";
+import { recordSecurityIncident } from "@/lib/security/alerts";
 
 export const dynamic = "force-dynamic";
 
@@ -51,6 +52,13 @@ export async function POST(request: Request) {
   const rawBody = await request.text();
   const signature = request.headers.get("x-razorpay-signature");
   if (!signature || !verifyRazorpayWebhookSignature(rawBody, signature, secret)) {
+    await recordSecurityIncident({
+      type: "webhook_signature_forgery",
+      message: "Razorpay webhook rejected: signature mismatch or missing signature header",
+      sourceIp: request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || request.headers.get("x-real-ip"),
+      path: "/api/webhooks/razorpay",
+      metadata: { hasSignature: !!signature },
+    }).catch(() => {});
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 

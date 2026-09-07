@@ -2,9 +2,14 @@ import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth/require-user";
 import { setSubscriberTopics } from "@/lib/subscriptions/subscriber-topics";
 import { track } from "@/lib/track";
+import { verifySameOrigin } from "@/lib/security/csrf";
 
 /** PUT /api/account/topics — replaces the signed-in subscriber's topic selection (Part B4). */
 export async function PUT(request: Request) {
+  const originCheck = verifySameOrigin(request);
+  if (!originCheck.ok) {
+    return NextResponse.json({ error: originCheck.reason ?? "Forbidden" }, { status: 403 });
+  }
   const check = await requireUser();
   if (check.ok === false) {
     return NextResponse.json({ error: "Unauthorized" }, { status: check.status });

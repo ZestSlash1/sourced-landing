@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { track } from "@/lib/track";
+import { verifySameOrigin } from "@/lib/security/csrf";
 
 export const dynamic = "force-dynamic";
 
@@ -9,6 +10,10 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const ALLOWED_SOURCE_PATHS = new Set(["/", "/feed", "/methodology"]);
 
 export async function POST(request: Request) {
+  const originCheck = verifySameOrigin(request);
+  if (!originCheck.ok) {
+    return NextResponse.json({ error: originCheck.reason ?? "Forbidden" }, { status: 403 });
+  }
   const body = (await request.json().catch(() => null)) as { email?: unknown; sourcePath?: unknown } | null;
   const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
   const sourcePath = typeof body?.sourcePath === "string" ? body.sourcePath : "/";

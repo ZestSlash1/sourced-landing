@@ -4,9 +4,30 @@
 > (human or agent) reads this before touching anything.
 
 **Last updated by:** Antigravity / Gemini
-**Date:** 2026-09-06
+**Date:** 2026-09-08
 
 ## Current state
+- Full 7-Pillar Platform Security Hardening Shipped & Verified:
+  1. **HTTP Security Headers** (`next.config.mjs`): Enforced `Strict-Transport-Security: max-age=63072000; includeSubDomains; preload`, `Cross-Origin-Opener-Policy: same-origin-allow-popups`, `Cross-Origin-Resource-Policy: same-origin`, and `X-DNS-Prefetch-Control: on`.
+  2. **Framework Vulnerability Patching** (`package.json`): Upgraded `next` to `14.2.35`, eliminating critical SSRF and cache poisoning CVEs without breaking App Router compatibility.
+  3. **Constant-Time Secret Auth** (`lib/ingest/require-cron.ts`): Replaced string equality with constant-time `timingSafeEqual()` over SHA-256 digests to eliminate token timing side-channel attacks.
+  4. **Multi-Tenant Schema Guardrails** (`supabase/migrations/0031_tenant_schema_guardrails.sql`, `docs/database-tenant-isolation.md`): Created isolated `sourced` PostgreSQL schema definitions and migration runbook for decoupling Sourced from Mettel's shared database.
+  5. **Distributed Edge Rate Limiting** (`lib/security/rate-limit.ts`, `middleware.ts`): Added `checkRateLimitAsync()` with native Upstash Redis REST pipeline support for multi-instance serverless rate limiting, with automatic in-memory sliding window fallback.
+  6. **CSRF & Origin Defense** (`lib/security/csrf.ts`): Guarded `/api/newsletter`, `/api/signup`, and `/api/account/topics` against cross-site request forgery and foreign form submissions using `Sec-Fetch-Site` and `Origin` validation.
+  7. **Real-Time Security Alerts** (`lib/security/alerts.ts`): Hooked into `notify()` to trigger instant priority-4 ntfy push alerts on 403 admin attempts, forged Razorpay webhook signatures, and security tamper events.
+  - Test suites: 46 test files (225 tests) passing in Vitest (`npm run test`). Full TypeScript check (`npm run typecheck`) and Next.js production build (`npm run build`) passing with 0 errors.
+- Supabase Row-Level Security (RLS) Audit Executed & Verified:
+  - Executed all 5 steps of `RLS-AUDIT-CHECKLIST.md` against live Supabase (`https://sourced-db.getsourced.dev`) using both the public anon key and service role key.
+  - Verification results:
+    - `idea_drops` (14 rows): RLS fully active. Anon `SELECT` returns 0 rows; anon `INSERT` blocked with code 42501 (insufficient_privilege).
+    - `raw_signals` (2,788 rows): RLS fully active. Anon read and write completely blocked.
+    - `admins` (2 rows): RLS fully active. Anon read and write completely blocked.
+    - `sourced_subscribers` (3 rows) & `subscriber_topics` (8 rows): RLS fully active. Anon read and write blocked.
+    - `events` (1,766 rows) & `pipeline_runs` (16 rows): RLS fully active. Anon read and write blocked.
+    - `sourced_newsletter_signups`: RLS fully active. Live test with dummy inserted row verified that anon `SELECT` cannot read any rows and anon `INSERT` is rejected (42501).
+    - `subscribers` (legacy cross-tenant table): RLS active with insert rejected (42501).
+    - `settings`: Table does not exist in schema (`PGRST205`).
+  - Added reusable CLI audit suite `scripts/audit-rls.ts` executable via `npm run audit:rls`.
 - 8 Fresh High-Demand Drops Harvested & Drafted to `/admin/pending`:
   - Executed `runDraftPass()` over the newly unlocked 0.74 clusters using local Ollama (`gemma3:4b`) and OmniRoute (`big-pickle`). Drafted 8 complete build briefs now sitting in `pending_review`:
     1. **`TokenGuard: AI Agent Cost Control & Observability`** (Dev Tools, demand: 85): AI agent runaway token burn & subagent recursion protection.

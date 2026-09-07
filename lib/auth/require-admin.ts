@@ -1,6 +1,7 @@
 import "server-only";
 import { getSupabaseAuthServerClient } from "@/lib/supabase/auth-server";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { recordSecurityIncident } from "@/lib/security/alerts";
 
 export type AdminCheck = { ok: true } | { ok: false; status: 401 | 403 };
 
@@ -31,7 +32,14 @@ export async function requireAdmin(): Promise<AdminCheck> {
     .maybeSingle();
 
   if (error) throw new Error(`requireAdmin: ${error.message}`);
-  if (!admin) return { ok: false, status: 403 };
+  if (!admin) {
+    await recordSecurityIncident({
+      type: "admin_unauthorized_access",
+      message: `Unauthorized attempt to access admin interface by user ${user.id} (${user.email ?? "no email"})`,
+      metadata: { userId: user.id, email: user.email },
+    }).catch(() => {});
+    return { ok: false, status: 403 };
+  }
 
   return { ok: true };
 }

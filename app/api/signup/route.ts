@@ -3,6 +3,7 @@ import { recordSignup } from "@/lib/slatebase/server";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { track } from "@/lib/track";
+import { verifySameOrigin } from "@/lib/security/csrf";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +11,10 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const ALLOWED_TIERS = new Set(["free", "builder", "studio"]);
 
 export async function POST(request: Request) {
+  const originCheck = verifySameOrigin(request);
+  if (!originCheck.ok) {
+    return NextResponse.json({ error: originCheck.reason ?? "Forbidden" }, { status: 403 });
+  }
   const ip =
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
     request.headers.get("x-real-ip") ||

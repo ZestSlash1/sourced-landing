@@ -14,7 +14,8 @@
     "ingest:backfill-competitive": "tsx scripts/backfill-competitive-landscape.ts",
     "ingest:backfill-embeddings-vec": "tsx scripts/backfill-embeddings-vec.ts",
     "ingest:verify-embedding-parity": "tsx scripts/verify-embedding-parity.ts",
-    "ingest:classifier-parity": "tsx scripts/classifier-parity.ts"
+    "ingest:classifier-parity": "tsx scripts/classifier-parity.ts",
+    "audit:rls": "tsx scripts/audit-rls.ts"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",
@@ -26,7 +27,7 @@
     "lenis": "^1.3.26",
     "lucide": "^1.37.0",
     "morphicons": "^1.7.1",
-    "next": "14.2.5",
+    "next": "^14.2.35",
     "node-appwrite": "^29.0.0",
     "razorpay": "^2.9.8",
     "react": "^18.3.1",

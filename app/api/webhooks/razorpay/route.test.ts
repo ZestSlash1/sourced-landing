@@ -1,5 +1,11 @@
 import { createHmac } from "crypto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+vi.mock("server-only", () => ({}));
+vi.mock("@/lib/security/alerts", () => ({
+  recordSecurityIncident: vi.fn().mockResolvedValue(undefined),
+}));
+
 import { POST } from "./route";
 
 const getSubscriberByRazorpaySubscriptionId = vi.fn();
