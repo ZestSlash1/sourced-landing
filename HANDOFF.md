@@ -7,15 +7,13 @@
 **Date:** 2026-09-08
 
 ## Current state
-- Pipeline Particle Hero & Pricing Glass Restyle (`hero-pipeline-visual` branch — not merged to `main`):
-  - Isolated preview branch per `antigravity-brief.md`. Zero pushes to `origin/main`.
-  - Replaced hero background with Three.js `PipelineField` client component (`components/hero/pipeline-field.tsx`), dynamically imported with `{ ssr: false }`.
-  - Particles spawn on the left tagged with source platform colors (HN `#ff8a4d`, GH `#7c5cff`, SE `#4dd9e8`, DEV `#5fe0a0`, LOB `#e05fd0`), drift through embed band, swirl into rotating cluster core, and emit survivor published sparks toward the right. Interactive mouse repulsion and camera parallax included.
-  - Full `prefers-reduced-motion: reduce` support rendering an iridescent static background with no WebGL render loop. Proper teardown with `cancelAnimationFrame`, listener removal, geometry, material, and WebGL renderer disposal.
-  - Live Source Tallies: Created `getSourceTallies()` (`lib/ingest/pipeline-stats.ts`) querying real database counts (`pipeline_runs` / `raw_signals`) and passed via SSR to `HomeClient` and rendered in `.source-tally`, matching `/methodology` counts.
-  - Pricing Glass Cards: Restyled pricing cards in `app/home-client.tsx` and `app/globals.css` to dark glass cards (`.plan-card`) with cursor-tracked radial glow (`--mx`/`--my` on pointer move) and `"most used"` badge on the Builder tier. Kept all plan pricing, currency switching (USD/INR), and checkout logic intact.
-  - Verification: 55 Vitest test files (252 tests) passing, `tsc --noEmit` passing with 0 errors, Next.js production build (`next build`) passing with all 22 static/dynamic routes compiled cleanly.
-- React Three Fiber (R3F) 3D Visual Architecture Prototype (`prototype/r3f-3d-visuals` branch — not merged to `main`):
+- Pipeline Particle Hero & Pricing Glass Restyle (Merged to `main` and Deployed Live):
+  - Deployed to production on `main` ([www.getsourced.dev](https://www.getsourced.dev)).
+  - Three.js `PipelineField` client component (`components/hero/pipeline-field.tsx`) mounted in hero with code-splitting (`{ ssr: false }`).
+  - Real database counts (`pipeline_runs` / `raw_signals`) displayed in `.source-tally` on the hero for HN, GH, SE, DEV, and LOB.
+  - Pricing cards restyled to dark glass (`.plan-card`) with cursor-tracked radial glow (`--mx`/`--my`) and `"most used"` badge on the Builder tier.
+  - Verification: 55 Vitest test files (252 tests) passing, `tsc --noEmit` clean, production build verified.
+- React Three Fiber (R3F) 3D Visual Architecture Prototype (`prototype/r3f-3d-visuals` branch):
   - Branch created and isolated per user review request. Zero pushes to `origin/main`.
   - Architecture: Lightweight, modular Three.js (`three@^0.160.1`) and React Three Fiber (`@react-three/fiber@^8.18.0`, `@react-three/drei@^9.122.0`) integration on React 18.3.1.
   - Three Core 3D Surfaces:
