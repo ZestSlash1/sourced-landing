@@ -40,6 +40,7 @@ import { generateMissingEmbeddings, cosineSimilarity, parseEmbeddingField } from
 import type { PollResult, RawSignal, RawSignalInput } from "../lib/ingest/types";
 
 const inspectNearMisses = process.argv.includes("--inspect-near-misses");
+const pollOnly = process.argv.includes("--poll-only");
 const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false } });
 
 async function insertRawSignals(signals: RawSignalInput[]): Promise<number> {
@@ -169,6 +170,11 @@ async function main() {
 
   console.log("\n=== Poll report (Part 1) ===");
   console.table(pollReport);
+
+  if (pollOnly) {
+    console.log("\n[poll-all] Polling complete (--poll-only). Exiting before classification.");
+    return;
+  }
 
   // Classify whatever's unclassified — a dry run has no daily cap concerns,
   // so no cap is applied here (unlike runDraftPass's CLASSIFICATION_RUN_CAP).

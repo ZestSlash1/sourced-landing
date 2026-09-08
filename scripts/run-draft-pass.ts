@@ -1,8 +1,17 @@
 import { config } from "dotenv";
 config({ path: ".env.local" });
-import { runDraftPass } from "../lib/ingest/run-draft-pass";
+
+// Bypass "server-only" for standalone tsx execution
+const serverOnlyPath = require.resolve("server-only");
+require.cache[serverOnlyPath] = {
+  id: serverOnlyPath,
+  filename: serverOnlyPath,
+  loaded: true,
+  exports: {},
+} as any;
 
 async function main() {
+  const { runDraftPass } = await import("../lib/ingest/run-draft-pass");
   console.log("Triggering runDraftPass()...");
   const result = await runDraftPass();
   console.log("\nDraft pass completed successfully!");

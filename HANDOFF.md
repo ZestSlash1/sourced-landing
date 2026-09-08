@@ -7,6 +7,15 @@
 **Date:** 2026-09-08
 
 ## Current state
+- Ingestion & Pipeline Pass Executed (4 Fresh Drops Drafted to `/admin/pending`):
+  - Ingestion Pass: Ran keyless pollers (`scripts/poll-all.ts --poll-only`), inserting 290 fresh signals into Supabase `raw_signals` (YouTube: 127, Discourse: 77, Mastodon: 51, Codeberg: 16, GitLab: 12, HN: 6, Lobsters: 1).
+  - Draft Pass: Executed `runDraftPass()` (`scripts/run-draft-pass.ts`) using local Ollama (`gemma3:4b` + `nomic-embed-text`) and OmniRoute (`auto/coding`). Evaluated 916 complaints across 853 clusters (419,070 pair comparisons).
+  - 4 New Build Briefs Harvested & Drafted to Supabase:
+    1. **`CodeContext Guard`** (`pending_review`, Dev Tools, demand: 88, slug: `codecontext-guard`): Prevention of token blowups and context pollution in AI coding workflows.
+    2. **`OmniDeck: Unified VPS SSH, SFTP, and Multi-Database Client`** (`pending_review`, Dev Tools, demand: 88, slug: `omnideck-unified-vps-ssh-sftp-and-multi-database-client`): All-in-one lightweight developer terminal, SFTP sync, and database viewer for VPS fleets.
+    3. **`RankDiagnostics: SEO Index Auditor`** (`pending_review`, Content/Creator Tools, demand: 85, slug: `rankdiagnostics-seo-index-auditor`): Automated crawler & indexability diagnostic auditor detecting silent rendering and de-indexing penalties.
+    4. **`ORM Supercharger for Prisma`** (`needs_evidence`, Dev Tools, demand: 89, slug: `orm-supercharger-for-prisma`): High-speed query acceleration, type-safe pagination, and edge runtime connection enhancements.
+  - Script DX Enhancements: Added `--poll-only` to `scripts/poll-all.ts` for fast multi-source polling without triggering full in-process classification, and added `server-only` module cache bypass to `scripts/run-draft-pass.ts` for standalone tsx execution outside Next.js server runtime.
 - Pipeline Particle Hero & Pricing Glass Restyle (Merged to `main` and Deployed Live):
   - Deployed to production on `main` ([www.getsourced.dev](https://www.getsourced.dev)).
   - Three.js `PipelineField` client component (`components/hero/pipeline-field.tsx`) mounted in hero with code-splitting (`{ ssr: false }`).
