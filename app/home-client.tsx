@@ -396,7 +396,7 @@ export default function HomeClient({
             </div>
           </div>
 
-          <div className="hero-radar-container my-8 w-full max-w-[420px] mx-auto">
+          <div className="hero-radar-container" style={{ width: "100%", maxWidth: 440, margin: "28px auto 16px" }}>
             <RadarSignalSphere />
           </div>
         </div>
@@ -829,7 +829,7 @@ export default function HomeClient({
               )}
             </Reveal>
             <Reveal delay={0.08} className="plan featured" style={{ position: "relative" }}>
-              <BorderBeam size={220} duration={16} colorFrom="rgba(138, 43, 226, 0.65)" colorTo="rgba(6, 182, 212, 0.45)" />
+              <BorderBeam duration={16} colorFrom="rgba(138, 43, 226, 0.75)" colorTo="rgba(6, 182, 212, 0.65)" />
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
                 <div className="plan-name" style={{ margin: 0 }}>Builder</div>
                 <span

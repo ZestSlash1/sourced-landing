@@ -57,15 +57,31 @@ export function BriefGraphFallback({
 
   return (
     <div
-      className={`brief-graph-fallback relative w-full h-[360px] md:h-[400px] overflow-hidden rounded-2xl border border-violet-500/20 bg-[#08090e]/90 select-none shadow-[0_0_35px_rgba(124,58,237,0.1)] ${className}`}
-      style={style}
+      className={`brief-graph-fallback ${className}`}
+      style={{
+        position: "relative",
+        width: "100%",
+        maxWidth: 680,
+        height: 380,
+        margin: "24px auto 32px",
+        overflow: "hidden",
+        borderRadius: 16,
+        border: "1px solid rgba(124, 58, 237, 0.25)",
+        background: "radial-gradient(circle at 50% 50%, rgba(124, 58, 237, 0.08) 0%, rgba(16, 18, 26, 0.92) 80%)",
+        userSelect: "none",
+        boxShadow: "0 8px 32px rgba(0,0,0,0.4), inset 0 0 30px rgba(124, 58, 237, 0.06)",
+        boxSizing: "border-box",
+        ...style,
+      }}
       role="img"
       aria-label="Solution signal convergence graph"
     >
       {/* Background ambient radial glow */}
       <div
-        className="absolute inset-0 pointer-events-none"
         style={{
+          position: "absolute",
+          inset: 0,
+          pointerEvents: "none",
           background:
             "radial-gradient(circle at center, rgba(124, 58, 237, 0.16) 0%, rgba(8, 9, 14, 0.95) 75%)",
         }}
@@ -74,7 +90,7 @@ export function BriefGraphFallback({
       {/* SVG Convergence Schematic */}
       <svg
         viewBox="0 0 600 340"
-        className="w-full h-full text-violet-400"
+        style={{ width: "100%", height: "100%" }}
         xmlns="http://www.w3.org/2000/svg"
       >
         <defs>
@@ -89,96 +105,93 @@ export function BriefGraphFallback({
           </radialGradient>
         </defs>
 
-        {/* Ambient coordinate grid / rings */}
-        <circle cx={centerX} cy={centerY} r="140" fill="none" stroke="#7c3aed" strokeWidth="1" strokeOpacity="0.15" strokeDasharray="3 4" />
-        <circle cx={centerX} cy={centerY} r="95" fill="none" stroke="#7c3aed" strokeWidth="1" strokeOpacity="0.2" />
-        <circle cx={centerX} cy={centerY} r="50" fill="none" stroke="#a78bfa" strokeWidth="1" strokeOpacity="0.3" strokeDasharray="2 3" />
-        <circle cx={centerX} cy={centerY} r="75" fill="url(#centerAura)" />
+        {/* Ambient Center Aura */}
+        <circle cx={centerX} cy={centerY} r="120" fill="url(#centerAura)" />
+        <circle cx={centerX} cy={centerY} r="85" fill="none" stroke="#7c3aed" strokeWidth="1" strokeOpacity="0.25" strokeDasharray="4 4" />
+        <circle cx={centerX} cy={centerY} r="55" fill="none" stroke="#a78bfa" strokeWidth="1" strokeOpacity="0.3" />
 
-        {/* Converging Quadratic Bezier Curves */}
+        {/* Quadratic Bezier Convergence Paths */}
         {platforms.map((platform, idx) => {
           const pos = nodePositions[idx] || nodePositions[0];
           const color = PLATFORM_COLORS[platform] || "#a78bfa";
+
           return (
-            <g key={platform}>
-              {/* Ghost background line */}
+            <g key={`path-${platform}`}>
               <path
                 d={`M ${pos.x} ${pos.y} Q ${pos.qx} ${pos.qy} ${centerX} ${centerY}`}
                 fill="none"
                 stroke={color}
                 strokeWidth="1.5"
-                strokeOpacity="0.25"
-                strokeDasharray="4 4"
+                strokeOpacity="0.4"
+                strokeDasharray="5 4"
               />
-              {/* Primary active bezier stream */}
               <path
                 d={`M ${pos.x} ${pos.y} Q ${pos.qx} ${pos.qy} ${centerX} ${centerY}`}
                 fill="none"
-                stroke={color}
-                strokeWidth="1.2"
-                strokeOpacity="0.6"
+                stroke="url(#curveGlow)"
+                strokeWidth="0.8"
+                strokeOpacity="0.75"
               />
-              {/* In-flight packet particle */}
+              {/* Midpoint Packet Dot */}
               <circle
                 cx={pos.x + (centerX - pos.x) * 0.45}
                 cy={pos.y + (centerY - pos.y) * 0.45}
-                r="3"
-                fill={color}
+                r="3.5"
+                fill="#ffffff"
                 opacity="0.85"
               />
             </g>
           );
         })}
 
-        {/* Central Micro-SaaS Solution Node */}
+        {/* Central Synthesized Solution Crystal */}
         <g transform={`translate(${centerX}, ${centerY})`}>
-          {/* Outer rotating/pulsing aura ring */}
-          <rect
-            x="-65"
-            y="-35"
-            width="130"
-            height="70"
-            rx="12"
-            fill="#10121a"
-            stroke="#7c3aed"
+          {/* Outer rotating coordinate diamond */}
+          <polygon
+            points="0,-48 48,0 0,48 -48,0"
+            fill="#12131f"
+            stroke="#8b5cf6"
             strokeWidth="1.5"
-            strokeOpacity="0.75"
+            strokeOpacity="0.8"
           />
-          <rect
-            x="-69"
-            y="-39"
-            width="138"
-            height="78"
-            rx="15"
+          <polygon
+            points="0,-36 36,0 0,36 -36,0"
             fill="none"
             stroke="#a78bfa"
-            strokeWidth="0.75"
-            strokeOpacity="0.3"
-            strokeDasharray="4 3"
+            strokeWidth="1"
+            strokeOpacity="0.5"
+            strokeDasharray="2 3"
           />
-          {/* Central Label */}
+          {/* Inner Glowing Nucleus Core */}
+          <polygon
+            points="0,-20 20,0 0,20 -20,0"
+            fill="#7c3aed"
+            stroke="#c4b5fd"
+            strokeWidth="1.2"
+          />
+
+          {/* Solution Title Label Box */}
+          <rect
+            x="-80"
+            y="-10"
+            width="160"
+            height="20"
+            rx="5"
+            fill="#0b0d14"
+            stroke="#8b5cf6"
+            strokeWidth="0.8"
+            strokeOpacity="0.85"
+          />
           <text
             x="0"
-            y="-8"
-            textAnchor="middle"
-            fill="#c4b5fd"
-            fontSize="10"
-            fontFamily="monospace"
-            fontWeight="700"
-            letterSpacing="1"
-          >
-            SOLUTION CORE
-          </text>
-          <text
-            x="0"
-            y="8"
+            y="4"
             textAnchor="middle"
             fill="#ffffff"
-            fontSize="11"
-            fontFamily="sans-serif"
+            fontSize="9.5"
+            fontFamily="monospace"
             fontWeight="600"
           >
-            {title.length > 32 ? `${title.slice(0, 30)}…` : title}
+            {title.length > 28 ? `${title.slice(0, 26)}…` : title}
           </text>
           {/* Demand score pill inside core */}
           <rect
@@ -209,10 +222,9 @@ export function BriefGraphFallback({
         {platforms.map((platform, idx) => {
           const pos = nodePositions[idx] || nodePositions[0];
           const color = PLATFORM_COLORS[platform] || "#a78bfa";
-          const isLeft = pos.x < centerX;
           const boxWidth = 96;
           const boxHeight = 26;
-          const boxX = isLeft ? -boxWidth / 2 : -boxWidth / 2;
+          const boxX = -boxWidth / 2;
 
           return (
             <g key={`node-${platform}`} transform={`translate(${pos.x}, ${pos.y})`}>
@@ -250,17 +262,81 @@ export function BriefGraphFallback({
       </svg>
 
       {/* Telemetry Overlays */}
-      <div className="absolute top-3 left-4 text-[10px] font-mono tracking-widest text-violet-400/80 flex items-center gap-1.5 pointer-events-none">
-        <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse motion-reduce:animate-none" />
+      <div
+        style={{
+          position: "absolute",
+          top: 14,
+          left: 16,
+          zIndex: 10,
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          fontFamily: "var(--mono, 'JetBrains Mono', monospace)",
+          fontSize: 10,
+          letterSpacing: "0.06em",
+          color: "rgba(167, 139, 250, 0.85)",
+          pointerEvents: "none",
+          textTransform: "uppercase",
+        }}
+      >
+        <span
+          className="motion-reduce:animate-none"
+          style={{
+            width: 6,
+            height: 6,
+            borderRadius: "50%",
+            background: "#8b5cf6",
+            display: "inline-block",
+            boxShadow: "0 0 8px #8b5cf6",
+          }}
+        />
         SYS.GRAPH // SIGNAL CONVERGENCE
       </div>
-      <div className="absolute top-3 right-4 text-[10px] font-mono tracking-wider text-emerald-400/90 pointer-events-none">
+      <div
+        style={{
+          position: "absolute",
+          top: 14,
+          right: 16,
+          zIndex: 10,
+          fontFamily: "var(--mono, 'JetBrains Mono', monospace)",
+          fontSize: 10,
+          letterSpacing: "0.04em",
+          color: "var(--lime, #10b981)",
+          fontWeight: 600,
+          pointerEvents: "none",
+          textTransform: "uppercase",
+        }}
+      >
         {`${demandScore}% DEMAND SCORE`}
       </div>
-      <div className="absolute bottom-3 left-4 text-[9px] font-mono text-slate-400/70 pointer-events-none">
+      <div
+        style={{
+          position: "absolute",
+          bottom: 14,
+          left: 16,
+          zIndex: 10,
+          fontFamily: "var(--mono, 'JetBrains Mono', monospace)",
+          fontSize: 9.5,
+          color: "var(--ink-soft, #9496a6)",
+          letterSpacing: "0.04em",
+          pointerEvents: "none",
+        }}
+      >
         MULTI-SOURCE COMPLAINT CONVERGENCE
       </div>
-      <div className="absolute bottom-3 right-4 text-[9px] font-mono text-violet-400/70 pointer-events-none">
+      <div
+        style={{
+          position: "absolute",
+          bottom: 14,
+          right: 16,
+          zIndex: 10,
+          fontFamily: "var(--mono, 'JetBrains Mono', monospace)",
+          fontSize: 9.5,
+          color: "rgba(167, 139, 250, 0.75)",
+          letterSpacing: "0.04em",
+          pointerEvents: "none",
+        }}
+      >
         SYS.SOLUTION // SYNTHESIZED
       </div>
     </div>

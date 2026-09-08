@@ -1,6 +1,6 @@
 "use client";
 
-import React, { CSSProperties } from "react";
+import React from "react";
 
 interface BorderBeamProps {
   size?: number;
@@ -13,13 +13,12 @@ interface BorderBeamProps {
 }
 
 export function BorderBeam({
-  size = 160,
   duration = 14,
   delay = 0,
-  colorFrom = "rgba(138, 43, 226, 0.65)",
-  colorTo = "rgba(6, 182, 212, 0.45)",
+  colorFrom = "rgba(138, 43, 226, 0.8)",
+  colorTo = "rgba(6, 182, 212, 0.7)",
   className = "",
-  borderWidth = 1.25,
+  borderWidth = 1.5,
 }: BorderBeamProps) {
   return (
     <div
@@ -30,32 +29,42 @@ export function BorderBeam({
         inset: 0,
         pointerEvents: "none",
         borderRadius: "inherit",
-        borderWidth: `${borderWidth}px`,
-        borderStyle: "solid",
-        borderColor: "transparent",
-        maskImage: "linear-gradient(transparent, transparent), linear-gradient(#000, #000)",
-        maskClip: "padding-box, border-box",
-        maskComposite: "intersect",
-        WebkitMaskComposite: "destination-out",
         overflow: "hidden",
+        zIndex: 1,
       }}
     >
-      <div
-        style={
-          {
-            position: "absolute",
-            aspectRatio: "1/1",
-            width: `${size}px`,
-            offsetPath: "rect(0 auto auto 0 round inherit)",
-            animation: `border-beam ${duration}s linear infinite`,
+      <svg
+        style={{
+          position: "absolute",
+          inset: 0,
+          width: "100%",
+          height: "100%",
+          borderRadius: "inherit",
+          overflow: "visible",
+        }}
+      >
+        <defs>
+          <linearGradient id="borderBeamGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor={colorFrom} />
+            <stop offset="100%" stopColor={colorTo} />
+          </linearGradient>
+        </defs>
+        <rect
+          width="100%"
+          height="100%"
+          rx="16"
+          fill="none"
+          stroke="url(#borderBeamGradient)"
+          strokeWidth={borderWidth * 2}
+          pathLength="100"
+          strokeDasharray="22 78"
+          strokeLinecap="round"
+          style={{
+            animation: `border-beam-dash ${duration}s linear infinite`,
             animationDelay: `${delay}s`,
-            background: `linear-gradient(to left, ${colorFrom}, ${colorTo}, transparent)`,
-            transform: "translate(-50%, -50%)",
-            opacity: 0.9,
-            filter: "blur(0.5px)",
-          } as CSSProperties
-        }
-      />
+          }}
+        />
+      </svg>
     </div>
   );
 }

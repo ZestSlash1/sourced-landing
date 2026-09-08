@@ -2,7 +2,6 @@
 
 import React, { useRef, useState, useEffect, useMemo } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { Html } from "@react-three/drei";
 import * as THREE from "three";
 import { BriefGraphFallback, type BriefGraphFallbackProps } from "./brief-graph-fallback";
 
@@ -16,19 +15,22 @@ export interface BriefSolutionGraphProps {
   style?: React.CSSProperties;
 }
 
-interface SignalNodeData {
+interface PlatformSignal {
   platform: string;
   color: string;
-  start: [number, number, number];
-  control: [number, number, number];
   quoteSnippet?: string;
-  speed: number;
-  offset: number;
+  position: [number, number, number];
+  controlPoint: [number, number, number];
 }
 
-const DEFAULT_PLATFORMS = ["GitHub", "Hacker News", "Discourse", "Dev.to"];
+const DEFAULT_PLATFORMS: Array<{ platform: string; color: string }> = [
+  { platform: "GitHub", color: "#818cf8" },
+  { platform: "Hacker News", color: "#f59e0b" },
+  { platform: "Discourse", color: "#10b981" },
+  { platform: "App Store", color: "#38bdf8" },
+];
 
-const PLATFORM_COLORS: Record<string, string> = {
+const PLATFORM_COLOR_MAP: Record<string, string> = {
   GitHub: "#818cf8",
   "Hacker News": "#f59e0b",
   Discourse: "#10b981",
@@ -38,105 +40,106 @@ const PLATFORM_COLORS: Record<string, string> = {
   Reddit: "#f97316",
 };
 
-const DEFAULT_NODE_LAYOUTS: Array<{
-  start: [number, number, number];
-  control: [number, number, number];
-}> = [
-  { start: [-2.1, 1.15, 0.4], control: [-1.1, 1.45, 0.2] },
-  { start: [2.1, 1.15, -0.3], control: [1.1, 1.45, 0.1] },
-  { start: [-1.9, -1.15, -0.4], control: [-0.9, -1.35, -0.2] },
-  { start: [1.9, -1.15, 0.5], control: [0.9, -1.35, 0.3] },
-];
-
 /**
- * BezierStream: Quadratic Bezier trajectory connecting an outer platform signal node
- * to the central Micro-SaaS crystal with an animated glowing telemetry particle packet.
+ * BezierStream: Draws a glowing quadratic bezier connection from a peripheral
+ * signal node to the central solution nucleus, with an animated light packet flowing along it.
  */
 function BezierStream({
-  data,
+  start,
+  control,
+  end,
+  color,
   isInView,
+  speed = 0.5,
+  offset = 0,
 }: {
-  data: SignalNodeData;
+  start: [number, number, number];
+  control: [number, number, number];
+  end: [number, number, number];
+  color: string;
   isInView: boolean;
+  speed?: number;
+  offset?: number;
 }) {
+  const packetRef = useRef<THREE.Mesh>(null);
+
   const curve = useMemo(() => {
     return new THREE.QuadraticBezierCurve3(
-      new THREE.Vector3(...data.start),
-      new THREE.Vector3(...data.control),
-      new THREE.Vector3(0, 0, 0)
+      new THREE.Vector3(...start),
+      new THREE.Vector3(...control),
+      new THREE.Vector3(...end)
     );
-  }, [data.start, data.control]);
+  }, [start, control, end]);
+
+  const lineGeometry = useMemo(() => {
+    const points = curve.getPoints(36);
+    return new THREE.BufferGeometry().setFromPoints(points);
+  }, [curve]);
 
   const lineObject = useMemo(() => {
-    const points = curve.getPoints(28);
-    const geometry = new THREE.BufferGeometry().setFromPoints(points);
-    const material = new THREE.LineBasicMaterial({
-      color: data.color,
-      transparent: true,
-      opacity: 0.38,
-    });
-    return new THREE.Line(geometry, material);
-  }, [curve, data.color]);
+    const mat = new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.35 });
+    return new THREE.Line(lineGeometry, mat);
+  }, [lineGeometry, color]);
 
   useEffect(() => {
     return () => {
-      lineObject.geometry.dispose();
+      lineGeometry.dispose();
       (lineObject.material as THREE.Material).dispose();
     };
-  }, [lineObject]);
+  }, [lineGeometry, lineObject]);
 
-  const packetRef = useRef<THREE.Mesh>(null);
-  const progressRef = useRef(data.offset);
-
-  useFrame((_, delta) => {
+  useFrame((state) => {
     if (!isInView || !packetRef.current) return;
-    progressRef.current = (progressRef.current + delta * data.speed) % 1;
-    const pt = curve.getPoint(progressRef.current);
-    packetRef.current.position.copy(pt);
+    const t = (state.clock.getElapsedTime() * speed + offset) % 1;
+    const point = curve.getPoint(t);
+    packetRef.current.position.set(point.x, point.y, point.z);
+    const scale = 0.8 + 0.4 * Math.sin(t * Math.PI);
+    packetRef.current.scale.set(scale, scale, scale);
   });
 
   return (
     <group>
+      {/* Curved connection line */}
       <primitive object={lineObject} />
-      {/* Streaming telemetry particle packet */}
+
+      {/* Flowing animated light packet */}
       <mesh ref={packetRef}>
         <sphereGeometry args={[0.045, 12, 12]} />
-        <meshBasicMaterial color={data.color} />
+        <meshBasicMaterial color="#ffffff" />
       </mesh>
     </group>
   );
 }
 
 /**
- * PeripheralSignalNode: Outer platform signal orb with pulsing halo
- * and floating HTML metadata badge.
+ * PeripheralSignalNode: Outer node representing a complaint source with glowing halos.
  */
 function PeripheralSignalNode({
   data,
   isInView,
 }: {
-  data: SignalNodeData;
+  data: PlatformSignal;
   isInView: boolean;
 }) {
-  const haloRef = useRef<THREE.Mesh>(null);
+  const pulseRef = useRef<THREE.Mesh>(null);
 
   useFrame((state) => {
-    if (!isInView || !haloRef.current) return;
-    const pulse = 1 + 0.28 * Math.sin(state.clock.getElapsedTime() * 3.5 + data.offset * 6);
-    haloRef.current.scale.set(pulse, pulse, pulse);
+    if (!isInView || !pulseRef.current) return;
+    const pulse = 1 + 0.25 * Math.sin(state.clock.getElapsedTime() * 3.5 + data.position[0]);
+    pulseRef.current.scale.set(pulse, pulse, pulse);
   });
 
   return (
-    <group position={data.start}>
-      {/* Signal core orb */}
+    <group position={data.position}>
+      {/* Solid core sphere */}
       <mesh>
         <sphereGeometry args={[0.08, 16, 16]} />
         <meshBasicMaterial color={data.color} />
       </mesh>
 
-      {/* Wireframe pulsing halo */}
-      <mesh ref={haloRef}>
-        <sphereGeometry args={[0.13, 16, 16]} />
+      {/* Pulsing wireframe halo */}
+      <mesh ref={pulseRef}>
+        <sphereGeometry args={[0.15, 16, 16]} />
         <meshBasicMaterial
           color={data.color}
           transparent
@@ -145,35 +148,6 @@ function PeripheralSignalNode({
           depthWrite={false}
         />
       </mesh>
-
-      {/* Floating 3D HUD Chip */}
-      <Html
-        distanceFactor={6.8}
-        center
-        position={[0, 0.26, 0]}
-        style={{ pointerEvents: "none" }}
-      >
-        <div
-          className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10.5px] font-mono tracking-wider whitespace-nowrap border shadow-lg backdrop-blur-md select-none"
-          style={{
-            backgroundColor: "rgba(16, 18, 26, 0.9)",
-            borderColor: `${data.color}55`,
-            color: data.color,
-            boxShadow: `0 0 14px ${data.color}33`,
-          }}
-        >
-          <span
-            className="w-1.5 h-1.5 rounded-full"
-            style={{ backgroundColor: data.color }}
-          />
-          <span className="font-bold">{data.platform}</span>
-          {data.quoteSnippet && (
-            <span className="text-slate-400 opacity-80 text-[9px] max-w-[100px] truncate">
-              · {data.quoteSnippet}
-            </span>
-          )}
-        </div>
-      </Html>
     </group>
   );
 }
@@ -183,12 +157,8 @@ function PeripheralSignalNode({
  * representing the synthesized Micro-SaaS nucleus.
  */
 function SolutionCrystalCore({
-  title,
-  demandScore,
   isInView,
 }: {
-  title: string;
-  demandScore: number;
   isInView: boolean;
 }) {
   const crystalRef = useRef<THREE.Mesh>(null);
@@ -232,26 +202,6 @@ function SolutionCrystalCore({
         <torusGeometry args={[0.9, 0.008, 16, 48]} />
         <meshBasicMaterial color="#7c3aed" transparent opacity={0.3} />
       </mesh>
-
-      {/* Floating Central Solution Badge */}
-      <Html
-        distanceFactor={6.8}
-        center
-        position={[0, 0.85, 0]}
-        style={{ pointerEvents: "none" }}
-      >
-        <div className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl border border-violet-500/40 bg-[#10121a]/95 text-center shadow-[0_0_20px_rgba(124,58,237,0.3)] backdrop-blur-md select-none">
-          <span className="text-[9px] font-mono tracking-widest text-violet-400 font-bold uppercase">
-            SOLUTION CORE
-          </span>
-          <span className="text-[11px] font-semibold text-white max-w-[160px] truncate leading-tight">
-            {title}
-          </span>
-          <span className="text-[8.5px] font-mono text-emerald-400 font-bold tracking-wider">
-            {`${demandScore}% DEMAND`}
-          </span>
-        </div>
-      </Html>
     </group>
   );
 }
@@ -261,9 +211,7 @@ function SolutionCrystalCore({
  * via nested groups to prevent rotation stalling.
  */
 function SolutionGraphScene({
-  title,
   evidence,
-  demandScore,
   isInView,
 }: {
   title: string;
@@ -275,30 +223,50 @@ function SolutionGraphScene({
   const innerParallaxRef = useRef<THREE.Group>(null);
   const pointerTarget = useRef({ x: 0, y: 0 });
 
-  // Prepare up to 4 signal nodes
-  const nodesData: SignalNodeData[] = useMemo(() => {
+  // Map evidence or fall back to default platforms symmetrically around center
+  const signals: PlatformSignal[] = useMemo(() => {
     const rawPlatforms = Array.from(new Set(evidence.map((e) => e.platform).filter(Boolean)));
-    const platforms = [...rawPlatforms];
-    if (platforms.length === 0) {
-      platforms.push(...DEFAULT_PLATFORMS);
-    } else if (platforms.length < 4) {
-      for (const p of DEFAULT_PLATFORMS) {
-        if (!platforms.includes(p) && platforms.length < 4) platforms.push(p);
+    const selected: Array<{ platform: string; color: string; quote?: string }> = [];
+
+    for (const p of rawPlatforms) {
+      const match = evidence.find((e) => e.platform === p);
+      selected.push({
+        platform: p,
+        color: PLATFORM_COLOR_MAP[p] || "#a78bfa",
+        quote: match?.quote || match?.title,
+      });
+      if (selected.length === 4) break;
+    }
+
+    // Pad with defaults if less than 3
+    if (selected.length < 3) {
+      for (const def of DEFAULT_PLATFORMS) {
+        if (!selected.some((s) => s.platform === def.platform)) {
+          selected.push(def);
+          if (selected.length === 4) break;
+        }
       }
     }
-    const selectedPlatforms = platforms.slice(0, 4);
 
-    return selectedPlatforms.map((platform, idx) => {
-      const layout = DEFAULT_NODE_LAYOUTS[idx] || DEFAULT_NODE_LAYOUTS[0];
-      const match = evidence.find((e) => e.platform === platform);
+    // 4 symmetric quadrant coordinates on XY plane
+    const baseCoords: Array<{
+      pos: [number, number, number];
+      ctrl: [number, number, number];
+    }> = [
+      { pos: [-2.1, 1.2, 0], ctrl: [-1.0, 0.4, 0.4] },   // Top-left
+      { pos: [-2.1, -1.2, 0], ctrl: [-1.0, -0.4, -0.3] }, // Bottom-left
+      { pos: [2.1, 1.2, 0], ctrl: [1.0, 0.4, -0.4] },     // Top-right
+      { pos: [2.1, -1.2, 0], ctrl: [1.0, -0.4, 0.3] },    // Bottom-right
+    ];
+
+    return selected.map((item, idx) => {
+      const coord = baseCoords[idx] || baseCoords[0];
       return {
-        platform,
-        color: PLATFORM_COLORS[platform] || "#a78bfa",
-        start: layout.start,
-        control: layout.control,
-        quoteSnippet: match?.quote ? match.quote.slice(0, 30) : undefined,
-        speed: 0.4 + idx * 0.08,
-        offset: idx * 0.25,
+        platform: item.platform,
+        color: item.color,
+        quoteSnippet: item.quote ? (item.quote.length > 40 ? `${item.quote.slice(0, 38)}…` : item.quote) : undefined,
+        position: coord.pos,
+        controlPoint: coord.ctrl,
       };
     });
   }, [evidence]);
@@ -306,20 +274,20 @@ function SolutionGraphScene({
   useFrame((state, delta) => {
     if (!isInView) return;
 
-    // 1. Uninterrupted continuous ambient spin on outer group
+    // 1. Continuous slow ambient rotation of the entire node network
     if (outerSpinRef.current) {
-      outerSpinRef.current.rotation.y += delta * 0.1;
+      outerSpinRef.current.rotation.y += delta * 0.15;
     }
 
-    // 2. Smoothed pointer parallax on inner group
+    // 2. Smoothed pointer parallax on the inner group
     if (innerParallaxRef.current) {
-      const targetX = -state.pointer.y * 0.3;
-      const targetY = state.pointer.x * 0.4;
+      const targetX = -state.pointer.y * 0.25;
+      const targetY = state.pointer.x * 0.35;
 
       pointerTarget.current.x = THREE.MathUtils.lerp(pointerTarget.current.x, targetX, 0.05);
       pointerTarget.current.y = THREE.MathUtils.lerp(pointerTarget.current.y, targetY, 0.05);
 
-      innerParallaxRef.current.rotation.x = pointerTarget.current.x + 0.12;
+      innerParallaxRef.current.rotation.x = pointerTarget.current.x + 0.1;
       innerParallaxRef.current.rotation.y = pointerTarget.current.y;
     }
   });
@@ -327,25 +295,23 @@ function SolutionGraphScene({
   return (
     <group ref={innerParallaxRef}>
       <group ref={outerSpinRef}>
-        {/* Central Micro-SaaS Nucleus */}
-        <SolutionCrystalCore
-          title={title}
-          demandScore={demandScore}
-          isInView={isInView}
-        />
+        {/* Central synthesized micro-SaaS crystal core */}
+        <SolutionCrystalCore isInView={isInView} />
 
-        {/* Ambient orbital rings */}
-        <mesh rotation={[Math.PI / 2, 0, 0]}>
-          <torusGeometry args={[2.2, 0.006, 16, 64]} />
-          <meshBasicMaterial color="#7c3aed" transparent opacity={0.15} />
-        </mesh>
-
-        {/* Outer Peripheral Signal Nodes & Ingress Bezier Streams */}
-        {nodesData.map((node) => (
-          <React.Fragment key={node.platform}>
-            <BezierStream data={node} isInView={isInView} />
-            <PeripheralSignalNode data={node} isInView={isInView} />
-          </React.Fragment>
+        {/* Outer complaint signal nodes and bezier convergence streams */}
+        {signals.map((sig, idx) => (
+          <group key={sig.platform + idx}>
+            <PeripheralSignalNode data={sig} isInView={isInView} />
+            <BezierStream
+              start={sig.position}
+              control={sig.controlPoint}
+              end={[0, 0, 0]}
+              color={sig.color}
+              isInView={isInView}
+              speed={0.45}
+              offset={idx * 0.25}
+            />
+          </group>
         ))}
       </group>
     </group>
@@ -353,12 +319,10 @@ function SolutionGraphScene({
 }
 
 /**
- * BriefSolutionGraph: Interactive 3D WebGL Canvas showing multi-platform complaint
- * signal nodes converging along curved quadratic bezier lines with flowing particle
- * streams into a central rotating solution crystal.
+ * BriefSolutionGraph: Interactive 3D WebGL component for Drop Detail Pages.
  */
 export function BriefSolutionGraph({
-  title = "Solution Core",
+  title = "Micro-SaaS Solution",
   evidence = [],
   demandScore = 85,
   className = "",
@@ -367,26 +331,21 @@ export function BriefSolutionGraph({
   const containerRef = useRef<HTMLDivElement>(null);
   const [isInView, setIsInView] = useState(true);
   const [isMounted, setIsMounted] = useState(false);
-
-  // Lazy initialization for prefers-reduced-motion: reduce
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(() =>
-    typeof window !== "undefined" && Boolean(window.matchMedia?.("(prefers-reduced-motion: reduce)").matches)
-  );
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return false;
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  });
 
   useEffect(() => {
     setIsMounted(true);
     if (typeof window === "undefined" || !window.matchMedia) return;
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setPrefersReducedMotion(mq.matches);
 
-    const handler = (e: MediaQueryListEvent) => {
-      setPrefersReducedMotion(e.matches);
-    };
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const handler = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
+    mediaQuery.addEventListener("change", handler);
+    return () => mediaQuery.removeEventListener("change", handler);
   }, []);
 
-  // Viewport Observer: Persistent on outer container for 0% idle GPU off-screen
   useEffect(() => {
     if (!containerRef.current || typeof IntersectionObserver === "undefined") return;
 
@@ -400,6 +359,13 @@ export function BriefSolutionGraph({
     observer.observe(containerRef.current);
     return () => observer.disconnect();
   }, []);
+
+  // Extract platforms for HUD bottom legend
+  const platforms = useMemo(() => {
+    const raw = Array.from(new Set(evidence.map((e) => e.platform).filter(Boolean)));
+    if (raw.length === 0) return ["GitHub", "Hacker News", "Discourse"];
+    return raw.slice(0, 4);
+  }, [evidence]);
 
   // Fallback if SSR or reduced-motion
   if (!isMounted || prefersReducedMotion) {
@@ -417,31 +383,133 @@ export function BriefSolutionGraph({
   return (
     <div
       ref={containerRef}
-      className={`relative w-full h-[360px] md:h-[400px] overflow-hidden rounded-2xl border border-violet-500/20 bg-[#08090e]/85 shadow-[0_0_35px_rgba(124,58,237,0.12)] ${className}`}
-      style={style}
+      className={`brief-graph-wrap ${className}`}
+      style={{
+        position: "relative",
+        width: "100%",
+        maxWidth: 680,
+        height: 380,
+        margin: "24px auto 32px",
+        borderRadius: 16,
+        border: "1px solid rgba(124, 58, 237, 0.25)",
+        background:
+          "radial-gradient(circle at 50% 50%, rgba(124, 58, 237, 0.08) 0%, rgba(16, 18, 26, 0.92) 80%)",
+        boxShadow: "0 8px 32px rgba(0, 0, 0, 0.4), inset 0 0 30px rgba(124, 58, 237, 0.06)",
+        overflow: "hidden",
+        boxSizing: "border-box",
+        ...style,
+      }}
     >
-      {/* Background ambient glow */}
+      {/* Top-left Telemetry Overlay */}
       <div
-        className="absolute inset-0 pointer-events-none"
         style={{
-          background:
-            "radial-gradient(circle at center, rgba(124, 58, 237, 0.14) 0%, rgba(8, 9, 14, 0.95) 75%)",
+          position: "absolute",
+          top: 14,
+          left: 16,
+          zIndex: 10,
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          fontFamily: "var(--mono, 'JetBrains Mono', monospace)",
+          fontSize: 10,
+          letterSpacing: "0.06em",
+          color: "rgba(167, 139, 250, 0.9)",
+          pointerEvents: "none",
+          textTransform: "uppercase",
         }}
-      />
-
-      {/* Telemetry Overlays */}
-      <div className="absolute top-3 left-4 z-10 text-[10px] font-mono tracking-widest text-violet-400/80 pointer-events-none flex items-center gap-1.5">
-        <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-ping motion-reduce:animate-none" />
-        SYS.GRAPH // 3D SOLUTION CONVERGENCE
+      >
+        <span
+          style={{
+            width: 6,
+            height: 6,
+            borderRadius: "50%",
+            background: "#10b981",
+            display: "inline-block",
+            boxShadow: "0 0 8px #10b981",
+          }}
+        />
+        <span>SYS.CONVERGENCE // 3D SIGNAL GRAPH</span>
       </div>
-      <div className="absolute top-3 right-4 z-10 text-[10px] font-mono tracking-wider text-emerald-400/90 pointer-events-none">
+
+      {/* Top-right Demand Metric */}
+      <div
+        style={{
+          position: "absolute",
+          top: 14,
+          right: 16,
+          zIndex: 10,
+          fontFamily: "var(--mono, 'JetBrains Mono', monospace)",
+          fontSize: 10,
+          letterSpacing: "0.04em",
+          color: "var(--lime, #10b981)",
+          fontWeight: 600,
+          pointerEvents: "none",
+          textTransform: "uppercase",
+        }}
+      >
         {`${demandScore}% DEMAND SCORE`}
       </div>
-      <div className="absolute bottom-3 left-4 z-10 text-[9px] font-mono text-slate-400/70 pointer-events-none">
-        INTERACTIVE 3D // POINTER PARALLAX
-      </div>
-      <div className="absolute bottom-3 right-4 z-10 text-[9px] font-mono text-violet-400/70 pointer-events-none">
-        SYS.SOLUTION // SYNTHESIZED
+
+      {/* Bottom Status Strip */}
+      <div
+        style={{
+          position: "absolute",
+          bottom: 12,
+          left: 16,
+          right: 16,
+          zIndex: 10,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          pointerEvents: "none",
+        }}
+      >
+        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          {platforms.map((p) => {
+            const color = PLATFORM_COLOR_MAP[p] || "#a78bfa";
+            return (
+              <span
+                key={p}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 4,
+                  fontSize: 9.5,
+                  fontFamily: "var(--mono, 'JetBrains Mono', monospace)",
+                  color,
+                  fontWeight: 600,
+                  letterSpacing: "0.02em",
+                }}
+              >
+                <span
+                  style={{
+                    width: 5,
+                    height: 5,
+                    borderRadius: "50%",
+                    backgroundColor: color,
+                    display: "inline-block",
+                    boxShadow: `0 0 6px ${color}`,
+                  }}
+                />
+                {p}
+              </span>
+            );
+          })}
+        </div>
+        <span
+          style={{
+            fontSize: 9,
+            fontFamily: "var(--mono, 'JetBrains Mono', monospace)",
+            color: "var(--ink-soft, #9496a6)",
+            letterSpacing: "0.04em",
+            maxWidth: 220,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          → {title}
+        </span>
       </div>
 
       <Canvas
@@ -449,6 +517,7 @@ export function BriefSolutionGraph({
         gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
         camera={{ position: [0, 0, 5], fov: 45 }}
         frameloop={isInView ? "always" : "never"}
+        style={{ width: "100%", height: "100%" }}
       >
         <ambientLight intensity={0.7} />
         <pointLight position={[5, 5, 5]} intensity={0.9} />

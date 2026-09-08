@@ -41,6 +41,15 @@
     }
   }
 
+  @keyframes border-beam-dash {
+    from {
+      stroke-dashoffset: 100;
+    }
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
   @keyframes shine-rotate {
     from {
       transform: rotate(0deg);
@@ -1291,4 +1300,33 @@
   .admin-demand-fill {
     height: 100%; background: linear-gradient(90deg, var(--violet), #8B5CF6);
     border-radius: 100px;
+  }
+
+  /* R3F 3D TELEMETRY & GRAPH CONTAINERS */
+  .radar-sphere-wrap {
+    position: relative;
+    width: 100%;
+    max-width: 440px;
+    height: 380px;
+    margin: 0 auto;
+    border-radius: var(--r-lg, 16px);
+    border: 1px solid rgba(124, 58, 237, 0.25);
+    background: radial-gradient(circle at 50% 50%, rgba(124, 58, 237, 0.08) 0%, rgba(8, 9, 14, 0.92) 75%);
+    box-shadow: 0 0 35px rgba(124, 58, 237, 0.12), inset 0 0 30px rgba(0, 0, 0, 0.6);
+    overflow: hidden;
+    box-sizing: border-box;
+  }
+
+  .brief-graph-wrap {
+    position: relative;
+    width: 100%;
+    max-width: 680px;
+    height: 380px;
+    margin: 24px auto 32px;
+    border-radius: var(--r-lg, 16px);
+    border: 1px solid rgba(124, 58, 237, 0.25);
+    background: radial-gradient(circle at 50% 50%, rgba(124, 58, 237, 0.08) 0%, rgba(16, 18, 26, 0.92) 80%);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 0 30px rgba(124, 58, 237, 0.06);
+    overflow: hidden;
+    box-sizing: border-box;
   }

@@ -2,7 +2,6 @@
 
 import React, { useRef, useState, useEffect } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { Html } from "@react-three/drei";
 import * as THREE from "three";
 import { RadarFallback, type RadarFallbackProps } from "./radar-fallback";
 
@@ -103,7 +102,7 @@ function SweepingRadarBeam({ isInView }: { isInView: boolean }) {
 
 /**
  * SignalPingNode: Orbiting ping representing a Sourced ingestion channel
- * with a glowing core, halo pulse, and floating HTML data badge.
+ * with a glowing core, halo pulse, and pure WebGL visuals.
  */
 function SignalPingNode({
   channel,
@@ -134,7 +133,7 @@ function SignalPingNode({
         <meshBasicMaterial
           color={channel.color}
           transparent
-          opacity={0.2}
+          opacity={0.22}
           depthWrite={false}
         />
       </mesh>
@@ -142,50 +141,23 @@ function SignalPingNode({
       {/* Rotating orbit group */}
       <group ref={orbitGroupRef} rotation={[0, channel.initialAngle, 0]}>
         <group position={[1.8, 0, 0]}>
-          {/* Core sphere */}
+          {/* Core glowing sphere */}
           <mesh>
-            <sphereGeometry args={[0.065, 16, 16]} />
+            <sphereGeometry args={[0.075, 16, 16]} />
             <meshBasicMaterial color={channel.color} />
           </mesh>
 
-          {/* Pulsing halo ring */}
+          {/* Pulsing halo sphere */}
           <mesh ref={haloRef}>
-            <sphereGeometry args={[0.11, 16, 16]} />
+            <sphereGeometry args={[0.14, 16, 16]} />
             <meshBasicMaterial
               color={channel.color}
               transparent
-              opacity={0.25}
+              opacity={0.35}
               wireframe
               depthWrite={false}
             />
           </mesh>
-
-          {/* Floating HTML telemetry badge */}
-          <Html
-            distanceFactor={7.5}
-            center
-            position={[0, 0.22, 0]}
-            style={{ pointerEvents: "none" }}
-          >
-            <div
-              className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-mono tracking-wider whitespace-nowrap border shadow-lg backdrop-blur-sm"
-              style={{
-                backgroundColor: "rgba(16, 18, 26, 0.88)",
-                borderColor: `${channel.color}55`,
-                color: channel.color,
-                boxShadow: `0 0 12px ${channel.color}33`,
-              }}
-            >
-              <span
-                className="w-1.5 h-1.5 rounded-full"
-                style={{ backgroundColor: channel.color }}
-              />
-              <span className="font-bold">{channel.code}</span>
-              <span className="text-slate-400 opacity-80 text-[9px]">
-                {channel.count}
-              </span>
-            </div>
-          </Html>
         </group>
       </group>
     </group>
@@ -232,52 +204,30 @@ function RadarSphereScene({ isInView }: { isInView: boolean }) {
             wireframe
             color="#7c3aed"
             transparent
-            opacity={0.15}
+            opacity={0.16}
           />
         </mesh>
 
         {/* Main Equator ring */}
         <mesh rotation={[Math.PI / 2, 0, 0]}>
-          <torusGeometry args={[1.8, 0.012, 16, 64]} />
-          <meshBasicMaterial color="#8b5cf6" transparent opacity={0.35} />
+          <torusGeometry args={[1.79, 0.008, 16, 64]} />
+          <meshBasicMaterial color="#a78bfa" transparent opacity={0.35} />
         </mesh>
 
-        {/* Concentric internal radar range rings on equator */}
-        <mesh rotation={[Math.PI / 2, 0, 0]}>
-          <torusGeometry args={[1.2, 0.008, 16, 48]} />
-          <meshBasicMaterial color="#7c3aed" transparent opacity={0.22} />
-        </mesh>
-        <mesh rotation={[Math.PI / 2, 0, 0]}>
-          <torusGeometry args={[0.6, 0.006, 16, 48]} />
+        {/* Vertical longitude ring */}
+        <mesh rotation={[0, 0, 0]}>
+          <torusGeometry args={[1.79, 0.005, 16, 64]} />
           <meshBasicMaterial color="#7c3aed" transparent opacity={0.2} />
         </mesh>
-
-        {/* Upper & lower latitude rings */}
-        <mesh position={[0, 0.85, 0]} rotation={[Math.PI / 2, 0, 0]}>
-          <torusGeometry args={[1.58, 0.007, 16, 48]} />
-          <meshBasicMaterial color="#7c3aed" transparent opacity={0.18} />
-        </mesh>
-        <mesh position={[0, -0.85, 0]} rotation={[Math.PI / 2, 0, 0]}>
-          <torusGeometry args={[1.58, 0.007, 16, 48]} />
-          <meshBasicMaterial color="#7c3aed" transparent opacity={0.18} />
-        </mesh>
-
-        {/* Polar axis core line */}
-        <mesh>
-          <cylinderGeometry args={[0.008, 0.008, 3.8, 8]} />
-          <meshBasicMaterial color="#6d28d9" transparent opacity={0.3} />
-        </mesh>
-
-        {/* Center Core Node */}
-        <mesh>
-          <sphereGeometry args={[0.1, 16, 16]} />
-          <meshBasicMaterial color="#a78bfa" />
+        <mesh rotation={[0, Math.PI / 2, 0]}>
+          <torusGeometry args={[1.79, 0.005, 16, 64]} />
+          <meshBasicMaterial color="#7c3aed" transparent opacity={0.2} />
         </mesh>
 
         {/* Sweeping Radar Beam */}
         <SweepingRadarBeam isInView={isInView} />
 
-        {/* Real Ingestion Channel Pings */}
+        {/* Orbiting Channel Ping Nodes */}
         {SIGNAL_CHANNELS.map((channel) => (
           <SignalPingNode
             key={channel.id}
@@ -285,15 +235,24 @@ function RadarSphereScene({ isInView }: { isInView: boolean }) {
             isInView={isInView}
           />
         ))}
+
+        {/* Core telemetry crystal center */}
+        <mesh>
+          <octahedronGeometry args={[0.22, 0]} />
+          <meshBasicMaterial
+            color="#8b5cf6"
+            wireframe
+            transparent
+            opacity={0.4}
+          />
+        </mesh>
       </group>
     </group>
   );
 }
 
 /**
- * RadarSignalSphere: Interactive 3D WebGL Canvas component with latitude/longitude
- * coordinate rings, pulsing equator sweep, orbiting signal pings, pointer parallax,
- * and persistent viewport observer.
+ * RadarSignalSphere: Main exported component for Homepage Hero.
  */
 export function RadarSignalSphere({
   className = "",
@@ -301,25 +260,22 @@ export function RadarSignalSphere({
 }: RadarSignalSphereProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isInView, setIsInView] = useState(true);
-
-  // Lazy initialization for prefers-reduced-motion: reduce
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(() =>
-    typeof window !== "undefined" && Boolean(window.matchMedia?.("(prefers-reduced-motion: reduce)").matches)
-  );
+  const [isMounted, setIsMounted] = useState(false);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return false;
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  });
 
   useEffect(() => {
+    setIsMounted(true);
     if (typeof window === "undefined" || !window.matchMedia) return;
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setPrefersReducedMotion(mq.matches);
 
-    const handler = (e: MediaQueryListEvent) => {
-      setPrefersReducedMotion(e.matches);
-    };
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const handler = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
+    mediaQuery.addEventListener("change", handler);
+    return () => mediaQuery.removeEventListener("change", handler);
   }, []);
 
-  // Viewport Observer: Persistent on outer container, pauses rendering loop when out of view (0% GPU)
   useEffect(() => {
     if (!containerRef.current || typeof IntersectionObserver === "undefined") return;
 
@@ -337,35 +293,136 @@ export function RadarSignalSphere({
   return (
     <div
       ref={containerRef}
-      className={`relative w-full h-[360px] md:h-[400px] max-w-[420px] mx-auto overflow-hidden rounded-2xl border border-violet-500/20 bg-[#08090e]/80 shadow-[0_0_35px_rgba(124,58,237,0.12)] ${className}`}
-      style={style}
+      className={`radar-sphere-wrap ${className}`}
+      style={{
+        position: "relative",
+        width: "100%",
+        maxWidth: 440,
+        height: 380,
+        margin: "0 auto",
+        borderRadius: 16,
+        border: "1px solid rgba(124, 58, 237, 0.25)",
+        background:
+          "radial-gradient(circle at 50% 50%, rgba(124, 58, 237, 0.08) 0%, rgba(8, 9, 14, 0.92) 75%)",
+        boxShadow:
+          "0 0 35px rgba(124, 58, 237, 0.12), inset 0 0 30px rgba(0, 0, 0, 0.6)",
+        overflow: "hidden",
+        boxSizing: "border-box",
+        ...style,
+      }}
     >
-      {prefersReducedMotion ? (
-        <RadarFallback className="w-full h-full border-0 shadow-none" />
+      {prefersReducedMotion || !isMounted ? (
+        <RadarFallback
+          style={{ width: "100%", height: "100%", border: "none", boxShadow: "none" }}
+        />
       ) : (
         <>
-          {/* Ambient background glow */}
+          {/* Top-left HUD badge */}
           <div
-            className="absolute inset-0 pointer-events-none"
             style={{
-              background:
-                "radial-gradient(circle at center, rgba(124, 58, 237, 0.12) 0%, rgba(8, 9, 14, 0.95) 75%)",
+              position: "absolute",
+              top: 14,
+              left: 16,
+              zIndex: 10,
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              fontFamily: "var(--mono, 'JetBrains Mono', monospace)",
+              fontSize: 10,
+              letterSpacing: "0.06em",
+              color: "rgba(167, 139, 250, 0.9)",
+              pointerEvents: "none",
+              textTransform: "uppercase",
             }}
-          />
+          >
+            <span
+              style={{
+                width: 6,
+                height: 6,
+                borderRadius: "50%",
+                background: "#10b981",
+                display: "inline-block",
+                boxShadow: "0 0 8px #10b981",
+              }}
+            />
+            <span>SYS.RADAR // 3D SIGNAL SPHERE</span>
+          </div>
 
-          {/* Top/Bottom HUD Overlays */}
-          <div className="absolute top-3 left-4 z-10 text-[10px] font-mono tracking-widest text-violet-400/80 pointer-events-none flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping motion-reduce:animate-none" />
-            SYS.RADAR // 3D SIGNAL SPHERE
+          {/* Top-right HUD metric */}
+          <div
+            style={{
+              position: "absolute",
+              top: 14,
+              right: 16,
+              zIndex: 10,
+              fontFamily: "var(--mono, 'JetBrains Mono', monospace)",
+              fontSize: 10,
+              letterSpacing: "0.04em",
+              color: "var(--lime, #10b981)",
+              fontWeight: 600,
+              pointerEvents: "none",
+              textTransform: "uppercase",
+            }}
+          >
+            0.74 CLUSTER COSINE
           </div>
-          <div className="absolute top-3 right-4 z-10 text-[10px] font-mono tracking-wider text-emerald-400/90 pointer-events-none">
-            0.82 CLUSTER COSINE
-          </div>
-          <div className="absolute bottom-3 left-4 z-10 text-[9px] font-mono text-slate-400/70 pointer-events-none">
-            INTERACTIVE 3D // POINTER PARALLAX
-          </div>
-          <div className="absolute bottom-3 right-4 z-10 text-[9px] font-mono text-violet-400/70 pointer-events-none">
-            4 LIVE INGEST CHANNELS
+
+          {/* Bottom HUD status strip */}
+          <div
+            style={{
+              position: "absolute",
+              bottom: 12,
+              left: 16,
+              right: 16,
+              zIndex: 10,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              pointerEvents: "none",
+            }}
+          >
+            <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+              {SIGNAL_CHANNELS.map((ch) => (
+                <span
+                  key={ch.id}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                    fontSize: 9.5,
+                    fontFamily: "var(--mono, 'JetBrains Mono', monospace)",
+                    color: ch.color,
+                    fontWeight: 600,
+                    letterSpacing: "0.02em",
+                  }}
+                >
+                  <span
+                    style={{
+                      width: 5,
+                      height: 5,
+                      borderRadius: "50%",
+                      backgroundColor: ch.color,
+                      display: "inline-block",
+                      boxShadow: `0 0 6px ${ch.color}`,
+                    }}
+                  />
+                  {ch.code}{" "}
+                  <span style={{ opacity: 0.65, fontWeight: 400 }}>
+                    {ch.count.replace(" signals", "")}
+                  </span>
+                </span>
+              ))}
+            </div>
+            <span
+              style={{
+                fontSize: 9,
+                fontFamily: "var(--mono, 'JetBrains Mono', monospace)",
+                color: "var(--ink-soft, #9496a6)",
+                letterSpacing: "0.04em",
+              }}
+            >
+              POINTER PARALLAX
+            </span>
           </div>
 
           <Canvas
@@ -373,6 +430,7 @@ export function RadarSignalSphere({
             gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
             camera={{ position: [0, 0, 4.5], fov: 45 }}
             frameloop={isInView ? "always" : "never"}
+            style={{ width: "100%", height: "100%" }}
           >
             <ambientLight intensity={0.6} />
             <pointLight position={[5, 5, 5]} intensity={0.8} />

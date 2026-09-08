@@ -13,15 +13,34 @@ export interface RadarFallbackProps {
 export function RadarFallback({ className = "", style = {} }: RadarFallbackProps) {
   return (
     <div
-      className={`radar-fallback relative w-full h-[360px] md:h-[400px] max-w-[420px] mx-auto flex items-center justify-center overflow-hidden rounded-2xl border border-violet-500/20 bg-[#08090e]/90 select-none shadow-[0_0_30px_rgba(124,58,237,0.1)] ${className}`}
-      style={style}
+      className={`radar-fallback ${className}`}
+      style={{
+        position: "relative",
+        width: "100%",
+        maxWidth: 440,
+        height: 380,
+        margin: "0 auto",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        overflow: "hidden",
+        borderRadius: 16,
+        border: "1px solid rgba(124, 58, 237, 0.25)",
+        background: "radial-gradient(circle at 50% 50%, rgba(124, 58, 237, 0.08) 0%, rgba(8, 9, 14, 0.92) 75%)",
+        boxShadow: "0 0 35px rgba(124, 58, 237, 0.12), inset 0 0 30px rgba(0, 0, 0, 0.6)",
+        userSelect: "none",
+        boxSizing: "border-box",
+        ...style,
+      }}
       role="img"
       aria-label="Radar signal triangulation visualization"
     >
       {/* Background ambient radial glow */}
       <div
-        className="absolute inset-0 pointer-events-none"
         style={{
+          position: "absolute",
+          inset: 0,
+          pointerEvents: "none",
           background:
             "radial-gradient(circle at center, rgba(124, 58, 237, 0.15) 0%, rgba(8, 9, 14, 0.9) 70%)",
         }}
@@ -30,7 +49,7 @@ export function RadarFallback({ className = "", style = {} }: RadarFallbackProps
       {/* SVG Radar Graphic */}
       <svg
         viewBox="0 0 400 400"
-        className="w-full h-full max-w-[380px] max-h-[380px] text-violet-400"
+        style={{ width: "100%", height: "100%", maxWidth: 360, maxHeight: 360 }}
         xmlns="http://www.w3.org/2000/svg"
       >
         <defs>
@@ -101,17 +120,77 @@ export function RadarFallback({ className = "", style = {} }: RadarFallbackProps
       </svg>
 
       {/* Telemetry Labels */}
-      <div className="absolute top-3 left-4 text-[10px] font-mono tracking-widest text-violet-400/80">
+      <div
+        style={{
+          position: "absolute",
+          top: 14,
+          left: 16,
+          zIndex: 10,
+          fontFamily: "var(--mono, 'JetBrains Mono', monospace)",
+          fontSize: 10,
+          letterSpacing: "0.06em",
+          color: "rgba(167, 139, 250, 0.85)",
+          textTransform: "uppercase",
+        }}
+      >
         SYS.RADAR // TRIANGULATION
       </div>
-      <div className="absolute top-3 right-4 text-[10px] font-mono tracking-wider text-emerald-400/90 flex items-center gap-1">
-        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse motion-reduce:animate-none" />
+      <div
+        style={{
+          position: "absolute",
+          top: 14,
+          right: 16,
+          zIndex: 10,
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          fontFamily: "var(--mono, 'JetBrains Mono', monospace)",
+          fontSize: 10,
+          letterSpacing: "0.04em",
+          color: "var(--lime, #10b981)",
+          fontWeight: 600,
+          textTransform: "uppercase",
+        }}
+      >
+        <span
+          className="motion-reduce:animate-none"
+          style={{
+            width: 6,
+            height: 6,
+            borderRadius: "50%",
+            background: "#10b981",
+            display: "inline-block",
+            boxShadow: "0 0 8px #10b981",
+          }}
+        />
         4 CHANNELS
       </div>
-      <div className="absolute bottom-3 left-4 text-[9px] font-mono text-slate-400/70">
+      <div
+        style={{
+          position: "absolute",
+          bottom: 14,
+          left: 16,
+          zIndex: 10,
+          fontFamily: "var(--mono, 'JetBrains Mono', monospace)",
+          fontSize: 9.5,
+          color: "var(--ink-soft, #9496a6)",
+          letterSpacing: "0.04em",
+        }}
+      >
         LAT/LONG 3D MESH
       </div>
-      <div className="absolute bottom-3 right-4 text-[9px] font-mono text-violet-400/70">
+      <div
+        style={{
+          position: "absolute",
+          bottom: 14,
+          right: 16,
+          zIndex: 10,
+          fontFamily: "var(--mono, 'JetBrains Mono', monospace)",
+          fontSize: 9.5,
+          color: "rgba(167, 139, 250, 0.75)",
+          letterSpacing: "0.04em",
+        }}
+      >
         SYS.RADAR // ACTIVE
       </div>
     </div>
