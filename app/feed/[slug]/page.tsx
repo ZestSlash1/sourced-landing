@@ -25,6 +25,16 @@ import { applyWatermark, generateLicenseFingerprint } from "@/lib/security/water
 import EconomicSeverityCard from "./economic-severity-card";
 import OutreachPackPanel from "./outreach-pack-panel";
 import BuilderExportPanel from "./builder-export-panel";
+import nextDynamic from "next/dynamic";
+import { BriefGraphFallback } from "@/components/r3f/brief-graph-fallback";
+
+const BriefSolutionGraph = nextDynamic(
+  () => import("@/components/r3f/brief-solution-graph").then((m) => m.BriefSolutionGraph),
+  {
+    ssr: false,
+    loading: () => <BriefGraphFallback />,
+  }
+);
 
 export const dynamic = "force-dynamic";
 
@@ -149,6 +159,14 @@ export default async function IdeaDetailPage({ params }: { params: { slug: strin
               ))}
             </ul>
             {triangulation ? <SourceLinksList triangulation={triangulation} /> : null}
+          </div>
+
+          <div className="brief-section" style={{ padding: 0, overflow: "hidden", border: "none", background: "transparent" }}>
+            <BriefSolutionGraph
+              title={idea.title}
+              evidence={idea.evidence}
+              demandScore={idea.demandScore}
+            />
           </div>
 
           <CompetitiveLandscapeSection idea={idea} />
