@@ -7,6 +7,24 @@
 **Date:** 2026-09-08
 
 ## Current state
+- React Three Fiber (R3F) 3D Visual Architecture Prototype (`prototype/r3f-3d-visuals` branch — not merged to `main`):
+  - Branch created and isolated per user review request. Zero pushes to `origin/main`.
+  - Architecture: Lightweight, modular Three.js (`three@^0.160.1`) and React Three Fiber (`@react-three/fiber@^8.18.0`, `@react-three/drei@^9.122.0`) integration on React 18.3.1.
+  - Three Core 3D Surfaces:
+    1. **Hero 3D Radar Signal Sphere** (`components/r3f/radar-signal-sphere.tsx`, `components/r3f/radar-fallback.tsx`):
+       - A dark wireframe geosphere with glowing orbital rings, rotating equator radar scan cone, and real ingested source telemetry nodes (GitHub `#818cf8`, Hacker News `#f59e0b`, App Store `#38bdf8`, Discourse `#10b981`).
+       - Damped cursor parallax decoupled from continuous ambient spin via nested Three.js groups.
+       - Zero-GPU idle gating: `frameloop={isInView ? "always" : "never"}` via persistent `IntersectionObserver` consumes 0% GPU when scrolled off-screen.
+       - Pure SVG fallback (`radar-fallback.tsx`) with zero Three.js dependencies ensures clean asynchronous code-splitting with no bundle leakage on initial HTML load (`/` page First Load JS remains at 142 kB).
+    2. **Drop Detail 3D Solution Graph** (`components/r3f/brief-solution-graph.tsx`, `components/r3f/brief-graph-fallback.tsx`):
+       - Interactive 3D node network on `/feed/[slug]` showing incoming multi-platform complaint signal nodes converging along curved quadratic bezier lines with flowing particle streams into a central rotating solution crystal.
+       - Viewport observer pauses WebGL execution when out of view. Pure SVG schematic fallback handles SSR and `prefers-reduced-motion: reduce`.
+    3. **Hardware-Accelerated 3D Card Tilt & Sheen** (`components/card-3d-tilt.tsx`):
+       - Applied across the homepage masonry grid and sample card.
+       - Uses composite-only CSS 3D transforms (`perspective`, `rotateX`, `rotateY`, `scale3d`) and dynamic radial specular glare tracking pointer coordinates.
+       - Mobile touch gesture cancellation via `onPointerCancel` and instant reset for `prefers-reduced-motion: reduce`.
+       - Eliminates the need to instantiate dozens of WebGL contexts, avoiding mobile browser context loss limits.
+  - Verification: 51 Vitest test files (244 tests) passing with 0 errors. TypeScript `tsc --noEmit` passing with 0 errors. Next.js production build (`next build`) generated all 22 static and dynamic routes cleanly.
 - Procedural Signal Text Mask on Hero Wordmark (`components/procedural-text-mask.tsx`, `app/home-client.tsx`, `app/globals.css`):
   - Created zero-download procedural signal canvas text mask on `triangulated.` in the hero title, inspired by Framer's `TextVideoMask` but adapted for Sourced's aesthetic and zero-latency performance.
   - Architecture: Uses HTML5 Canvas 2D with `ctx.globalCompositeOperation = 'destination-in'` to mask high-DPI streaming telemetry particles (violet, sky cyan, emerald glyphs) and radar sweep line into the exact letterforms of `triangulated.` (`Space Grotesk`).
