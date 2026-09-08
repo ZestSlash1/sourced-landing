@@ -20,7 +20,7 @@ import { Marquee } from "@/components/magicui/marquee";
 import { Meteors } from "@/components/magicui/meteors";
 import { ProceduralTextMask } from "@/components/procedural-text-mask";
 import { Card3DTilt } from "@/components/card-3d-tilt";
-import { RadarFallback } from "@/components/r3f/radar-signal-sphere";
+import { RadarFallback } from "@/components/r3f/radar-fallback";
 
 const ProofBar = dynamic(() => import("./proof-bar"), { loading: () => null });
 const RadarSignalSphere = dynamic(
