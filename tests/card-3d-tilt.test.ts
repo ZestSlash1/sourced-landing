@@ -52,4 +52,23 @@ describe("Card3DTilt", () => {
     );
     expect(html).not.toContain("card-3d-glare");
   });
+
+  it("handles rendering gracefully when window.matchMedia is absent", () => {
+    const originalMatchMedia = (globalThis as unknown as { matchMedia?: unknown }).matchMedia;
+    try {
+      delete (globalThis as unknown as { matchMedia?: unknown }).matchMedia;
+      const html = renderToString(
+        React.createElement(
+          Card3DTilt,
+          null,
+          React.createElement("span", null, "No MatchMedia")
+        )
+      );
+      expect(html).toContain("No MatchMedia");
+    } finally {
+      if (originalMatchMedia) {
+        (globalThis as unknown as { matchMedia?: unknown }).matchMedia = originalMatchMedia;
+      }
+    }
+  });
 });
