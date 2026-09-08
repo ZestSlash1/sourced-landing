@@ -20,8 +20,16 @@ import { Marquee } from "@/components/magicui/marquee";
 import { Meteors } from "@/components/magicui/meteors";
 import { ProceduralTextMask } from "@/components/procedural-text-mask";
 import { Card3DTilt } from "@/components/card-3d-tilt";
+import { RadarFallback } from "@/components/r3f/radar-signal-sphere";
 
 const ProofBar = dynamic(() => import("./proof-bar"), { loading: () => null });
+const RadarSignalSphere = dynamic(
+  () => import("@/components/r3f/radar-signal-sphere").then((m) => m.RadarSignalSphere),
+  {
+    ssr: false,
+    loading: () => <RadarFallback />,
+  }
+);
 
 gsap.registerPlugin(useGSAP);
 
@@ -386,6 +394,10 @@ export default function HomeClient({
               <span className="prompt">$</span>
               <span>{agent.cmd}</span>
             </div>
+          </div>
+
+          <div className="hero-radar-container my-8 w-full max-w-[420px] mx-auto">
+            <RadarSignalSphere />
           </div>
         </div>
       </header>
