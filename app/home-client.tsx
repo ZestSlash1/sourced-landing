@@ -99,17 +99,20 @@ function Reveal({
   scale = false,
   className = "",
   style = {},
+  onPointerMove,
 }: {
   children: ReactNode;
   delay?: number;
   scale?: boolean;
   className?: string;
   style?: CSSProperties;
+  onPointerMove?: (e: React.PointerEvent<HTMLDivElement>) => void;
 }) {
   return (
     <div
       className={`${scale ? "reveal-scale" : "reveal"} ${className}`}
       style={{ ["--d" as string]: `${delay}s`, ...style }}
+      onPointerMove={onPointerMove}
     >
       {children}
     </div>
@@ -219,6 +222,12 @@ export default function HomeClient({
   }, []);
 
   const foundingActive = (foundingRemaining ?? 0) > 0;
+
+  const handleCardPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    e.currentTarget.style.setProperty("--mx", `${e.clientX - r.left}px`);
+    e.currentTarget.style.setProperty("--my", `${e.clientY - r.top}px`);
+  };
 
   async function startCheckout(plan: PlanKey) {
     trackEvent("upgrade_cta_click", { plan });
@@ -719,10 +728,13 @@ export default function HomeClient({
             </div>
           </Reveal>
           <div className="pricing-grid">
-            <Reveal delay={0} className="plan">
+            <Reveal delay={0} className="plan plan-card" onPointerMove={handleCardPointerMove}>
               <div className="plan-name">Free</div>
-              <div className="plan-tag">Try before you commit</div>
-              <div className="plan-price">$0</div>
+              <div className="plan-desc">Browse every idea and its evidence, no card required.</div>
+              <div className="plan-price">
+                <span className="amount">{currency === "INR" ? "₹0" : "$0"}</span>
+                <span className="period">/month</span>
+              </div>
               <ul className="plan-features">
                 <li>1 full idea card / month</li>
                 <li>Headlines of every other card</li>
@@ -841,28 +853,16 @@ export default function HomeClient({
                 </>
               )}
             </Reveal>
-            <Reveal delay={0.08} className="plan featured" style={{ position: "relative" }}>
+            <Reveal
+              delay={0.08}
+              className="plan plan-card featured"
+              style={{ position: "relative" }}
+              onPointerMove={handleCardPointerMove}
+            >
               <BorderBeam duration={16} colorFrom="rgba(138, 43, 226, 0.75)" colorTo="rgba(6, 182, 212, 0.65)" />
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-                <div className="plan-name" style={{ margin: 0 }}>Builder</div>
-                <span
-                  style={{
-                    fontSize: 10.5,
-                    fontFamily: "var(--mono)",
-                    fontWeight: 700,
-                    padding: "3px 9px",
-                    borderRadius: "999px",
-                    background: "rgba(124, 58, 237, 0.22)",
-                    color: "var(--violet-deep)",
-                    border: "1px solid rgba(124, 58, 237, 0.4)",
-                    letterSpacing: "0.04em",
-                    textTransform: "uppercase",
-                  }}
-                >
-                  ⚡ Most Popular
-                </span>
-              </div>
-              <div className="plan-tag">The full weekly feed · most common pick</div>
+              <div className="plan-tag">most used</div>
+              <div className="plan-name">Builder</div>
+              <div className="plan-desc">For shipping one idea a week without waiting on quota.</div>
               {(() => {
                 const builderMonthly = formatPlanPrice("builder-monthly", currency);
                 const builderFounding = formatPlanPrice("builder-founding", currency);
@@ -916,9 +916,9 @@ export default function HomeClient({
                   : "Get Builder ⚡"}
               </RainbowButton>
             </Reveal>
-            <Reveal delay={0.16} className="plan">
+            <Reveal delay={0.16} className="plan plan-card" onPointerMove={handleCardPointerMove}>
               <div className="plan-name">Studio</div>
-              <div className="plan-tag">For your specific niche</div>
+              <div className="plan-desc">For teams and serial builders working the backlog.</div>
               {(() => {
                 const studioMonthly = formatPlanPrice("studio-monthly", currency);
                 return (

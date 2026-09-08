@@ -1427,3 +1427,61 @@
     .pipeline-labels .stage { animation: none; }
   }
 
+  /* ---------------------------------------------------------------- */
+  /* PRICING CARD STYLING & CURSOR-TRACKED RADIAL GLOW                 */
+  /* ---------------------------------------------------------------- */
+  .plan-card {
+    --mx: 50%;
+    --my: 0%;
+    position: relative;
+    background: var(--bg-raised, #0b0b12);
+    border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+    border-radius: 16px;
+    padding: 30px 28px 28px;
+    overflow: hidden;
+    isolation: isolate;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    box-sizing: border-box;
+  }
+
+  .plan-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: radial-gradient(360px circle at var(--mx) var(--my), rgba(124, 92, 255, 0.14), transparent 62%);
+    opacity: 0;
+    transition: opacity 0.35s ease;
+    pointer-events: none;
+  }
+
+  .plan-card:hover::before {
+    opacity: 1;
+  }
+
+  .plan-card.featured {
+    border-color: var(--violet);
+    box-shadow: 0 0 0 1px var(--violet), 0 24px 60px -24px rgba(124, 92, 255, 0.45);
+  }
+
+  .plan-card.featured::before {
+    background: radial-gradient(360px circle at var(--mx) var(--my), rgba(124, 92, 255, 0.24), transparent 62%);
+  }
+
+  .plan-card .plan-tag {
+    position: absolute;
+    top: 26px;
+    right: 26px;
+    font-family: var(--mono, 'JetBrains Mono', monospace);
+    font-size: 11px;
+    color: var(--violet);
+    background: rgba(124, 92, 255, 0.12);
+    border: 1px solid rgba(124, 92, 255, 0.35);
+    padding: 4px 9px;
+    border-radius: 20px;
+    letter-spacing: 0.02em;
+  }
+
+
