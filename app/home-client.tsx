@@ -24,11 +24,11 @@ import { RadarFallback } from "@/components/r3f/radar-fallback";
 import type { SourceTallies } from "@/lib/ingest/types";
 
 const ProofBar = dynamic(() => import("./proof-bar"), { loading: () => null });
-const RadarSignalSphere = dynamic(
-  () => import("@/components/r3f/radar-signal-sphere").then((m) => m.RadarSignalSphere),
+const PipelineField = dynamic(
+  () => import("@/components/hero/pipeline-field").then((m) => m.PipelineField),
   {
     ssr: false,
-    loading: () => <RadarFallback />,
+    loading: () => null,
   }
 );
 
@@ -330,25 +330,31 @@ export default function HomeClient({
 
   return (
     <>
-      <div className="hero-dotfield-wrapper" aria-hidden="true">
-        <DotField
-          dotRadius={1.5}
-          dotSpacing={14}
-          bulgeStrength={67}
-          glowRadius={160}
-          sparkle={false}
-          waveAmplitude={0}
-          gradientFrom="rgba(91, 79, 247, 0.35)"
-          gradientTo="rgba(168, 85, 247, 0.22)"
-          glowColor="rgba(91, 79, 247, 0.16)"
+      <div className="hero-pipeline-wrap" aria-hidden="true">
+        <PipelineField
+          weights={[
+            sourceTallies?.hackernews ?? 126,
+            sourceTallies?.github ?? 77,
+            sourceTallies?.stackexchange ?? 117,
+            sourceTallies?.devto ?? 35,
+            sourceTallies?.lobsters ?? 15,
+          ]}
         />
-        <Meteors number={16} />
+        <div className="hero-veil" />
       </div>
       <a href="#main-content" className="skip-link">Skip to content</a>
 
       <main id="main-content">
-      <header className="hero">
-        <div className="wrap">
+      <header className="hero" style={{ position: "relative" }}>
+        <div className="source-tally">
+          <div className="row"><span className="sw" style={{ background: "#ff8a4d" }}></span>HN <span className="n">{sourceTallies?.hackernews ?? 126}</span></div>
+          <div className="row"><span className="sw" style={{ background: "#7c5cff" }}></span>GH <span className="n">{sourceTallies?.github ?? 77}</span></div>
+          <div className="row"><span className="sw" style={{ background: "#4dd9e8" }}></span>SE <span className="n">{sourceTallies?.stackexchange ?? 117}</span></div>
+          <div className="row"><span className="sw" style={{ background: "#5fe0a0" }}></span>DEV <span className="n">{sourceTallies?.devto ?? 35}</span></div>
+          <div className="row"><span className="sw" style={{ background: "#e05fd0" }}></span>LOB <span className="n">{sourceTallies?.lobsters ?? 15}</span></div>
+        </div>
+
+        <div className="wrap" style={{ position: "relative", zIndex: 2 }}>
           <div style={{ marginBottom: 20 }}>
             <AnimatedGradientText badge>
               <span className="dot" style={{ width: 7, height: 7, borderRadius: "50%", background: "#10B981", display: "inline-block", boxShadow: "0 0 8px #10B981" }}></span>
@@ -398,10 +404,14 @@ export default function HomeClient({
               <span>{agent.cmd}</span>
             </div>
           </div>
+        </div>
 
-          <div className="hero-radar-container" style={{ width: "100%", maxWidth: 440, margin: "28px auto 16px" }}>
-            <RadarSignalSphere />
-          </div>
+        <div className="pipeline-labels">
+          <span className="stage">ingest</span>
+          <span className="stage">embed</span>
+          <span className="stage">cluster</span>
+          <span className="stage">draft</span>
+          <span className="stage">publish</span>
         </div>
       </header>
 

@@ -27,9 +27,8 @@ describe("Homepage Visual Overhaul Integration", () => {
     expect(html).toContain("animated-gradient-text");
     expect(html).toContain("border-beam");
     expect(html).toContain("shine-border");
-    expect(html).toContain("meteors-container");
     expect(html).toContain("procedural-text-mask");
-    expect(html).toContain("hero-radar-container");
-    expect(html).toContain("radar-fallback");
+    expect(html).toContain("hero-pipeline-wrap");
+    expect(html).toContain("pipeline-labels");
   });
 });
