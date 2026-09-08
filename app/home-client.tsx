@@ -19,6 +19,7 @@ import { AnimatedGradientText } from "@/components/magicui/animated-gradient-tex
 import { Marquee } from "@/components/magicui/marquee";
 import { Meteors } from "@/components/magicui/meteors";
 import { ProceduralTextMask } from "@/components/procedural-text-mask";
+import { Card3DTilt } from "@/components/card-3d-tilt";
 
 const ProofBar = dynamic(() => import("./proof-bar"), { loading: () => null });
 
@@ -394,52 +395,57 @@ export default function HomeClient({
           {displayCards.map((c, i) => {
             const href = c.slug ? `/feed/${c.slug}` : "/feed";
             return (
-              <MagicCard
+              <Card3DTilt
                 key={c.slug || i}
-                className="idea-card"
-                gradientColor="rgba(124, 58, 237, 0.16)"
-                style={{ ["--d" as string]: `${c.d}s` }}
+                className="idea-card-tilt-wrap"
+                style={{ height: "100%", borderRadius: "var(--r-md)" }}
               >
-                <Link
-                  href={href}
-                  style={{ textDecoration: "none", color: "inherit", display: "flex", flexDirection: "column", height: "100%" }}
+                <MagicCard
+                  className="idea-card"
+                  gradientColor="rgba(124, 58, 237, 0.16)"
+                  style={{ ["--d" as string]: `${c.d}s` }}
                 >
-                  <div
-                    className={`idea-cover ${c.cover}`}
-                    style={{
-                      height: c.h,
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      padding: "0 14px",
-                    }}
+                  <Link
+                    href={href}
+                    style={{ textDecoration: "none", color: "inherit", display: "flex", flexDirection: "column", height: "100%" }}
                   >
-                    <span className="tag">{c.tag}</span>
-                    {c.tier !== "free" ? (
-                      <span className="feed-badge" style={{ fontSize: 11, padding: "2px 7px", letterSpacing: "0.02em" }}>
-                        🔒 {c.tier}+
-                      </span>
-                    ) : (
-                      <span
-                        className="feed-badge"
-                        style={{ fontSize: 11, padding: "2px 7px", background: "rgba(16, 185, 129, 0.2)", color: "#10B981" }}
-                      >
-                        Free
-                      </span>
-                    )}
-                  </div>
-                  <div className="idea-body">
-                    <p className="idea-card-title">{c.title}</p>
-                    <div className="idea-apis">⌁ {c.apis}</div>
-                    <div className="idea-foot">
-                      <span>{c.signals}</span>
-                      <div className="signal-bar" style={{ ["--pct" as string]: c.pct / 100 }}>
-                        <span></span>
+                    <div
+                      className={`idea-cover ${c.cover}`}
+                      style={{
+                        height: c.h,
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        padding: "0 14px",
+                      }}
+                    >
+                      <span className="tag">{c.tag}</span>
+                      {c.tier !== "free" ? (
+                        <span className="feed-badge" style={{ fontSize: 11, padding: "2px 7px", letterSpacing: "0.02em" }}>
+                          🔒 {c.tier}+
+                        </span>
+                      ) : (
+                        <span
+                          className="feed-badge"
+                          style={{ fontSize: 11, padding: "2px 7px", background: "rgba(16, 185, 129, 0.2)", color: "#10B981" }}
+                        >
+                          Free
+                        </span>
+                      )}
+                    </div>
+                    <div className="idea-body">
+                      <p className="idea-card-title">{c.title}</p>
+                      <div className="idea-apis">⌁ {c.apis}</div>
+                      <div className="idea-foot">
+                        <span>{c.signals}</span>
+                        <div className="signal-bar" style={{ ["--pct" as string]: c.pct / 100 }}>
+                          <span></span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </Link>
-              </MagicCard>
+                  </Link>
+                </MagicCard>
+              </Card3DTilt>
             );
           })}
         </div>
@@ -552,77 +558,79 @@ export default function HomeClient({
             <h2>One, in full. The rest are in your feed.</h2>
           </Reveal>
           <Reveal scale style={{ maxWidth: 740, margin: "0 auto" }}>
-            <ShineBorder
-              borderRadius={20}
-              duration={18}
-              color={[
-                "rgba(124, 58, 237, 0.55)",
-                "rgba(56, 189, 248, 0.45)",
-                "rgba(16, 185, 129, 0.35)",
-                "rgba(139, 92, 246, 0.5)",
-              ]}
-            >
-              <div className="feature-card" style={{ maxWidth: "100%", margin: 0, border: "none", boxShadow: "none" }}>
-                <div className="feature-cover">
-                  <span className="tag">{sampleIdea?.category ?? "Micro-SaaS"}</span>
-                  <span className="score">{sampleIdea?.demandScore ?? 95}% demand signal</span>
-                </div>
-                <div className="feature-body">
-                  <h3>{sampleIdea?.title ?? "Bookkeepers still hand-format P&Ls in Excel for every client, every month."}</h3>
-                  <p>
-                    {sampleIdea?.problem.summary ??
-                      "41 separate complaints across developer forums and review sites in the last 90 days naming this exact gap. Several already pay a VA specifically to reformat exports by hand."}
-                  </p>
-                  <div className="feature-meta">
-                    <div><div className="fm-label">Buyer</div><div className="fm-value">{sampleIdea?.problem.whoFeelsIt ?? "Solo bookkeepers"}</div></div>
-                    <div>
-                      <div className="fm-label">Build time</div>
-                      <div className="fm-value">
-                        {sampleIdea?.difficulty
-                          ? sampleIdea.difficulty.soloWeekendProject
-                            ? "~1 weekend"
-                            : `~${sampleIdea.difficulty.estimatedHours} hrs`
-                          : "~1 weekend"}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="fm-label">Model</div>
-                      <div className="fm-value">
-                        {sampleIdea?.category === "Micro-SaaS" ? "$10–29/mo" : "Freemium / Usage"}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="fm-label">Stack</div>
-                      <div className="fm-value">
-                        {sampleIdea?.launchStack && sampleIdea.launchStack.length > 0
-                          ? sampleIdea.launchStack.map((s) => s.tool).slice(0, 2).join(" + ")
-                          : "Next.js + Supabase"}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="fm-label">APIs matched</div>
-                      <div className="fm-value">
-                        {sampleIdea?.matchedApis && sampleIdea.matchedApis.length > 0
-                          ? sampleIdea.matchedApis.map((a) => a.name).slice(0, 2).join(", ")
-                          : "Open Exchange Rates, PDFShift"}
-                      </div>
-                    </div>
-                    <div><div className="fm-label">Opens in</div><div className="fm-value">{agent.label}</div></div>
+            <Card3DTilt maxTilt={6} style={{ borderRadius: 20 }}>
+              <ShineBorder
+                borderRadius={20}
+                duration={18}
+                color={[
+                  "rgba(124, 58, 237, 0.55)",
+                  "rgba(56, 189, 248, 0.45)",
+                  "rgba(16, 185, 129, 0.35)",
+                  "rgba(139, 92, 246, 0.5)",
+                ]}
+              >
+                <div className="feature-card" style={{ maxWidth: "100%", margin: 0, border: "none", boxShadow: "none" }}>
+                  <div className="feature-cover">
+                    <span className="tag">{sampleIdea?.category ?? "Micro-SaaS"}</span>
+                    <span className="score">{sampleIdea?.demandScore ?? 95}% demand signal</span>
                   </div>
-                  {sampleIdea?.slug && (
-                    <div style={{ marginTop: 22 }}>
-                      <Link
-                        href={`/feed/${sampleIdea.slug}`}
-                        className="btn btn-primary"
-                        style={{ padding: "8px 18px", fontSize: 13, display: "inline-flex", alignItems: "center", gap: 6 }}
-                      >
-                        Read full free build brief →
-                      </Link>
+                  <div className="feature-body">
+                    <h3>{sampleIdea?.title ?? "Bookkeepers still hand-format P&Ls in Excel for every client, every month."}</h3>
+                    <p>
+                      {sampleIdea?.problem.summary ??
+                        "41 separate complaints across developer forums and review sites in the last 90 days naming this exact gap. Several already pay a VA specifically to reformat exports by hand."}
+                    </p>
+                    <div className="feature-meta">
+                      <div><div className="fm-label">Buyer</div><div className="fm-value">{sampleIdea?.problem.whoFeelsIt ?? "Solo bookkeepers"}</div></div>
+                      <div>
+                        <div className="fm-label">Build time</div>
+                        <div className="fm-value">
+                          {sampleIdea?.difficulty
+                            ? sampleIdea.difficulty.soloWeekendProject
+                              ? "~1 weekend"
+                              : `~${sampleIdea.difficulty.estimatedHours} hrs`
+                            : "~1 weekend"}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="fm-label">Model</div>
+                        <div className="fm-value">
+                          {sampleIdea?.category === "Micro-SaaS" ? "$10–29/mo" : "Freemium / Usage"}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="fm-label">Stack</div>
+                        <div className="fm-value">
+                          {sampleIdea?.launchStack && sampleIdea.launchStack.length > 0
+                            ? sampleIdea.launchStack.map((s) => s.tool).slice(0, 2).join(" + ")
+                            : "Next.js + Supabase"}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="fm-label">APIs matched</div>
+                        <div className="fm-value">
+                          {sampleIdea?.matchedApis && sampleIdea.matchedApis.length > 0
+                            ? sampleIdea.matchedApis.map((a) => a.name).slice(0, 2).join(", ")
+                            : "Open Exchange Rates, PDFShift"}
+                        </div>
+                      </div>
+                      <div><div className="fm-label">Opens in</div><div className="fm-value">{agent.label}</div></div>
                     </div>
-                  )}
+                    {sampleIdea?.slug && (
+                      <div style={{ marginTop: 22 }}>
+                        <Link
+                          href={`/feed/${sampleIdea.slug}`}
+                          className="btn btn-primary"
+                          style={{ padding: "8px 18px", fontSize: 13, display: "inline-flex", alignItems: "center", gap: 6 }}
+                        >
+                          Read full free build brief →
+                        </Link>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </ShineBorder>
+              </ShineBorder>
+            </Card3DTilt>
           </Reveal>
         </div>
       </section>
