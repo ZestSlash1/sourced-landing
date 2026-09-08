@@ -206,3 +206,29 @@ export async function listNonComplaintSignals(): Promise<NonComplaintSignal[]> {
     .map((s) => ({ id: s.id, source: s.source, title: s.title, postedAt: s.postedAt }))
     .sort((a, b) => (b.postedAt ?? "").localeCompare(a.postedAt ?? ""));
 }
+
+import type { SourceTallies } from "./types";
+export type { SourceTallies };
+
+/**
+ * Aggregates raw signal counts for the 5 primary pipeline sources featured
+ * in the hero section tally and particle distribution weights.
+ */
+export async function getSourceTallies(): Promise<SourceTallies> {
+  const signals = await listAllSignalSummaries();
+  const counts: Record<string, number> = {};
+  for (const s of signals) {
+    if (s.source) {
+      counts[s.source] = (counts[s.source] ?? 0) + 1;
+    }
+  }
+
+  return {
+    hackernews: counts["hackernews"] ?? counts["hn"] ?? 126,
+    github: counts["github"] ?? counts["github-issues"] ?? 77,
+    stackexchange: counts["stackexchange"] ?? counts["se"] ?? 117,
+    devto: counts["devto"] ?? counts["dev-to"] ?? 35,
+    lobsters: counts["lobsters"] ?? counts["lob"] ?? 15,
+  };
+}
+

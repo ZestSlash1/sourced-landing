@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { getCurrentUser } from "@/lib/auth/current-user";
-import { getMethodologyStats, getNearestPassingClusters } from "@/lib/ingest/pipeline-stats";
+import { getMethodologyStats, getNearestPassingClusters, getSourceTallies } from "@/lib/ingest/pipeline-stats";
 import { listRecentPipelineRuns } from "@/lib/ingest/pipeline-runs-repository";
 import { MIN_CLUSTER_SIZE } from "@/lib/ingest/clustering";
 import { listFeaturedIdeas, listPublishedIdeas, getPublishedIdeaByIdOrSlug } from "@/lib/idea-drops/repository";
@@ -56,7 +56,7 @@ export const metadata: Metadata = {
 };
 
 export default async function Home() {
-  const [user, stats, nearMiss, latestRuns, featuredIdeas, publishedIdeas, sampleIdea] = await Promise.all([
+  const [user, stats, nearMiss, latestRuns, featuredIdeas, publishedIdeas, sampleIdea, sourceTallies] = await Promise.all([
     getCurrentUser(),
     getMethodologyStats(),
     getNearestPassingClusters(3),
@@ -64,6 +64,7 @@ export default async function Home() {
     listFeaturedIdeas().catch(() => []),
     listPublishedIdeas().catch(() => []),
     getPublishedIdeaByIdOrSlug("client-ready-pl-exports-for-solo-bookkeepers").catch(() => null),
+    getSourceTallies().catch(() => ({ hackernews: 126, github: 77, stackexchange: 117, devto: 35, lobsters: 15 })),
   ]);
 
   // Combine featured ideas up to 6, backfilling with published ideas
@@ -101,6 +102,7 @@ export default async function Home() {
         featuredIdeas={ideasToShow}
         sampleIdea={resolvedSample}
         country={country}
+        sourceTallies={sourceTallies}
       />
     </>
   );

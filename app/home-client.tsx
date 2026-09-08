@@ -21,6 +21,7 @@ import { Meteors } from "@/components/magicui/meteors";
 import { ProceduralTextMask } from "@/components/procedural-text-mask";
 import { Card3DTilt } from "@/components/card-3d-tilt";
 import { RadarFallback } from "@/components/r3f/radar-fallback";
+import type { SourceTallies } from "@/lib/ingest/types";
 
 const ProofBar = dynamic(() => import("./proof-bar"), { loading: () => null });
 const RadarSignalSphere = dynamic(
@@ -121,6 +122,7 @@ interface HomeClientProps {
   featuredIdeas?: IdeaDrop[];
   sampleIdea?: IdeaDrop | null;
   country?: string | null;
+  sourceTallies?: SourceTallies;
 }
 
 const COVERS = ["cover-1", "cover-2", "cover-3", "cover-4", "cover-5", "cover-6"];
@@ -131,6 +133,7 @@ export default function HomeClient({
   featuredIdeas,
   sampleIdea,
   country,
+  sourceTallies,
 }: HomeClientProps) {
   const snippetRef = useRef<HTMLDivElement | null>(null);
   const [agentId, setAgentId] = useState("claude");

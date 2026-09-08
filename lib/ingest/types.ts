@@ -44,3 +44,12 @@ export interface RawSignal extends RawSignalInput {
   domain: string | null;
   classificationConfidence: number | null;
 }
+
+export interface SourceTallies {
+  hackernews: number;
+  github: number;
+  stackexchange: number;
+  devto: number;
+  lobsters: number;
+}
+
