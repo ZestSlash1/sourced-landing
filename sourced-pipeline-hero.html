@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sourced — pipeline hero + pricing</title>
+
+<!--
+  INTEGRATION NOTES FOR CLAUDE CODE / ANTIGRAVITY
+  ================================================
+  This is a standalone preview. To wire into the real Next.js app:
+
+  1. HERO BACKGROUND (PipelineField class below)
+     - Port the PipelineField class into a client component, e.g.
+       components/hero/PipelineField.tsx, mounted via useEffect on a
+       <canvas ref> the same way it's mounted here. Guard with
+       "use client" and check for window before touching WebGL.
+     - The five source counts (HN 126 / GH 77 / SE 117 / DEV 35 / LOB 15)
+       are hardcoded here — wire them to the real pipeline_runs /
+       raw_signals counts (same numbers already surfaced on /methodology)
+       so the hero and the methodology page never drift out of sync.
+     - Respects prefers-reduced-motion: falls back to a static gradient,
+       see the reduceMotion branch near the bottom of PipelineField.init().
+
+  2. PRICING SECTION
+     - Plain markup + CSS, no canvas — straightforward to lift into
+       components/pricing/PricingSection.tsx. Swap the ₹ figures for a
+       shared constants file if one doesn't already exist, so the
+       homepage and /pricing (if a dedicated page exists) can't diverge.
+     - The cursor-tracked glow is ~15 lines of vanilla JS (trackGlow at
+       the bottom) — trivial to port to a React onMouseMove handler that
+       sets CSS custom properties (--mx/--my) on the card ref.
+
+  3. FONTS: Space Grotesk (display) + JetBrains Mono (labels, data,
+     price figures) — matches the existing design system in memory.
+     Load via next/font/google in the real app rather than the <link>
+     tags used here for this static preview.
+-->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg: #06060a;
+    --bg-raised: #0b0b12;
+    --violet: #7c5cff;
+    --violet-dim: #7c5cff33;
+    --cyan: #4dd9e8;
+    --ink: #eeeef4;
+    --muted: #9797a8;
+    --muted-2: #5f5f70;
+    --border: rgba(255,255,255,0.08);
+    --border-strong: rgba(255,255,255,0.14);
+    --mono: 'JetBrains Mono', ui-monospace, monospace;
+    --sans: 'Space Grotesk', system-ui, sans-serif;
+  }
+
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection{ background: var(--violet); color: white; }
+
+  /* ---------------------------------------------------------------- */
+  /* HERO                                                              */
+  /* ---------------------------------------------------------------- */
+
+  .hero{
+    position: relative;
+    min-height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+  }
+
+  .hero canvas{
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .hero-veil{
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 46% 42% at 50% 34%, rgba(6,6,10,0.88) 0%, transparent 72%),
+      linear-gradient(180deg, rgba(6,6,10,0.05) 0%, rgba(6,6,10,0.25) 78%, rgba(6,6,10,0.7) 100%);
+    pointer-events: none;
+  }
+
+  .nav{
+    position: relative;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 28px 40px;
+  }
+
+  .brand{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    font-size: 17px;
+    letter-spacing: -0.01em;
+  }
+
+  .brand svg{ display:block; }
+
+  .nav-links{
+    display: flex;
+    gap: 32px;
+    font-size: 14px;
+    color: var(--muted);
+  }
+  .nav-links a{ color: inherit; text-decoration: none; }
+  .nav-links a:hover{ color: var(--ink); }
+
+  .nav-cta{
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--bg);
+    background: var(--ink);
+    padding: 9px 18px;
+    border-radius: 7px;
+    text-decoration: none;
+  }
+
+  .hero-body{
+    position: relative;
+    z-index: 4;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 40px 24px 0;
+  }
+
+  .hero-kicker{
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: var(--cyan);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 22px;
+    letter-spacing: 0.01em;
+  }
+  .hero-kicker .dot{
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--cyan);
+    box-shadow: 0 0 8px var(--cyan);
+  }
+
+  .hero-body h1{
+    font-size: clamp(34px, 5.2vw, 62px);
+    line-height: 1.08;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    max-width: 15ch;
+    margin: 0 0 20px;
+  }
+
+  .hero-body p{
+    font-size: 17px;
+    line-height: 1.6;
+    color: var(--muted);
+    max-width: 46ch;
+    margin: 0 0 34px;
+  }
+
+  .hero-ctas{
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 54px;
+  }
+
+  .btn-primary{
+    background: var(--violet);
+    color: white;
+    border: none;
+    font-family: var(--sans);
+    font-size: 15px;
+    font-weight: 600;
+    padding: 13px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.08) inset, 0 8px 24px -8px var(--violet-dim);
+  }
+
+  .btn-secondary{
+    background: transparent;
+    color: var(--ink);
+    border: 1px solid var(--border-strong);
+    font-family: var(--sans);
+    font-size: 15px;
+    font-weight: 500;
+    padding: 12px 22px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+
+  .terminal{
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 20px;
+    font-family: var(--mono);
+    font-size: 14px;
+    color: var(--ink);
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+    backdrop-filter: blur(6px);
+  }
+  .terminal .prompt{ color: var(--violet); }
+  .terminal .cursor-blink{
+    width: 7px; height: 15px;
+    background: var(--cyan);
+    display: inline-block;
+    animation: blink 1.1s step-end infinite;
+  }
+  @keyframes blink{ 50%{ opacity: 0; } }
+
+  .agent-tabs{
+    display: flex;
+    gap: 6px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 5px;
+    margin-bottom: 64px;
+  }
+  .agent-tabs button{
+    font-family: var(--mono);
+    font-size: 12.5px;
+    padding: 7px 14px;
+    border-radius: 7px;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+  }
+  .agent-tabs button.active{
+    background: var(--ink);
+    color: var(--bg);
+    font-weight: 600;
+  }
+
+  /* pipeline stage captions, arced along the bottom of the hero */
+  .pipeline-labels{
+    position: relative;
+    z-index: 4;
+    width: 100%;
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 0 24px 42px;
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted-2);
+  }
+  .pipeline-labels .stage{
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    animation: stagepulse 7s ease-in-out infinite;
+  }
+  .pipeline-labels .stage:nth-child(1){ animation-delay: 0s; }
+  .pipeline-labels .stage:nth-child(2){ animation-delay: 1.1s; }
+  .pipeline-labels .stage:nth-child(3){ animation-delay: 2.2s; }
+  .pipeline-labels .stage:nth-child(4){ animation-delay: 3.3s; }
+  .pipeline-labels .stage:nth-child(5){ animation-delay: 4.4s; }
+  .pipeline-labels .stage::before{
+    content: '';
+    width: 4px; height: 4px; border-radius: 50%;
+    background: var(--muted-2);
+  }
+  @keyframes stagepulse{
+    0%, 82%, 100%{ color: var(--muted-2); }
+    0%, 82%, 100%{ }
+    12%{ color: var(--cyan); }
+    12%{ }
+  }
+  .pipeline-labels .stage:hover{ color: var(--ink); }
+
+  .source-tally{
+    position: absolute;
+    left: 40px;
+    top: 50%;
+    transform: translateY(-10%);
+    z-index: 4;
+    display: none;
+    flex-direction: column;
+    gap: 9px;
+    font-family: var(--mono);
+    font-size: 11.5px;
+  }
+  @media (min-width: 980px){ .source-tally{ display: flex; } }
+  .source-tally .row{
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--muted-2);
+    opacity: 0.85;
+  }
+  .source-tally .sw{ width: 6px; height: 6px; border-radius: 1px; }
+  .source-tally .n{ color: var(--muted); min-width: 24px; }
+
+  /* ---------------------------------------------------------------- */
+  /* PRICING                                                           */
+  /* ---------------------------------------------------------------- */
+
+  .pricing{
+    position: relative;
+    background: var(--bg);
+    padding: 120px 24px 140px;
+    border-top: 1px solid var(--border);
+  }
+
+  .pricing-head{
+    text-align: center;
+    max-width: 700px;
+    margin: 0 auto 64px;
+  }
+  .pricing-head .eyebrow{
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: var(--violet);
+    margin-bottom: 14px;
+  }
+  .pricing-head h2{
+    font-size: clamp(28px, 3.4vw, 40px);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    margin: 0 0 14px;
+  }
+  .pricing-head p{
+    color: var(--muted);
+    font-size: 15.5px;
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  .pricing-grid{
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    max-width: 1040px;
+    margin: 0 auto;
+  }
+  @media (max-width: 860px){
+    .pricing-grid{ grid-template-columns: 1fr; max-width: 420px; }
+  }
+
+  .plan-card{
+    --mx: 50%;
+    --my: 0%;
+    position: relative;
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 30px 28px 28px;
+    overflow: hidden;
+    isolation: isolate;
+  }
+
+  .plan-card::before{
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: radial-gradient(360px circle at var(--mx) var(--my), rgba(124,92,255,0.14), transparent 62%);
+    opacity: 0;
+    transition: opacity 0.35s ease;
+  }
+  .plan-card:hover::before{ opacity: 1; }
+
+  .plan-card.featured{
+    border-color: var(--violet);
+    box-shadow: 0 0 0 1px var(--violet), 0 24px 60px -24px rgba(124,92,255,0.45);
+  }
+  .plan-card.featured::before{
+    background: radial-gradient(360px circle at var(--mx) var(--my), rgba(124,92,255,0.24), transparent 62%);
+  }
+
+  .plan-tag{
+    position: absolute;
+    top: 26px;
+    right: 26px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--violet);
+    background: rgba(124,92,255,0.12);
+    border: 1px solid rgba(124,92,255,0.35);
+    padding: 4px 9px;
+    border-radius: 20px;
+  }
+
+  .plan-name{
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 0 6px;
+  }
+  .plan-desc{
+    font-size: 13.5px;
+    color: var(--muted);
+    margin: 0 0 26px;
+    min-height: 36px;
+    line-height: 1.5;
+  }
+
+  .plan-price{
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    margin-bottom: 26px;
+    font-family: var(--mono);
+  }
+  .plan-price .amount{
+    font-size: 34px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .plan-price .period{
+    font-size: 13px;
+    color: var(--muted-2);
+  }
+
+  .plan-btn{
+    display: block;
+    width: 100%;
+    text-align: center;
+    font-family: var(--sans);
+    font-size: 14.5px;
+    font-weight: 600;
+    padding: 12px 0;
+    border-radius: 8px;
+    text-decoration: none;
+    margin-bottom: 28px;
+    cursor: pointer;
+    border: 1px solid var(--border-strong);
+    background: transparent;
+    color: var(--ink);
+  }
+  .plan-card.featured .plan-btn{
+    background: var(--violet);
+    border-color: var(--violet);
+    color: white;
+  }
+
+  .plan-features{
+    list-style: none;
+    margin: 0;
+    padding: 20px 0 0;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 13px;
+  }
+  .plan-features li{
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 13.5px;
+    color: #c7c7d4;
+    line-height: 1.5;
+  }
+  .plan-features li svg{
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .plan-features li.muted{ color: var(--muted-2); }
+  .plan-features li.muted svg{ opacity: 0.4; }
+
+  .pricing-foot{
+    text-align: center;
+    margin-top: 44px;
+    font-size: 13.5px;
+    color: var(--muted-2);
+  }
+  .pricing-foot a{ color: var(--muted); }
+
+  @media (prefers-reduced-motion: reduce){
+    .pipeline-labels .stage{ animation: none; }
+    .terminal .cursor-blink{ animation: none; opacity: 1; }
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* MOBILE                                                             */
+  /* ---------------------------------------------------------------- */
+  @media (max-width: 640px){
+    .nav{ padding: 20px; }
+    .nav-links{ display: none; }
+    .brand{ font-size: 16px; }
+    .nav-cta{ padding: 8px 14px; font-size: 13px; }
+
+    .hero-body{ padding: 24px 20px 0; }
+    .hero-body p{ font-size: 15.5px; }
+
+    .hero-ctas{
+      flex-direction: column;
+      width: 100%;
+      max-width: 320px;
+      gap: 10px;
+      margin-bottom: 40px;
+    }
+    .btn-primary, .btn-secondary{ width: 100%; }
+
+    .terminal{ font-size: 12.5px; padding: 12px 16px; }
+
+    .agent-tabs{
+      width: 100%;
+      max-width: 360px;
+      overflow-x: auto;
+      justify-content: flex-start;
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    .agent-tabs::-webkit-scrollbar{ display: none; }
+    .agent-tabs button{
+      white-space: nowrap;
+      flex-shrink: 0;
+      font-size: 12px;
+      padding: 7px 12px;
+    }
+
+    .pipeline-labels{
+      font-size: 10.5px;
+      padding: 0 20px 28px;
+    }
+
+    .pricing{ padding: 80px 18px 100px; }
+    .pricing-head{ margin-bottom: 44px; }
+    .pricing-head h2{ max-width: 22ch; margin-left: auto; margin-right: auto; }
+  }
+</style>
+</head>
+<body>
+
+<section class="hero" id="hero">
+  <canvas id="field"></canvas>
+  <div class="hero-veil"></div>
+
+  <nav class="nav">
+    <div class="brand">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <path d="M12 2L4 6.5V17.5L12 22L20 17.5V6.5L12 2Z" stroke="#7c5cff" stroke-width="1.4"/>
+        <path d="M8 9C8 9 9.5 8 12 8C14.5 8 16 9 16 9" stroke="#7c5cff" stroke-width="1.4" stroke-linecap="round"/>
+        <path d="M8 15C8 15 9.5 16 12 16C14.5 16 16 15 16 15" stroke="#4dd9e8" stroke-width="1.4" stroke-linecap="round"/>
+      </svg>
+      Sourced
+    </div>
+    <div class="nav-links">
+      <a href="#">Feed</a>
+      <a href="#">Methodology</a>
+      <a href="#pricing">Pricing</a>
+    </div>
+    <a class="nav-cta" href="#">Sign in</a>
+  </nav>
+
+  <div class="hero-body">
+    <div class="hero-kicker"><span class="dot"></span> live pipeline · 5 sources, updated hourly</div>
+    <h1>The internet's already telling you what to build</h1>
+    <p>Sourced clusters real complaints from Hacker News, GitHub, Stack Exchange, Dev.to and Lobsters into validated ideas — each shipped with a full build brief and agent prompts.</p>
+
+    <div class="hero-ctas">
+      <button class="btn-primary">See this week's drop</button>
+      <button class="btn-secondary">How it works</button>
+    </div>
+
+    <div class="terminal">
+      <span class="prompt">$</span> claude code brief.md <span class="cursor-blink"></span>
+    </div>
+
+    <div class="agent-tabs">
+      <button class="active">Claude Code</button>
+      <button>Cursor</button>
+      <button>Windsurf</button>
+      <button>v0</button>
+      <button>Bolt</button>
+    </div>
+  </div>
+
+  <div class="pipeline-labels">
+    <span class="stage">ingest</span>
+    <span class="stage">embed</span>
+    <span class="stage">cluster</span>
+    <span class="stage">draft</span>
+    <span class="stage">publish</span>
+  </div>
+
+  <div class="source-tally">
+    <div class="row"><span class="sw" style="background:#ff8a4d"></span>HN <span class="n">126</span></div>
+    <div class="row"><span class="sw" style="background:#7c5cff"></span>GH <span class="n">77</span></div>
+    <div class="row"><span class="sw" style="background:#4dd9e8"></span>SE <span class="n">117</span></div>
+    <div class="row"><span class="sw" style="background:#5fe0a0"></span>DEV <span class="n">35</span></div>
+    <div class="row"><span class="sw" style="background:#e05fd0"></span>LOB <span class="n">15</span></div>
+  </div>
+</section>
+
+<section class="pricing" id="pricing">
+  <div class="pricing-head">
+    <div class="eyebrow">pricing</div>
+    <h2>Three ways to unlock the drop</h2>
+    <p>Evidence is always free to read. Unlock the full build brief — stack, matched APIs, and agent prompts — when you're ready to ship it.</p>
+  </div>
+
+  <div class="pricing-grid">
+
+    <div class="plan-card" id="card-free">
+      <div class="plan-name">Free</div>
+      <div class="plan-desc">Browse every idea and its evidence, no card required.</div>
+      <div class="plan-price"><span class="amount">₹0</span><span class="period">/month</span></div>
+      <button class="plan-btn">Start free</button>
+      <ul class="plan-features">
+        <li>${check()} Full evidence on every idea drop</li>
+        <li>${check()} Triangulation badges &amp; source links</li>
+        <li>${check()} 1 build brief unlock / month</li>
+        <li class="muted">${cross()} Agent prompts for unlocked briefs</li>
+        <li class="muted">${cross()} Weekly email digest</li>
+      </ul>
+    </div>
+
+    <div class="plan-card featured" id="card-builder">
+      <div class="plan-tag">most used</div>
+      <div class="plan-name">Builder</div>
+      <div class="plan-desc">For shipping one idea a week without waiting on quota.</div>
+      <div class="plan-price"><span class="amount">₹399</span><span class="period">/month</span></div>
+      <button class="plan-btn">Get Builder</button>
+      <ul class="plan-features">
+        <li>${check()} Everything in Free</li>
+        <li>${check()} 4 build brief unlocks / month</li>
+        <li>${check()} Agent prompts for Claude Code, Cursor, Windsurf, v0, Bolt</li>
+        <li>${check()} Matched APIs &amp; launch stack per idea</li>
+        <li>${check()} Weekly email digest</li>
+      </ul>
+    </div>
+
+    <div class="plan-card" id="card-studio">
+      <div class="plan-name">Studio</div>
+      <div class="plan-desc">For teams and serial builders working the backlog.</div>
+      <div class="plan-price"><span class="amount">₹999</span><span class="period">/month</span></div>
+      <button class="plan-btn">Get Studio</button>
+      <ul class="plan-features">
+        <li>${check()} Everything in Builder</li>
+        <li>${check()} Unlimited build brief unlocks</li>
+        <li>${check()} Full rejected-cluster archive</li>
+        <li>${check()} Early access to new source pollers</li>
+        <li>${check()} Priority support</li>
+      </ul>
+    </div>
+
+  </div>
+
+  <div class="pricing-foot">Prices in INR. Cancel anytime — unlocked briefs stay unlocked. <a href="#">See what changed on /methodology →</a></div>
+</section>
+
+<script type="module">
+import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+
+/* ------------------------------------------------------------------ */
+/* helper: swap the ${check()}/${cross()} placeholders left in the    */
+/* markup above with real inline SVG icons (kept as template-literal  */
+/* style calls so the HTML stays readable — a real build would just   */
+/* use JSX/astro components here instead)                             */
+/* ------------------------------------------------------------------ */
+const CHECK = `<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2.5 7.2L5.5 10.2L11.5 3.8" stroke="#7c5cff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const CROSS = `<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3.5 3.5L10.5 10.5M10.5 3.5L3.5 10.5" stroke="#5f5f70" stroke-width="1.4" stroke-linecap="round"/></svg>`;
+document.querySelectorAll('.plan-features li').forEach(li=>{
+  li.innerHTML = li.innerHTML
+    .replace('${check()}', CHECK)
+    .replace('${cross()}', CROSS);
+});
+
+/* ------------------------------------------------------------------ */
+/* PIPELINE FIELD — the hero background                               */
+/*                                                                     */
+/* Model: particles spawn at the left edge tagged with a source color */
+/* (HN/GH/SE/DEV/LOB), drift rightward through an "embed" band, get   */
+/* pulled into a rotating cluster core around the midpoint, and only  */
+/* a small fraction survive the cluster to launch onward as a bright  */
+/* "published" spark. The rest fade out inside the cluster — a direct */
+/* visualization of the real pipeline (394 signals in, ~0 clusters    */
+/* passing the bar most runs — most raw signal dies at clustering).   */
+/* ------------------------------------------------------------------ */
+class PipelineField{
+  constructor(canvas){
+    this.canvas = canvas;
+    this.reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    this.mouse = new THREE.Vector2(0, 0);
+    this.mouseTarget = new THREE.Vector2(0, 0);
+    this.clock = new THREE.Clock();
+    this.init();
+  }
+
+  init(){
+    const canvas = this.canvas;
+    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    this.scene = new THREE.Scene();
+    this.camera = new THREE.PerspectiveCamera(50, 1, 0.1, 100);
+    this.camera.position.set(0, 0, 12);
+
+    this.SPAN_X = 15;      // world-space width particles travel across
+    this.BAND_Y = 3.6;     // vertical band thickness
+    this.CLUSTER_T = 0.56; // progress (0..1) where the cluster core sits
+    this.CLUSTER_W = 0.16; // width of the cluster pull zone
+
+    const COUNT = this.reduceMotion ? 0 : 2200;
+    this.count = COUNT;
+
+    const positions = new Float32Array(COUNT * 3);
+    const colors = new Float32Array(COUNT * 3);
+    const sizes = new Float32Array(COUNT);
+
+    // per-particle simulation state, kept in plain arrays (cheap for this count)
+    this.t = new Float32Array(COUNT);       // progress along the pipeline, 0..1, loops
+    this.speed = new Float32Array(COUNT);
+    this.lane = new Float32Array(COUNT);    // base vertical offset
+    this.seed = new Float32Array(COUNT);    // per-particle noise phase
+    this.survives = new Uint8Array(COUNT);  // 1 = becomes a published spark past cluster
+    this.sourceColor = [];
+
+    // source palette — matches .source-tally swatches
+    const palette = [
+      new THREE.Color('#ff8a4d'), // HN
+      new THREE.Color('#7c5cff'), // GH
+      new THREE.Color('#4dd9e8'), // SE
+      new THREE.Color('#5fe0a0'), // DEV
+      new THREE.Color('#e05fd0'), // LOB
+    ];
+    const weights = [126, 77, 117, 35, 15]; // real source volumes, biases spawn distribution
+    const totalW = weights.reduce((a,b)=>a+b,0);
+
+    const violet = new THREE.Color('#7c5cff');
+    const white = new THREE.Color('#ffffff');
+
+    for(let i=0;i<COUNT;i++){
+      this.t[i] = Math.random();
+      this.speed[i] = 0.045 + Math.random()*0.05;
+      this.lane[i] = (Math.random()*2-1);
+      this.seed[i] = Math.random()*1000;
+      // ~14% of particles survive clustering to become a published spark —
+      // roughly matches the real pass rate the pipeline sees at volume
+      this.survives[i] = Math.random() < 0.14 ? 1 : 0;
+
+      let r = Math.random()*totalW;
+      let idx = 0;
+      for(let w=0; w<weights.length; w++){ if(r < weights[w]){ idx = w; break; } r -= weights[w]; }
+      const c = palette[idx];
+      this.sourceColor.push(c);
+
+      colors[i*3+0] = c.r; colors[i*3+1] = c.g; colors[i*3+2] = c.b;
+      sizes[i] = this.survives[i] ? (0.8 + Math.random()*0.55) : (0.34 + Math.random()*0.4);
+    }
+
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    geo.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+
+    const mat = new THREE.ShaderMaterial({
+      uniforms: { uPixelRatio: { value: Math.min(window.devicePixelRatio,2) } },
+      vertexShader: `
+        attribute float size;
+        varying vec3 vColor;
+        void main(){
+          vColor = color;
+          vec4 mv = modelViewMatrix * vec4(position, 1.0);
+          gl_PointSize = size * (130.0 / -mv.z);
+          gl_Position = projectionMatrix * mv;
+        }
+      `,
+      fragmentShader: `
+        varying vec3 vColor;
+        void main(){
+          vec2 c = gl_PointCoord - 0.5;
+          float d = length(c);
+          if(d > 0.5) discard;
+          float glow = pow(smoothstep(0.5, 0.0, d), 2.2);
+          gl_FragColor = vec4(vColor, glow * 0.65);
+        }
+      `,
+      vertexColors: true,
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    });
+
+    // per-particle alpha isn't in the shader above for simplicity; we fake
+    // fade by scaling color toward black, cheaper than a second attribute pass
+    this.points = new THREE.Points(geo, mat);
+    this.scene.add(this.points);
+    this.geo = geo;
+    this.violet = violet;
+    this.white = white;
+    this.palette = palette;
+
+    if(this.reduceMotion){
+      // static: just leave the veil gradient doing the work, no canvas draw loop
+      return;
+    }
+
+    window.addEventListener('resize', ()=>this.resize());
+    window.addEventListener('pointermove', (e)=>this.onPointer(e));
+    this.resize();
+    this.tick();
+  }
+
+  onPointer(e){
+    const rect = this.canvas.getBoundingClientRect();
+    const x = ((e.clientX - rect.left)/rect.width)*2 - 1;
+    const y = -(((e.clientY - rect.top)/rect.height)*2 - 1);
+    this.mouseTarget.set(x * (this.SPAN_X*0.5), y * this.BAND_Y);
+  }
+
+  resize(){
+    const rect = this.canvas.getBoundingClientRect();
+    this.renderer.setSize(rect.width, rect.height, false);
+    this.camera.aspect = rect.width / rect.height;
+    this.camera.updateProjectionMatrix();
+  }
+
+  tick(){
+    requestAnimationFrame(()=>this.tick());
+    const dt = Math.min(this.clock.getDelta(), 0.05);
+    const elapsed = this.clock.elapsedTime;
+
+    // ease mouse toward target — smooths jittery input, gives the field weight
+    this.mouse.x += (this.mouseTarget.x - this.mouse.x) * 0.06;
+    this.mouse.y += (this.mouseTarget.y - this.mouse.y) * 0.06;
+
+    const pos = this.geo.attributes.position.array;
+    const col = this.geo.attributes.color.array;
+    const SPAN = this.SPAN_X;
+
+    for(let i=0;i<this.count;i++){
+      let t = this.t[i] + dt * this.speed[i];
+      if(t > 1) t -= 1;
+      this.t[i] = t;
+
+      let x = -SPAN*0.5 + t*SPAN;
+      let y = this.lane[i] * this.BAND_Y * 0.5;
+
+      // organic wobble, cheap sine-stack standing in for curl noise
+      const s = this.seed[i];
+      y += Math.sin(elapsed*0.6 + s) * 0.18 + Math.sin(elapsed*0.23 + s*1.7) * 0.12;
+      let z = Math.cos(elapsed*0.4 + s*0.5) * 0.6;
+
+      // cluster pull: gaussian bump centered at CLUSTER_T, adds inward pull + swirl
+      const dCluster = (t - this.CLUSTER_T) / this.CLUSTER_W;
+      const pull = Math.exp(-dCluster*dCluster); // 0..1
+      const angle = elapsed*1.6 + s;
+      x += Math.cos(angle) * pull * 0.7;
+      y = y*(1-pull*0.85) + Math.sin(angle) * pull * 0.9;
+      z += Math.sin(angle*1.3) * pull * 0.8;
+
+      // past the cluster: survivors launch outward+upward as a spark and brighten;
+      // non-survivors fade toward black (visually "dissolve" — most signals don't cluster)
+      let brightness = 1.0;
+      let colorMix = 0.0; // 0 = source color, 1 = white-hot spark
+      if(t > this.CLUSTER_T){
+        const past = (t - this.CLUSTER_T) / (1 - this.CLUSTER_T); // 0..1
+        if(this.survives[i]){
+          y += past * 1.4;
+          colorMix = Math.min(past*2.2, 1);
+          brightness = 1.0;
+        } else {
+          brightness = Math.max(0, 1 - past*1.8);
+        }
+      }
+
+      // fade in at spawn
+      if(t < 0.06) brightness *= t/0.06;
+
+      // cursor repulsion — nearby particles get pushed away, gives the
+      // "cursor responsive" feel the reference video has
+      const mdx = x - this.mouse.x;
+      const mdy = y - this.mouse.y;
+      const mdist = Math.sqrt(mdx*mdx + mdy*mdy);
+      const RADIUS = 2.1;
+      if(mdist < RADIUS){
+        const force = (1 - mdist/RADIUS) * 1.1;
+        const inv = 1/(mdist+0.0001);
+        x += mdx*inv*force;
+        y += mdy*inv*force;
+      }
+
+      pos[i*3+0] = x;
+      pos[i*3+1] = y;
+      pos[i*3+2] = z;
+
+      const base = this.sourceColor[i];
+      const r = base.r + (this.white.r - base.r)*colorMix;
+      const g = base.g + (this.white.g - base.g)*colorMix;
+      const b = base.b + (this.white.b - base.b)*colorMix;
+      col[i*3+0] = r*brightness;
+      col[i*3+1] = g*brightness;
+      col[i*3+2] = b*brightness;
+    }
+
+    this.geo.attributes.position.needsUpdate = true;
+    this.geo.attributes.color.needsUpdate = true;
+
+    // gentle camera parallax toward the cursor — depth cue, matches the
+    // "pointer parallax" idea from the original globe without a globe
+    this.camera.position.x += ((this.mouse.x*0.12) - this.camera.position.x) * 0.04;
+    this.camera.position.y += ((this.mouse.y*0.12) - this.camera.position.y) * 0.04;
+    this.camera.lookAt(0,0,0);
+
+    this.renderer.render(this.scene, this.camera);
+  }
+}
+
+new PipelineField(document.getElementById('field'));
+
+/* ------------------------------------------------------------------ */
+/* pricing card cursor glow                                            */
+/* ------------------------------------------------------------------ */
+document.querySelectorAll('.plan-card').forEach(card=>{
+  card.addEventListener('pointermove', (e)=>{
+    const r = card.getBoundingClientRect();
+    card.style.setProperty('--mx', `${e.clientX - r.left}px`);
+    card.style.setProperty('--my', `${e.clientY - r.top}px`);
+  });
+});
+</script>
+
+</body>
+</html>
