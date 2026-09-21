@@ -5,6 +5,7 @@ import { MorphIcon } from "morphicons/react";
 import { Sparkles } from "lucide";
 import { motion } from "framer-motion";
 import SignOutButton from "./sign-out-button";
+import PipelineBanner from "./pipeline-banner";
 
 const TABS = [
   { href: "/admin", label: "Ideas" },
@@ -80,6 +81,7 @@ export default function AdminShell({
         animate={{ opacity: 1, y: 0 }}
         transition={{ type: "spring", stiffness: 220, damping: 28, delay: 0.05 }}
       >
+        <PipelineBanner />
         {children}
       </motion.div>
     </div>
