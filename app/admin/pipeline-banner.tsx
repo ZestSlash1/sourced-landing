@@ -2,12 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import { POLLER_LIST } from "@/lib/ingest/poller-ids";
+import PipelineFlow from "./pipeline-flow";
 
 type StepState = "idle" | "running" | "done" | "error";
 
 interface Step {
   state: StepState;
   detail?: string;
+  inserted?: number;
 }
 
 /** Client view of a pipeline_jobs row (see lib/ingest/pipeline-jobs-repository.ts). */
@@ -144,7 +146,8 @@ export default function PipelineBanner() {
   async function runPoll(id: string): Promise<boolean> {
     set(id, { state: "running" });
     try {
-      set(id, { state: "done", detail: summarizePoll(await callStage({ stage: "poll", source: id })) });
+      const res = await callStage({ stage: "poll", source: id });
+      set(id, { state: "done", detail: summarizePoll(res), inserted: Number(res.inserted) || 0 });
       return true;
     } catch (err) {
       set(id, { state: "error", detail: err instanceof Error ? err.message : String(err) });
@@ -231,6 +234,8 @@ export default function PipelineBanner() {
           </button>
         </div>
       </div>
+
+      <PipelineFlow steps={steps} pollAllKey={POLL_ALL} draftKey={DRAFT} />
 
       {(pollAll || draft) && (
         <div className="pipeline-status mono" role="status">
