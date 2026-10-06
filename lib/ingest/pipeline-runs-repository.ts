@@ -38,6 +38,22 @@ export interface PipelineRunStats {
   draftOpenrouterAvgLatencyMs: number;
   draftFallbacks: number;
   errors: string[];
+  // sourced-clustering-upgrade-spec.md Part 6: only present when the tiered
+  // clustering funnel (ENABLE_TIERED_CLUSTERING) ran this pass.
+  funnel?: PipelineRunFunnel;
+}
+
+/** Shape logged to pipeline_runs.funnel — see tiered-clustering.ts's TieredClusteringFunnel. */
+export interface PipelineRunFunnel {
+  candidatesFound: number;
+  groupsAfterArbitration: number;
+  groupsConfirmedHighConf: number;
+  groupsConfirmedMediumConf: number;
+  groupsPassingGate: number;
+  llmCallsMade: number;
+  llmCostUsd: number;
+  borderlineGroups: number;
+  arbiterErrors: string[];
 }
 
 export interface PipelineRunRow extends PipelineRunStats {
@@ -45,11 +61,17 @@ export interface PipelineRunRow extends PipelineRunStats {
   ranAt: string;
 }
 
-/** Records one draft-pass invocation for the observability panel. Never throws. */
-export async function recordPipelineRun(stats: PipelineRunStats): Promise<void> {
+/**
+ * Records one draft-pass invocation for the observability panel. Never
+ * throws. Returns the inserted row's id (or null on failure) so callers that
+ * also write candidate_pairs can correlate them via pipeline_run_id — the id
+ * is generated here rather than by the caller so a failed insert can't leave
+ * an orphaned id referenced elsewhere.
+ */
+export async function recordPipelineRun(stats: PipelineRunStats): Promise<string | null> {
   try {
     const supabase = getSupabaseServerClient();
-    const { error } = await supabase.from("pipeline_runs").insert({
+    const { data, error } = await supabase.from("pipeline_runs").insert({
       signals_considered: stats.signalsConsidered,
       pairs_compared: stats.pairsCompared,
       clusters_formed: stats.clustersFormed,
@@ -83,10 +105,16 @@ export async function recordPipelineRun(stats: PipelineRunStats): Promise<void> 
       draft_openrouter_avg_latency_ms: stats.draftOpenrouterAvgLatencyMs,
       draft_fallbacks: stats.draftFallbacks,
       errors: stats.errors,
-    });
-    if (error) console.error("[pipeline_runs] insert failed:", error.message);
+      funnel: stats.funnel ?? null,
+    }).select("id").single();
+    if (error) {
+      console.error("[pipeline_runs] insert failed:", error.message);
+      return null;
+    }
+    return (data as { id: string }).id;
   } catch (err) {
     console.error("[pipeline_runs] insert threw:", err);
+    return null;
   }
 }
 
@@ -139,6 +167,7 @@ export async function listRecentPipelineRuns(limit = 10): Promise<PipelineRunRow
     draft_openrouter_avg_latency_ms: number | null;
     draft_fallbacks: number | null;
     errors: string[] | null;
+    funnel: PipelineRunFunnel | null;
   }
   return (data as Row[]).map((r) => ({
     id: r.id,
@@ -176,5 +205,6 @@ export async function listRecentPipelineRuns(limit = 10): Promise<PipelineRunRow
     draftOpenrouterAvgLatencyMs: r.draft_openrouter_avg_latency_ms ?? 0,
     draftFallbacks: r.draft_fallbacks ?? 0,
     errors: r.errors ?? [],
+    funnel: r.funnel ?? undefined,
   }));
 }

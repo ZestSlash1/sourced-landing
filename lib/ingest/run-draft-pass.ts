@@ -16,7 +16,10 @@ import {
   saveClassifications,
   saveEmbeddings,
 } from "./raw-signals-repository";
-import { recordPipelineRun } from "./pipeline-runs-repository";
+import { recordPipelineRun, type PipelineRunFunnel } from "./pipeline-runs-repository";
+import { saveCandidatePairs } from "./candidate-pairs-repository";
+import type { CandidatePair } from "./group-candidates";
+import { computeTieredPairs, runTieredClustering } from "./tiered-clustering";
 
 export interface DraftPassResult {
   signalsConsidered: number;
@@ -123,10 +126,28 @@ export async function runDraftPass(): Promise<DraftPassResult> {
   // CLUSTERING_STRATEGY=jaccard keeps using the original in-process path,
   // same as before this migration.
   const useSqlClustering = process.env.CLUSTERING_ENGINE === "sql";
-  const { clusters, stats } =
-    CLUSTERING_STRATEGY === "embedding" && useSqlClustering
-      ? await clusterSignalsSQL(getSupabaseServerClient(), complaintSignals)
-      : clusterSignals(complaintSignals);
+  // sourced-clustering-upgrade-spec.md: tiered candidate-discovery ->
+  // LLM-arbiter funnel, run behind its own flag so it can be A/B'd against
+  // the single-threshold path (above) on the same signal batch before
+  // cutting over. Takes precedence over CLUSTERING_ENGINE=sql when both are
+  // set, since the tiered path does its own in-process pairwise sweep.
+  const enableTieredClustering = process.env.ENABLE_TIERED_CLUSTERING === "true";
+  let funnel: PipelineRunFunnel | undefined;
+  let candidatePairsFound: CandidatePair[] = [];
+  const { clusters, stats } = await (async () => {
+    if (CLUSTERING_STRATEGY === "embedding" && enableTieredClustering) {
+      const tiered = await runTieredClustering(complaintSignals);
+      funnel = tiered.funnel;
+      // Recomputed here rather than threaded out of runTieredClustering just
+      // for persistence — cheap relative to the LLM calls already made.
+      candidatePairsFound = computeTieredPairs(complaintSignals).candidatePairs;
+      return { clusters: tiered.clusters, stats: tiered.stats };
+    }
+    if (CLUSTERING_STRATEGY === "embedding" && useSqlClustering) {
+      return clusterSignalsSQL(getSupabaseServerClient(), complaintSignals);
+    }
+    return clusterSignals(complaintSignals);
+  })();
 
   // Persist cluster_key for every signal in a non-trivial cluster. Singletons
   // stay null — they're not really "clustered" and marking them would just add
@@ -199,7 +220,7 @@ export async function runDraftPass(): Promise<DraftPassResult> {
       `passing=${stats.clustersPassingBar} distribution=${JSON.stringify(clusterSizeDistribution)} drafted=${drafted}`,
   );
 
-  await recordPipelineRun({
+  const pipelineRunId = await recordPipelineRun({
     signalsConsidered: stats.signalsConsidered,
     pairsCompared: stats.pairsCompared,
     clustersFormed: stats.clustersFormed,
@@ -237,7 +258,12 @@ export async function runDraftPass(): Promise<DraftPassResult> {
     draftOpenrouterAvgLatencyMs: draftOpenrouterCalls > 0 ? draftOpenrouterLatencyMsTotal / draftOpenrouterCalls : 0,
     draftFallbacks,
     errors,
+    funnel,
   });
+
+  if (candidatePairsFound.length > 0) {
+    await saveCandidatePairs(candidatePairsFound, pipelineRunId);
+  }
 
   return {
     signalsConsidered: stats.signalsConsidered,

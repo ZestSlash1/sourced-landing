@@ -180,6 +180,9 @@ export function PipelineTableCard({ pipelineRuns }: { pipelineRuns: PipelineRunR
                 <th>Comp. checks</th>
                 <th>Comp. errors</th>
                 <th>Errors</th>
+                <th title="Tiered clustering funnel: candidates found -> LLM-arbitrated groups -> gate-passing (ENABLE_TIERED_CLUSTERING runs only)">
+                  Funnel
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -207,6 +210,11 @@ export function PipelineTableCard({ pipelineRuns }: { pipelineRuns: PipelineRunR
                   <td>{r.competitiveChecksRun}</td>
                   <td>{r.competitiveCheckErrors.length}</td>
                   <td>{r.errors.length}</td>
+                  <td>
+                    {r.funnel
+                      ? `${r.funnel.candidatesFound} cand → ${r.funnel.groupsAfterArbitration} groups (${r.funnel.groupsConfirmedHighConf}h/${r.funnel.groupsConfirmedMediumConf}m) → ${r.funnel.groupsPassingGate} pass · ${r.funnel.borderlineGroups} borderline · ${r.funnel.llmCallsMade} calls`
+                      : "—"}
+                  </td>
                 </tr>
               ))}
             </tbody>
