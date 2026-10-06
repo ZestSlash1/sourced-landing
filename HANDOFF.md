@@ -3,11 +3,19 @@
 > Overwrite this file at the end of every session — whoever picks up next
 > (human or agent) reads this before touching anything.
 
-**Last updated by:** Claude Code
+**Last updated by:** Antigravity / Gemini
 **Date:** 2026-10-07
 
 ## Current state
-- "Run full pipeline" fix (uncommitted, NOT yet deployed). On prod (2026-10-06 run) three things failed:
+- Animated Pipeline Flow in Admin Banner (`f7d1075`):
+  - Visual pipeline diagram component `app/admin/pipeline-flow.tsx` mounted directly in `app/admin/pipeline-banner.tsx` with styles in `app/globals.css`.
+  - Source chips pulse on active poll, display green `+N` counts on completion, and emit particle streams scaled logarithmically by signal volume (`Math.min(6, Math.ceil(Math.log2(inserted + 1)))`).
+  - Ingest node displays a circular progress ring filling as sources settle (`settled / total`).
+  - Draft job node group (Classify → Cluster → Draft) animates with sequential highlights during draft runs, hand-off packet tracks flow between stages, and Review sink node marks completion with `✓`.
+  - Responsive: collapses cleanly into vertical orientation on viewports ≤720px (including 375px mobile) with vertical packet animations and `prefers-reduced-motion` overrides.
+  - Scratch files `app/pflow-preview/` cleaned.
+  - Full suite verified: 61 test files (279 tests) passing in Vitest, `tsc --noEmit` clean, and `next build` passing.
+- "Run full pipeline" fix (committed in `beb66da`, deployed with next push). On prod (2026-10-06 run) three things failed:
   1. **Discourse poll → 504**: the deployed route had `maxDuration = 120`; Discourse needs ~4 min. The working tree's bump to 280 (same as the discourse cron, which does complete on Vercel) fixes it once deployed.
   2. **App Store poll → 502**: `raw_signals_source_check` never included `'appstore'`, so every insert was rejected (0 appstore rows ever). Fixed by `supabase/migrations/0033_add_appstore_source.sql` — **already applied to the live `supabase-sourced-db`**; verified with a real poll (224 inserted).
   3. **Draft → "No classifier provider configured"**: Vercel has no OLLAMA_URL/OMNIROUTE_URL/OPENROUTER_API_KEY and can't reach falcon's LLMs (the `draft-ideas` cron has been failing the same way every day — no `pipeline_runs` row ever came from Vercel). OpenRouter isn't a fix: its embeddings are a different vector space from the stored nomic-embed-text vectors. Fix = job queue: new Sourced table `pipeline_jobs` (`supabase/migrations/0034_pipeline_jobs.sql`, **already applied live**). Where `OLLAMA_URL` is unset (Vercel), `POST /api/admin/pipeline/run {stage:"draft"}` and `/api/cron/draft-ideas` call `enqueueDraftJob()` (dedupes against an already queued/running job) instead of running the pass; `GET /api/admin/pipeline/run?job=<id|latest>` returns status. `scripts/pipeline-worker.ts` (`npm run worker`, must be running on falcon) claims queued jobs and runs `runDraftPass()` locally — no function timeout. Banner polls the job (queued → "running on falcon…" → result), hints after 45s queued that the worker may be down, and resumes a running job after navigating between admin pages. Locally (OLLAMA_URL set) the draft stage still runs inline as before.
