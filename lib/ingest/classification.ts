@@ -13,10 +13,12 @@ export const CLASSIFICATION_CONFIDENCE_FLOOR = 0.6;
 
 // Per-run cap (Part 2 cost control) — classification scales linearly with
 // the volume expansion already shipped, so bound how many signals one pass
-// classifies.
+// classifies. Raised from 25 to 200 once the pass moved to the falcon worker
+// (scripts/pipeline-worker.ts): Ollama calls are free and there's no function
+// timeout there, and at 25/run ingest (~500/day) outran classification.
 export const CLASSIFICATION_RUN_CAP = process.env.CLASSIFICATION_RUN_CAP
   ? Number(process.env.CLASSIFICATION_RUN_CAP)
-  : 25;
+  : 200;
 
 // Rough per-token pricing for a small model at this class — good enough for
 // cost-tracking purposes, same rationale as embeddings.ts's USD_PER_TOKEN.

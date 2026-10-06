@@ -3,6 +3,7 @@
 // Next.js's react-server condition, where the server-only marker package
 // throws unconditionally. Same convention as classification.ts/embeddings.ts.
 import type { CompetitiveLandscape } from "@/types/idea-drop";
+import { omniRouteHeaders } from "@/lib/llm/providers/omniroute";
 
 // OpenRouter's `:online` suffix attaches a real web-search plugin (Exa) to
 // any model — the model's completion comes back with the search results
@@ -200,7 +201,7 @@ Respond ONLY with JSON:
 
       const res = await fetch(`${omniRouteUrl}/v1/chat/completions`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: omniRouteHeaders(),
         body: JSON.stringify({
           model: process.env.OMNIROUTE_DRAFT_MODEL ?? "gemini/gemini-3.6-flash",
           stream: false,

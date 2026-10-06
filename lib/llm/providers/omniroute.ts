@@ -8,6 +8,18 @@ import type { ProviderDraftResult } from "./types";
 
 const DEFAULT_MODEL = "gemini/gemini-3.6-flash";
 
+/**
+ * Request headers for any OmniRoute call. Newer OmniRoute images reject
+ * unauthenticated /v1 requests (401 AUTH_002), so send OMNIROUTE_API_KEY
+ * (created in the OmniRoute dashboard) as a bearer token when it's set.
+ */
+export function omniRouteHeaders(): Record<string, string> {
+  const apiKey = process.env.OMNIROUTE_API_KEY;
+  return apiKey
+    ? { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` }
+    : { "Content-Type": "application/json" };
+}
+
 /** Pure function: one OmniRoute draft-generation call. Throws on failure/malformed output — caller decides whether to fall back. */
 export async function generateDraftViaOmniRoute(
   prompt: string,
@@ -18,7 +30,7 @@ export async function generateDraftViaOmniRoute(
 
   const res = await fetch(`${omniRouteUrl}/v1/chat/completions`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: omniRouteHeaders(),
     body: JSON.stringify({
       model,
       // Always explicit: omitting this returns SSE chunks instead of a

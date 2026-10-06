@@ -19,7 +19,8 @@ is production, deployed via Vercel from `main`).
 - Next.js App Router, deployed on Vercel
 - Supabase — **this instance is SHARED with the Mettel project**. Only touch
   Sourced tables: `raw_signals`, `idea_drops`, `idea_drop_views`,
-  `sourced_subscribers`, `subscriber_topics`, `events`, `admins`, `settings`.
+  `sourced_subscribers`, `subscriber_topics`, `events`, `admins`, `settings`,
+  `pipeline_runs`, `candidate_pairs`, `pipeline_jobs`.
   Never modify Mettel-owned tables without explicit confirmation.
 - Razorpay for payments (INR pricing, India-based). International payments
   (USD/EUR/GBP) are supported by Razorpay but not yet activated — needs KYC +
@@ -34,9 +35,16 @@ is production, deployed via Vercel from `main`).
 ## Ingest pipeline (context, not a to-do list)
 Pollers (HN, StackExchange, GitHub Issues, Dev.to, Lobsters, Bluesky,
 DevRant, select Discourse instances — all keyless except Bluesky, which
-needs an App Password) → embed via OpenRouter text-embedding-3-small →
-cosine similarity clustering (threshold 0.82, needs 3+ signals across 2+
-platforms) → OpenRouter draft → admin review → publish.
+needs an App Password) → embed (local Ollama `nomic-embed-text`, OpenRouter
+`text-embedding-3-small` as fallback) → cosine similarity clustering
+(threshold 0.74, needs 3+ signals, 1+ platform — see `lib/ingest/clustering.ts`
+for the actual current constants before assuming this doc is up to date) →
+Ollama/OmniRoute draft → admin review → publish. Vercel can't reach the local
+LLMs, so on prod the draft pass (admin banner + `draft-ideas` cron) is only
+enqueued in `pipeline_jobs`; `npm run worker` on falcon claims and runs it. A separate, flag-gated
+(`ENABLE_TIERED_CLUSTERING`, off by default) tiered-clustering path exists in
+`lib/ingest/tiered-clustering.ts` with its own 0.82/0.55 bands and an LLM
+arbiter stage — see HANDOFF.md for status before enabling it anywhere.
 
 Reddit and Product Hunt are permanently ruled out as sources (Reddit:
 commercial API tier too expensive; Product Hunt: signal shape doesn't fit —
@@ -55,6 +63,9 @@ feedback is mostly one-sided/positive, sparse criticism). Hashnode ruled out
 
 ## Do not
 - Don't re-attempt Reddit ingestion.
-- Don't change the clustering threshold (0.82) without discussion — it was
-  tuned deliberately.
+- Don't change the clustering threshold(s) in `lib/ingest/clustering.ts`
+  (currently 0.74) or `lib/ingest/tiered-clustering.ts` (0.82/0.55) without
+  discussion — both were tuned deliberately. Check the code for the current
+  number before citing one; this file has gone stale on this exact point
+  before.
 - Don't touch Mettel's Supabase tables.
