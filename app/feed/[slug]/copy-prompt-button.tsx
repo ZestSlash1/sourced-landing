@@ -58,7 +58,7 @@ export default function CopyPromptButton({ label, prompt }: { label: string; pro
           </button>
         </div>
       </div>
-      <pre className="prompt-pre">
+      <pre className="prompt-pre" tabIndex={0} role="region" aria-label={`Build prompt for ${label}`}>
         <span className="prompt-prefix">$</span>
         {prompt}
       </pre>

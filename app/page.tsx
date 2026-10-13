@@ -4,7 +4,7 @@ import { getCurrentUser } from "@/lib/auth/current-user";
 import { getMethodologyStats, getNearestPassingClusters, getSourceTallies } from "@/lib/ingest/pipeline-stats";
 import { listRecentPipelineRuns } from "@/lib/ingest/pipeline-runs-repository";
 import { MIN_CLUSTER_SIZE } from "@/lib/ingest/clustering";
-import { listFeaturedIdeas, listPublishedIdeas, getPublishedIdeaByIdOrSlug } from "@/lib/idea-drops/repository";
+import { listFeaturedIdeas, listPublishedIdeas } from "@/lib/idea-drops/repository";
 import type { ProofBarData } from "./proof-bar";
 import HomeClient from "./home-client";
 
@@ -17,7 +17,7 @@ const FAQ_ITEMS = [
   {
     question: "Where do the matched APIs come from?",
     answer:
-      "From a structured, regularly-synced copy of the public-apis directory, a 470k-star, MIT-licensed community list. We match categories to your idea's build brief; full docs links and rate limits ship on Builder and above.",
+      "From a structured copy of the public-apis directory, an MIT-licensed community list. We match categories to your idea's build brief; full docs links and rate limits ship on Builder and above.",
   },
   {
     question: "Which coding tool does this work with?",
@@ -32,7 +32,7 @@ const FAQ_ITEMS = [
   {
     question: "What if I build one and it doesn't work?",
     answer:
-      "Some won't. That's true of every idea anywhere. Sourced removes the guessing on whether anyone wants it in the first place; the execution risk is still yours, same as any build.",
+      "Complaints help identify problems to investigate. They do not establish willingness to pay, switching intent, or a viable market. Test the buyer and the smallest useful workflow before building.",
   },
 ];
 
@@ -56,15 +56,14 @@ export const metadata: Metadata = {
 };
 
 export default async function Home() {
-  const [user, stats, nearMiss, latestRuns, featuredIdeas, publishedIdeas, sampleIdea, sourceTallies] = await Promise.all([
+  const [user, stats, nearMiss, latestRuns, featuredIdeas, publishedIdeas, sourceTallies] = await Promise.all([
     getCurrentUser(),
     getMethodologyStats(),
     getNearestPassingClusters(3),
     listRecentPipelineRuns(1),
     listFeaturedIdeas().catch(() => []),
     listPublishedIdeas().catch(() => []),
-    getPublishedIdeaByIdOrSlug("client-ready-pl-exports-for-solo-bookkeepers").catch(() => null),
-    getSourceTallies().catch(() => ({ hackernews: 126, github: 77, stackexchange: 117, devto: 35, lobsters: 15 })),
+    getSourceTallies().catch(() => ({ hackernews: 0, github: 0, stackexchange: 0, devto: 0, lobsters: 0 })),
   ]);
 
   // Combine featured ideas up to 6, backfilling with published ideas
@@ -75,12 +74,6 @@ export default async function Home() {
       ideasToShow.push(idea);
     }
   }
-
-  const resolvedSample =
-    sampleIdea ??
-    publishedIdeas.find((i) => i.tier === "free") ??
-    ideasToShow[0] ??
-    null;
 
   const proofBar: ProofBarData = {
     signalsTracked: stats.signalsIngested,
@@ -99,8 +92,7 @@ export default async function Home() {
       <HomeClient
         userEmail={user?.email ?? null}
         proofBar={proofBar}
-        featuredIdeas={ideasToShow}
-        sampleIdea={resolvedSample}
+        featuredIdeas={ideasToShow.map((idea) => ({ slug: idea.slug, title: idea.title, category: idea.category, tier: idea.tier, demandScore: idea.demandScore, apiCount: idea.matchedApis.length, evidenceCount: idea.evidence.length }))}
         country={country}
         sourceTallies={sourceTallies}
       />

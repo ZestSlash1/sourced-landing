@@ -27,6 +27,9 @@ import OutreachPackPanel from "./outreach-pack-panel";
 import BuilderExportPanel from "./builder-export-panel";
 import nextDynamic from "next/dynamic";
 import { BriefGraphFallback } from "@/components/r3f/brief-graph-fallback";
+import OpportunityWatchButton from "@/components/opportunity-watch-button";
+import { evidenceSummary } from "@/lib/idea-drops/evidence-summary";
+import { evidenceFingerprint, listOpportunityWatches } from "@/lib/idea-drops/watchlist";
 
 const BriefSolutionGraph = nextDynamic(
   () => import("@/components/r3f/brief-solution-graph").then((m) => m.BriefSolutionGraph),
@@ -87,6 +90,9 @@ export default async function IdeaDetailPage({ params }: { params: { slug: strin
   // and evidence are rendered straight from `idea`, unscoped, for every viewer.
   const access = await resolveAndRecordAccess(idea, viewer);
   const scoped = access.idea;
+  const summary = evidenceSummary(idea.evidence);
+  const watches = viewer.userId ? await listOpportunityWatches(viewer.userId) : [];
+  const watch = watches.find((item) => item.ideaId === idea.id);
   const triangulation = await getTriangulation(idea.sourceSignalIds);
   const relatedIdeas = await listPublishedIdeasByCategory(idea.category, { excludeId: idea.id, limit: 3 });
   const categorySlug = slugify(idea.category);
@@ -108,7 +114,7 @@ export default async function IdeaDetailPage({ params }: { params: { slug: strin
           ← Back to feed
         </Link>
         <a
-          href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Building this micro-SaaS: "${idea.title}" (Demand score: ${idea.demandScore}%)\n\nValidated build brief via @getsourced:`)}&url=${encodeURIComponent(absoluteUrl(`/feed/${idea.slug}`))}`}
+          href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Building this micro-SaaS: "${idea.title}" (Research score: ${idea.demandScore}/100)\n\nResearch brief via @getsourced:`)}&url=${encodeURIComponent(absoluteUrl(`/feed/${idea.slug}`))}`}
           target="_blank"
           rel="noopener noreferrer"
           className="facet-chip"
@@ -127,10 +133,16 @@ export default async function IdeaDetailPage({ params }: { params: { slug: strin
         />
         <div className="brief-cover">
           <span className="tag">{idea.category}</span>
-          <span className="score">{idea.demandScore}% demand</span>
+          <span className="score">Research score {idea.demandScore}/100</span>
         </div>
         <div className="brief-body">
           <h1 className="brief-title display">{idea.title}</h1>
+          <p className="research-note">Published {formatCheckedDate(idea.publishedAt)}{idea.updatedAt ? ` · Brief updated ${formatCheckedDate(idea.updatedAt)}` : ""}. A research score is an internal ranking, not a probability of demand or success.</p>
+          <div className="brief-section">
+            <h2 className="research-heading">Keep this opportunity on your shortlist</h2>
+            <p>Save it to Account and compare the current published evidence when you return. Updates appear after the brief is revised; there are no automatic source checks or email alerts.</p>
+            <OpportunityWatchButton slug={idea.slug} signedIn={Boolean(viewer.userId)} initialFollowing={Boolean(watch)} evidenceChanged={Boolean(watch && watch.evidenceFingerprint !== evidenceFingerprint(idea.evidence))} />
+          </div>
 
           <div className="brief-section">
             <div className="eyebrow">Problem</div>
@@ -142,6 +154,7 @@ export default async function IdeaDetailPage({ params }: { params: { slug: strin
 
           <div className="brief-section">
             <div className="eyebrow">Evidence · {idea.evidence.length} source{idea.evidence.length === 1 ? "" : "s"}</div>
+            <p className="research-note">{summary.entries} entries · {summary.uniqueUrls} distinct URLs · {summary.repeatedUrls} repeated URLs. Distinct URLs and platform counts do not establish independent buyers. Cross-posts and shared authors have not been audited. Source dates are original post dates, not last-verified dates.</p>
             {triangulation ? (
               <div style={{ margin: "0 0 12px" }}>
                 <TriangulationBadge stats={triangulation.stats} />
@@ -155,6 +168,7 @@ export default async function IdeaDetailPage({ params }: { params: { slug: strin
                     {e.subforum ? ` · ${e.subforum}` : ""}
                   </a>{" "}
                   — {e.quote}
+                  <div className="research-note">Source date: {Number.isFinite(Date.parse(e.date)) ? formatCheckedDate(e.date) : "Not recorded"}</div>
                 </li>
               ))}
             </ul>
@@ -170,6 +184,12 @@ export default async function IdeaDetailPage({ params }: { params: { slug: strin
           </div>
 
           <CompetitiveLandscapeSection idea={idea} />
+          <div className="brief-section">
+            <h2 className="research-heading">Test the buyer before the build</h2>
+            <p>Start with {idea.problem.whoFeelsIt} Ask a consenting prospective user to show their last workaround, its cost, and what they have already tried. Compare the current alternatives before proposing the smallest useful workflow.</p>
+            <p><strong>Continue</strong> after a concrete commitment to try a small pilot. <strong>Change direction</strong> if a narrower problem dominates. <strong>Stop</strong> if an existing alternative solves it or users will not change their workflow. These are suggested tests; no interviews or purchases are established by this brief.</p>
+            <Link href="/#sample">Read the complete sample and validation walkthrough →</Link>
+          </div>
 
           <div className="brief-section">
             <div className="eyebrow">In this category</div>
@@ -236,6 +256,7 @@ export default async function IdeaDetailPage({ params }: { params: { slug: strin
                 <Link href="/#pricing" className="btn btn-primary">
                   Upgrade for more
                 </Link>
+                <p><Link href="/#sample">Inspect the complete free sample first →</Link></p>
               </div>
             ) : access.kind === "tier-locked" ? (
               <div className="locked-preview-container" style={{ position: "relative", overflow: "hidden", borderRadius: 16, border: "1px solid var(--line)" }}>
@@ -257,6 +278,7 @@ export default async function IdeaDetailPage({ params }: { params: { slug: strin
                   <Link href="/#pricing" className="btn btn-primary" style={{ padding: "8px 20px" }}>
                     {isUsd ? "Unlock with Builder ($4.80/mo)" : "Unlock with Builder (₹399/mo)"}
                   </Link>
+                  <Link href="/#sample">Read the complete free sample first →</Link>
                 </div>
               </div>
             ) : (
@@ -351,7 +373,7 @@ function formatCheckedDate(iso: string): string {
  * tier/sign-in, same rationale as Problem/Evidence above the gated zone.
  */
 function CompetitiveLandscapeSection({ idea }: { idea: IdeaDrop }) {
-  if (!idea.competitiveLandscape) return null;
+  if (!idea.competitiveLandscape) return <div className="brief-section"><h2 className="research-heading">Alternatives not yet checked</h2><p>There is no recorded competitive research for this brief. Check current products and workarounds before treating it as an opening.</p></div>;
   const landscape = idea.competitiveLandscape;
 
   return (
@@ -359,7 +381,7 @@ function CompetitiveLandscapeSection({ idea }: { idea: IdeaDrop }) {
       <div className="eyebrow">Competitive landscape</div>
       {landscape.verdict === "no_direct_competitor" ? (
         <p style={{ margin: 0, fontSize: 14 }}>
-          No existing tool found solving this specific problem as of {formatCheckedDate(landscape.checkedAt)}.
+          The recorded search did not identify a direct competitor as of {formatCheckedDate(landscape.checkedAt)}. This is a search limitation, not proof that none exists.
         </p>
       ) : (
         <>
@@ -386,6 +408,7 @@ function CompetitiveLandscapeSection({ idea }: { idea: IdeaDrop }) {
       <p className="mono" style={{ margin: "8px 0 0", fontSize: 11.5, color: "var(--ink-soft)" }}>
         Checked {formatCheckedDate(landscape.checkedAt)}
       </p>
+      <p className="research-note">Recorded search: {landscape.searchQueryUsed}. Automated results can include irrelevant alternatives; inspect the links and verify feature claims before relying on the suggested gap.</p>
     </div>
   );
 }

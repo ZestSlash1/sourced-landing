@@ -7,11 +7,11 @@ import { useGSAP } from "@gsap/react";
 import dynamic from "next/dynamic";
 import NewsletterForm from "./newsletter-form";
 import type { ProofBarData } from "./proof-bar";
+import ResearchSample from "@/components/research-sample";
 import type { IdeaDrop } from "@/types/idea-drop";
 import { trackEvent } from "@/lib/track-client";
 import { resolveCurrency, formatPlanPrice, type Currency } from "@/lib/currency";
 import { BorderBeam } from "@/components/magicui/border-beam";
-import { ShineBorder } from "@/components/magicui/shine-border";
 import { MagicCard } from "@/components/magicui/magic-card";
 import { RainbowButton } from "@/components/magicui/rainbow-button";
 import { Marquee } from "@/components/magicui/marquee";
@@ -50,15 +50,6 @@ function loadRazorpayScript(): Promise<void> {
     document.body.appendChild(script);
   });
 }
-
-const ideaCards = [
-  { cover: "cover-1", tag: "Micro-SaaS", h: 58, title: "Client-ready P&L exports for solo bookkeepers", apis: "3 APIs matched", signals: "41 signals found", pct: 88, d: 0 },
-  { cover: "cover-2", tag: "Chrome Ext", h: 58, title: "Auto-flag duplicate line items in shared Figma comment threads", apis: "1 API matched", signals: "19 signals", pct: 64, d: 0.08 },
-  { cover: "cover-3", tag: "API Tool", h: 58, title: "Merge duplicate contacts across 3 CRMs in one call", apis: "4 APIs matched", signals: "27 signals", pct: 71, d: 0.16 },
-  { cover: "cover-4", tag: "AI Wrapper", h: 58, title: "Turn a landlord's rent-roll spreadsheet into late-fee reminders, automatically", apis: "2 APIs matched", signals: "33 signals", pct: 80, d: 0.24 },
-  { cover: "cover-5", tag: "Marketplace", h: 58, title: "Booking waitlist tool for niche tattoo studios", apis: "2 APIs matched", signals: "15 signals", pct: 52, d: 0.32 },
-  { cover: "cover-6", tag: "Micro-SaaS", h: 58, title: "One-click GST invoice reconciliation for freelancers", apis: "3 APIs matched", signals: "52 signals", pct: 95, d: 0.4 },
-];
 
 const apiChips = [
   { name: "Open Exchange Rates", cat: "Finance" },
@@ -120,8 +111,8 @@ function Reveal({
 interface HomeClientProps {
   userEmail: string | null;
   proofBar: ProofBarData;
-  featuredIdeas?: IdeaDrop[];
-  sampleIdea?: IdeaDrop | null;
+  featuredIdeas?: Array<Pick<IdeaDrop, "slug" | "title" | "category" | "tier" | "demandScore"> & { apiCount: number; evidenceCount: number }>;
+
   country?: string | null;
   sourceTallies?: SourceTallies;
 }
@@ -132,7 +123,6 @@ export default function HomeClient({
   userEmail,
   proofBar,
   featuredIdeas,
-  sampleIdea,
   country,
   sourceTallies,
 }: HomeClientProps) {
@@ -144,56 +134,6 @@ export default function HomeClient({
   const [foundingRemaining, setFoundingRemaining] = useState<number | null>(null);
   const [currency, setCurrency] = useState<Currency>(() => resolveCurrency(country));
 
-  // Slatebase Free Tier Signup Flow (Phase 1)
-  const [freeEmail, setFreeEmail] = useState(userEmail || "");
-  const [freeHoneypot, setFreeHoneypot] = useState("");
-  const [freeStatus, setFreeStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
-  const [freeMessage, setFreeMessage] = useState<string | null>(null);
-  const [isFreeFormOpen, setIsFreeFormOpen] = useState(false);
-
-  async function handleFreeSignup(e?: React.FormEvent) {
-    if (e) e.preventDefault();
-    if (!isFreeFormOpen && !userEmail) {
-      setIsFreeFormOpen(true);
-      return;
-    }
-
-    const emailToSubmit = (userEmail || freeEmail).trim();
-    if (!emailToSubmit) {
-      setFreeStatus("error");
-      setFreeMessage("Please enter your email to get started.");
-      return;
-    }
-
-    setFreeStatus("loading");
-    setFreeMessage(null);
-
-    try {
-      const res = await fetch("/api/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: emailToSubmit,
-          tier: "free",
-          source: "pricing-card",
-          hp: freeHoneypot,
-        }),
-      });
-
-      const data = (await res.json()) as { ok?: boolean; error?: string; message?: string };
-      if (!res.ok) {
-        throw new Error(data.error || "We couldn't save your signup. Please try again.");
-      }
-
-      setFreeStatus("success");
-      setFreeMessage(data.message || "You're on the list! Free tier access granted.");
-      trackEvent("free_tier_signup", { source: "pricing-card" });
-    } catch (err: unknown) {
-      setFreeStatus("error");
-      setFreeMessage(err instanceof Error ? err.message : "Something went wrong. Please try again.");
-    }
-  }
-
   const displayCards =
     featuredIdeas && featuredIdeas.length > 0
       ? featuredIdeas.slice(0, 6).map((idea, i) => ({
@@ -202,13 +142,13 @@ export default function HomeClient({
           tag: idea.category,
           h: 58,
           title: idea.title,
-          apis: `${idea.matchedApis?.length ?? 0} APIs matched`,
-          signals: `${idea.evidence?.length ?? 0} signals`,
+          apis: `${idea.apiCount} APIs matched`,
+          signals: `${idea.evidenceCount} evidence entries`,
           pct: idea.demandScore,
           tier: idea.tier,
           d: i * 0.08,
         }))
-      : ideaCards.map((c) => ({ ...c, slug: "", tier: "builder" }));
+      : [];
 
   useEffect(() => {
     fetch("/api/founding-status")
@@ -343,19 +283,19 @@ export default function HomeClient({
       <header className="hero">
         <div className="wrap hero-layout">
         <div className="hero-copy">
-          <div className="drop-cadence"><span aria-hidden="true" /> A fresh drop. Every Monday.</div>
+          <div className="drop-cadence"><span aria-hidden="true" /> Complaint research for your next build.</div>
           <h1 className="hero-title">
             Real problems.<br />
             <span className="hero-title-muted">Your next</span><br />
             <span className="hero-title-accent">weekend build.</span>
           </h1>
           <p className="hero-sub">
-            People are already asking for it. We find the complaints, connect the evidence,
-            and turn them into a brief you can actually build.
+            Inspect the complaints, compare the alternatives,
+            and choose a small problem to test before you build.
           </p>
           <div className="hero-cta-row">
-            <DiscoverButton href="/feed" label="Find your next build" />
-            <a className="hero-sample-link" href="#sample">Read a free brief <span aria-hidden="true">↗</span></a>
+            <DiscoverButton href="#sample" label="Read the complete free sample" />
+            <Link className="hero-sample-link" href="/feed">Browse the feed <span aria-hidden="true">↗</span></Link>
           </div>
           <p className="hero-footnote"><span aria-hidden="true">✓</span> Real sources <span aria-hidden="true">·</span> Scoped MVPs <span aria-hidden="true">·</span> Agent-ready prompts</p>
         </div>
@@ -365,32 +305,32 @@ export default function HomeClient({
           <div className="signal-ingress">
             <div className="hero-pipeline-wrap" aria-hidden="true">
               <PipelineField weights={[
-                sourceTallies?.hackernews ?? 126,
-                sourceTallies?.github ?? 77,
-                sourceTallies?.stackexchange ?? 117,
-                sourceTallies?.devto ?? 35,
-                sourceTallies?.lobsters ?? 15,
+                sourceTallies?.hackernews ?? 0,
+                sourceTallies?.github ?? 0,
+                sourceTallies?.stackexchange ?? 0,
+                sourceTallies?.devto ?? 0,
+                sourceTallies?.lobsters ?? 0,
               ]} />
               <div className="hero-veil" />
             </div>
             <div className="source-tally" aria-label="Tracked source signals">
-              <div className="row">HN <span className="n">{sourceTallies?.hackernews ?? 126}</span></div>
-              <div className="row">GH <span className="n">{sourceTallies?.github ?? 77}</span></div>
-              <div className="row">SE <span className="n">{sourceTallies?.stackexchange ?? 117}</span></div>
-              <div className="row">DEV <span className="n">{sourceTallies?.devto ?? 35}</span></div>
-              <div className="row">LOB <span className="n">{sourceTallies?.lobsters ?? 15}</span></div>
+              <div className="row">HN <span className="n">{sourceTallies?.hackernews ?? 0}</span></div>
+              <div className="row">GH <span className="n">{sourceTallies?.github ?? 0}</span></div>
+              <div className="row">SE <span className="n">{sourceTallies?.stackexchange ?? 0}</span></div>
+              <div className="row">DEV <span className="n">{sourceTallies?.devto ?? 0}</span></div>
+              <div className="row">LOB <span className="n">{sourceTallies?.lobsters ?? 0}</span></div>
             </div>
             <div className="pipeline-labels" aria-hidden="true">
               <span className="stage">ingest</span><span className="stage">embed</span>
               <span className="stage">cluster</span><span className="stage">draft</span><span className="stage">publish</span>
             </div>
           </div>
-          <Link className="dossier-card" href={sampleIdea?.slug ? `/feed/${sampleIdea.slug}` : "#sample"}>
-            <div className="dossier-meta mono"><span>THE OPPORTUNITY</span><span>↗</span></div>
-            <h2>{sampleIdea?.title ?? "Client-ready P&L exports for solo bookkeepers"}</h2>
-            <p>{sampleIdea?.problem.summary ?? "Turn the monthly spreadsheet cleanup into a repeatable, client-ready export."}</p>
-            <div className="dossier-tags"><span>{sampleIdea?.category ?? "Micro-SaaS"}</span><span>Build brief included</span></div>
-            <div className="dossier-footer"><span>Evidence → MVP → matched APIs</span><span className="mono">brief.md</span></div>
+          <Link className="dossier-card" href="#sample">
+            <div className="dossier-meta mono"><span>HISTORICAL WALKTHROUGH</span><span>↗</span></div>
+            <h2>A migration review notebook for Prisma teams</h2>
+            <p>Three linked discussions, current alternatives, a small MVP, and a first validation plan.</p>
+            <div className="dossier-tags"><span>Developer tools</span><span>Complete free sample</span></div>
+            <div className="dossier-footer"><span>Historical evidence → MVP → validation</span><span className="mono">brief.md</span></div>
           </Link>
           <div className="agent-block">
             <span className="agent-label mono">YOUR TOOL. YOUR WORKFLOW.</span>
@@ -487,7 +427,7 @@ export default function HomeClient({
                       <div className="idea-apis">⌁ {c.apis}</div>
                       <div className="idea-foot">
                         <span>{c.signals}</span>
-                        <span className="idea-demand mono">{c.pct}<span>/100 demand</span></span>
+                        <span className="idea-demand mono">{c.pct}<span>/100 research</span></span>
                         <div className="signal-bar" style={{ ["--pct" as string]: c.pct / 100 }}>
                           <span></span>
                         </div>
@@ -616,85 +556,8 @@ export default function HomeClient({
 
       <section className="section" id="sample">
         <div className="wrap">
-          <Reveal className="section-head">
-            <div className="eyebrow">This week&apos;s free card</div>
-            <h2>One, in full. The rest are in your feed.</h2>
-          </Reveal>
-          <Reveal scale style={{ maxWidth: 740, margin: "0 auto" }}>
-            <Card3DTilt maxTilt={6} style={{ borderRadius: 20 }}>
-              <ShineBorder
-                borderRadius={20}
-                duration={18}
-                color={[
-                  "rgba(124, 58, 237, 0.55)",
-                  "rgba(167, 139, 250, 0.35)",
-                  "rgba(167, 139, 250, 0.15)",
-                  "rgba(139, 92, 246, 0.5)",
-                ]}
-              >
-                <div className="feature-card" style={{ maxWidth: "100%", margin: 0, border: "none", boxShadow: "none" }}>
-                  <div className="feature-cover">
-                    <span className="tag">{sampleIdea?.category ?? "Micro-SaaS"}</span>
-                    <span className="score">{sampleIdea?.demandScore ?? 95}% demand signal</span>
-                  </div>
-                  <div className="feature-body">
-                    <h3>{sampleIdea?.title ?? "Bookkeepers still hand-format P&Ls in Excel for every client, every month."}</h3>
-                    <p>
-                      {sampleIdea?.problem.summary ??
-                        "41 separate complaints across developer forums and review sites in the last 90 days naming this exact gap. Several already pay a VA specifically to reformat exports by hand."}
-                    </p>
-                    <div className="feature-meta">
-                      <div><div className="fm-label">Buyer</div><div className="fm-value">{sampleIdea?.problem.whoFeelsIt ?? "Solo bookkeepers"}</div></div>
-                      <div>
-                        <div className="fm-label">Build time</div>
-                        <div className="fm-value">
-                          {sampleIdea?.difficulty
-                            ? sampleIdea.difficulty.soloWeekendProject
-                              ? "~1 weekend"
-                              : `~${sampleIdea.difficulty.estimatedHours} hrs`
-                            : "~1 weekend"}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="fm-label">Model</div>
-                        <div className="fm-value">
-                          {sampleIdea?.category === "Micro-SaaS" ? "$10–29/mo" : "Freemium / Usage"}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="fm-label">Stack</div>
-                        <div className="fm-value">
-                          {sampleIdea?.launchStack && sampleIdea.launchStack.length > 0
-                            ? sampleIdea.launchStack.map((s) => s.tool).slice(0, 2).join(" + ")
-                            : "Next.js + Supabase"}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="fm-label">APIs matched</div>
-                        <div className="fm-value">
-                          {sampleIdea?.matchedApis && sampleIdea.matchedApis.length > 0
-                            ? sampleIdea.matchedApis.map((a) => a.name).slice(0, 2).join(", ")
-                            : "Open Exchange Rates, PDFShift"}
-                        </div>
-                      </div>
-                      <div><div className="fm-label">Opens in</div><div className="fm-value">{agent.label}</div></div>
-                    </div>
-                    {sampleIdea?.slug && (
-                      <div style={{ marginTop: 22 }}>
-                        <Link
-                          href={`/feed/${sampleIdea.slug}`}
-                          className="btn btn-primary"
-                          style={{ padding: "8px 18px", fontSize: 13, display: "inline-flex", alignItems: "center", gap: 6 }}
-                        >
-                          Read full free build brief →
-                        </Link>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </ShineBorder>
-            </Card3DTilt>
-          </Reveal>
+          <div className="section-head"><h2>See the research before you subscribe.</h2><p className="section-sub">A complete example, including the reasons you might choose not to build it. No account required.</p></div>
+          <ResearchSample />
         </div>
       </section>
 
@@ -702,8 +565,8 @@ export default function HomeClient({
         <div className="wrap">
           <Reveal className="section-head">
             <div className="eyebrow">Pricing</div>
-            <h2>Less than a coffee run, per idea</h2>
-            <p className="section-sub">Cancel anytime. Every paid plan comes with a 7-day refund, no questions.</p>
+            <h2>Inspect the sample. Then choose your access.</h2>
+            <p className="section-sub">Cancel anytime. Every paid plan comes with a 7-day refund, no questions. <a href="#sample">Read the complete sample first →</a></p>
             <div
               className="currency-picker"
               style={{
@@ -759,6 +622,7 @@ export default function HomeClient({
               </button>
             </div>
           </Reveal>
+          <p className="research-note">Studio currently provides unlimited brief access. Custom research requests, guaranteed turnaround, revisions, hosted databases, and early delivery are not available in this release.</p>
           <div className="pricing-grid">
             <Reveal delay={0} className="plan plan-card" onPointerMove={handleCardPointerMove}>
               <div className="plan-name">Free</div>
@@ -773,110 +637,7 @@ export default function HomeClient({
                 <li>API match: name only, no docs</li>
                 <li>No card required</li>
               </ul>
-              {freeStatus === "success" ? (
-                <div
-                  className="free-signup-success"
-                  role="status"
-                >
-                  ✓ {freeMessage || "You're in! Free tier access granted."}
-                </div>
-              ) : isFreeFormOpen && !userEmail ? (
-                <form
-                  onSubmit={handleFreeSignup}
-                  noValidate
-                  style={{ display: "flex", flexDirection: "column", gap: 8 }}
-                >
-                  <input
-                    type="text"
-                    name="company_hp"
-                    value={freeHoneypot}
-                    onChange={(e) => setFreeHoneypot(e.target.value)}
-                    style={{ display: "none" }}
-                    tabIndex={-1}
-                    autoComplete="off"
-                    aria-hidden="true"
-                  />
-                  <input
-                    type="email"
-                    aria-label="Email for free access"
-                    aria-invalid={freeStatus === "error"}
-                    placeholder="Enter your email"
-                    value={freeEmail}
-                    onChange={(e) => {
-                      setFreeEmail(e.target.value);
-                      if (freeStatus === "error") setFreeStatus("idle");
-                    }}
-                    required
-                    disabled={freeStatus === "loading"}
-                    autoFocus
-                    style={{
-                      width: "100%",
-                      padding: "10px 12px",
-                      borderRadius: "var(--r-sm)",
-                      border:
-                        freeStatus === "error"
-                          ? "1.5px solid var(--coral, #e5533d)"
-                          : "1.5px solid var(--line)",
-                      background: "var(--bg)",
-                      color: "var(--ink)",
-                      fontSize: 13.5,
-                      fontFamily: "inherit",
-                      outline: "none",
-                      boxSizing: "border-box",
-                    }}
-                  />
-                  <button
-                    type="submit"
-                    className="plan-btn"
-                    disabled={freeStatus === "loading"}
-                    style={{
-                      background: "var(--violet)",
-                      borderColor: "var(--violet)",
-                      color: "#fff",
-                    }}
-                  >
-                    {freeStatus === "loading" ? "Claiming access…" : "Claim free access"}
-                  </button>
-                  {freeStatus === "error" && freeMessage && (
-                    <div
-                      style={{
-                        color: "var(--coral, #e5533d)",
-                        fontSize: 12,
-                        textAlign: "center",
-                      }}
-                    >
-                      {freeMessage}
-                    </div>
-                  )}
-                </form>
-              ) : (
-                <>
-                  <button
-                    type="button"
-                    className="plan-btn"
-                    onClick={() => handleFreeSignup()}
-                    disabled={freeStatus === "loading"}
-                  >
-                    {freeStatus === "loading"
-                      ? "Claiming access…"
-                      : userEmail
-                      ? `Claim free tier (${userEmail})`
-                      : "Start free"}
-                  </button>
-                  {freeStatus === "error" && freeMessage && (
-                    <div
-                      style={{
-                        color: "var(--coral, #e5533d)",
-                        fontSize: 12,
-                        textAlign: "center",
-                        marginTop: 6,
-                      }}
-                    >
-                      {freeMessage}
-                    </div>
-                  )}
-                </>
-              )}
+              <Link href="/login?next=%2Faccount" className="plan-btn">Create a free account</Link>
             </Reveal>
             <Reveal
               delay={0.08}
@@ -885,9 +646,9 @@ export default function HomeClient({
               onPointerMove={handleCardPointerMove}
             >
               <BorderBeam duration={16} colorFrom="rgba(167, 139, 250, 0.65)" colorTo="rgba(124, 58, 237, 0.25)" />
-              <div className="plan-tag">most used</div>
+              <div className="plan-tag">4 new unlocks / month</div>
               <div className="plan-name">Builder</div>
-              <div className="plan-desc">For shipping one idea a week without waiting on quota.</div>
+              <div className="plan-desc">For comparing scoped briefs and testing one project at a time.</div>
               {(() => {
                 const builderMonthly = formatPlanPrice("builder-monthly", currency);
                 const builderFounding = formatPlanPrice("builder-founding", currency);
@@ -926,8 +687,8 @@ export default function HomeClient({
                 );
               })()}
               <ul className="plan-features">
-                <li>4 full idea cards every month</li>
-                <li>Full searchable archive</li>
+                <li>4 new full brief unlocks per calendar month</li>
+                <li>Search the archive; revisit prior unlocks anytime</li>
                 <li>Buyer profile + build brief on every card</li>
                 <li>Full API match: auth type, free-tier limits, docs links</li>
               </ul>
@@ -959,10 +720,10 @@ export default function HomeClient({
               })()}
               <ul className="plan-features">
                 <li>Everything in Builder</li>
-                <li>Instant dev database hosting bundle</li>
-                <li>One custom idea request / month</li>
-                <li>$0 launch stack: free-tier hosting, auth &amp; email picks per idea</li>
-                <li>48-hour early access to new cards</li>
+                <li>Unlimited full brief access</li>
+                <li>Downloadable build specs and database schemas</li>
+                <li>Launch-stack suggestions with provider limits to check</li>
+                <li>Save opportunities and review evidence changes in Account</li>
               </ul>
               <button
                 type="button"
@@ -976,8 +737,8 @@ export default function HomeClient({
           </div>
           <div style={{ textAlign: "center", marginTop: 22, fontSize: 13, color: "var(--ink-soft)" }}>
             {currency === "USD"
-              ? "Billed securely in equivalent INR (~₹399 / ₹999) via Razorpay · Accepts all international Visa, Mastercard, and Amex cards with automatic bank conversion"
-              : "Billed securely via Razorpay in INR · Accepts all international Visa, Mastercard, and Amex cards"}
+              ? "USD figures are approximate display equivalents. Checkout charges INR: Builder ₹399/month; Studio ₹999/month. International payment activation is pending."
+              : "Checkout charges INR via Razorpay: Builder ₹399/month; Studio ₹999/month. International payment activation is pending."}
           </div>
           {checkoutError && (
             <p style={{ textAlign: "center", color: "var(--coral, #e5533d)", marginTop: 16 }}>
@@ -1010,9 +771,9 @@ export default function HomeClient({
             <Reveal delay={0} className="faq-item">
               <h3>Where do the matched APIs come from?</h3>
               <p>
-                From a structured, regularly-synced copy of the{" "}
+                From a structured copy of the{" "}
                 <a href="https://github.com/public-apis/public-apis" target="_blank" rel="noopener noreferrer">public-apis directory</a>
-                , a 470k-star, MIT-licensed community list. We match categories to your
+                , an MIT-licensed community list. We match categories to your
                 idea&apos;s build brief; full docs links and rate limits ship on Builder and
                 above.
               </p>
@@ -1027,7 +788,7 @@ export default function HomeClient({
             </Reveal>
             <Reveal delay={0.15} className="faq-item">
               <h3>What if I build one and it doesn&apos;t work?</h3>
-              <p>Some won&apos;t. That&apos;s true of every idea anywhere. Sourced removes the guessing on whether anyone wants it in the first place; the execution risk is still yours, same as any build.</p>
+              <p>Complaints help identify problems to investigate. They do not establish willingness to pay, switching intent, or a viable market. Test the buyer and the smallest useful workflow before building.</p>
             </Reveal>
           </div>
         </div>
@@ -1044,8 +805,8 @@ export default function HomeClient({
         <div className="wrap">
           <div className="newsletter-panel">
             <div>
-              <h2 id="newsletter-heading">One verified problem a week.</h2>
-              <p>Get the evidence, the signal count, and the build brief when the next drop is ready.</p>
+              <h2 id="newsletter-heading">Get the next published brief.</h2>
+              <p>Join the newsletter for new drops. Your saved shortlist is reviewed in Account; it does not send automatic evidence alerts.</p>
             </div>
             <NewsletterForm sourcePath="/" />
           </div>

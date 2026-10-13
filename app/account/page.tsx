@@ -5,6 +5,8 @@ import { getQuotaStatus, nextQuotaResetIso, unlockedIdeaIds } from "@/lib/idea-d
 import { listPublishedIdeas } from "@/lib/idea-drops/repository";
 import { getSubscriberTopics } from "@/lib/subscriptions/subscriber-topics";
 import SignOutButton from "./sign-out-button";
+import OpportunityWatchButton from "@/components/opportunity-watch-button";
+import { evidenceFingerprint, listOpportunityWatches } from "@/lib/idea-drops/watchlist";
 
 export const dynamic = "force-dynamic";
 
@@ -36,11 +38,12 @@ export default async function AccountPage() {
   const graceEndsAt = formatDate(subscriber.gracePeriodEndsAt);
   const quotaResetsOn = formatDate(nextQuotaResetIso());
 
-  const [quota, unlockedIds, publishedIdeas, topics] = await Promise.all([
+  const [quota, unlockedIds, publishedIdeas, topics, watches] = await Promise.all([
     getQuotaStatus(subscriber.id, subscriber.tier),
     unlockedIdeaIds(subscriber.id),
     listPublishedIdeas(),
     getSubscriberTopics(subscriber.id),
+    subscriber.userId ? listOpportunityWatches(subscriber.userId) : Promise.resolve([]),
   ]);
 
   const unlockedBriefs = publishedIdeas.filter((idea) => unlockedIds.has(idea.id));
@@ -59,6 +62,21 @@ export default async function AccountPage() {
       </div>
 
       <div className="account-grid" style={{ marginTop: 24 }}>
+        <section className="account-section-card" id="shortlist" aria-labelledby="shortlist-heading">
+          <h2 id="shortlist-heading" className="account-section-title">Your opportunity shortlist</h2>
+          <p className="research-note">Compare evidence with your last review. Changes appear here when a published brief is revised; automatic monitoring and email alerts are not included.</p>
+          {watches.length === 0 ? <p>Save an opportunity from its brief to revisit it here. <Link href="/feed">Browse the feed →</Link></p> : watches.map((watch) => {
+            const idea = publishedIdeas.find((item) => item.id === watch.ideaId);
+            if (!idea) return <p key={watch.ideaId}>A saved opportunity is no longer published.</p>;
+            const changed = evidenceFingerprint(idea.evidence) !== watch.evidenceFingerprint;
+            return <div className="shortlist-item" key={watch.ideaId}>
+              <h3><Link href={`/feed/${idea.slug}`}>{idea.title}</Link></h3>
+              <p><strong>{changed ? "Evidence changed since your last review" : "No evidence changes since your last review"}</strong></p>
+              <p className="research-note">Last reviewed {formatDate(watch.reviewedAt)} · {idea.evidence.length} current evidence entries{idea.updatedAt ? ` · Brief updated ${formatDate(idea.updatedAt)}` : ""}</p>
+              <OpportunityWatchButton slug={idea.slug} signedIn initialFollowing evidenceChanged={changed} />
+            </div>;
+          })}
+        </section>
         {/* Profile Card */}
         <div className="account-profile-box">
           <div className="account-avatar-wrap">

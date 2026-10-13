@@ -28,7 +28,12 @@ describe("Homepage Visual Overhaul Integration", () => {
     expect(html).toContain("obsidian-split");
     expect(html).toContain("brief-workbench");
     expect(html).toContain("border-beam");
-    expect(html).toContain("shine-border");
+    expect(html).toContain("research-sample");
+    expect(html).toContain("Historical research walkthrough");
+    expect(html).toContain("https://github.com/prisma/orm/issues/4688");
+    expect(html).toContain("Custom research requests, guaranteed turnaround");
+    expect(html).not.toContain("41 separate complaints");
+    expect(html).not.toContain("Accepts all international");
     expect(html).toContain("hero-pipeline-wrap");
     expect(html).toContain("pipeline-labels");
   });

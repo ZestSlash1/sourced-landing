@@ -11,8 +11,8 @@ describe("Pricing Restyle Visuals", () => {
     expect(homeClientContent).toContain("--my");
   });
 
-  it("includes most used badge on Builder plan", () => {
-    expect(homeClientContent).toContain("most used");
+  it("describes actual Builder unlock allowance", () => {
+    expect(homeClientContent).toContain("4 new unlocks / month");
   });
 
   it("defines plan-card radial-gradient styling in globals.css", () => {

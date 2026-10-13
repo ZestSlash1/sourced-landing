@@ -15,7 +15,7 @@ import FeedBrowser, { type FeedCardData } from "@/components/feed-browser";
 export const dynamic = "force-dynamic";
 
 const FEED_DESCRIPTION =
-  "Browse Sourced's feed of validated startup ideas: real problems people already complain about, backed by evidence, ready to build.";
+  "Browse Sourced's feed of startup ideas to investigate: linked complaints, scoped build briefs, and practical validation steps.";
 
 export const metadata: Metadata = {
   title: "Startup Idea Feed",
@@ -77,12 +77,13 @@ export default async function FeedPage() {
       <p className="app-sub">
         {topics.length > 0
           ? "Filtered to your picked topics."
-          : "All published validated drops. Filter by category, stack, or weekend scope."}
+          : "Published research briefs. Filter by category, stack, or weekend scope."}
       </p>
       <Link href="/methodology" className="feed-methodology-link">
         How are these sourced? →
       </Link>
 
+      <p className="research-note"><Link href="/#sample">New here? Read the complete free sample →</Link> Complaints are research leads, not proof of willingness to pay.</p>
       <FeedBrowser items={cardItems} />
       <section className="newsletter-inline" aria-labelledby="feed-newsletter-heading">
         <h2 id="feed-newsletter-heading">Get the next proof drop</h2>
