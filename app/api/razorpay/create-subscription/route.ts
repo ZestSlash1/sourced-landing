@@ -30,6 +30,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid or missing plan" }, { status: 400 });
   }
 
+  if (body.plan === "builder-founding" && !process.env.RAZORPAY_PLAN_BUILDER_FOUNDING) {
+    return NextResponse.json({ error: "Founding checkout is unavailable. Choose Builder monthly." }, { status: 503 });
+  }
+
   if (body.plan === "builder-founding" && (await foundingSlotsRemaining()) <= 0) {
     return NextResponse.json({ error: "Founding-rate spots are gone — get Builder at the regular price." }, { status: 409 });
   }

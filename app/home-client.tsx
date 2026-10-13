@@ -153,8 +153,8 @@ export default function HomeClient({
   useEffect(() => {
     fetch("/api/founding-status")
       .then((res) => (res.ok ? res.json() : null))
-      .then((data: { remaining: number; total: number } | null) => {
-        if (data) setFoundingRemaining(data.remaining);
+      .then((data: { remaining: number | null; total: number; available: boolean } | null) => {
+        setFoundingRemaining(data?.available ? data.remaining : null);
       })
       .catch(() => {});
   }, []);
