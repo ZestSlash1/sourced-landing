@@ -5,7 +5,6 @@ import Link from "next/link";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import dynamic from "next/dynamic";
-import DotField from "@/components/DotField";
 import NewsletterForm from "./newsletter-form";
 import type { ProofBarData } from "./proof-bar";
 import type { IdeaDrop } from "@/types/idea-drop";
@@ -15,12 +14,11 @@ import { BorderBeam } from "@/components/magicui/border-beam";
 import { ShineBorder } from "@/components/magicui/shine-border";
 import { MagicCard } from "@/components/magicui/magic-card";
 import { RainbowButton } from "@/components/magicui/rainbow-button";
-import { AnimatedGradientText } from "@/components/magicui/animated-gradient-text";
 import { Marquee } from "@/components/magicui/marquee";
 import { Meteors } from "@/components/magicui/meteors";
-import { ProceduralTextMask } from "@/components/procedural-text-mask";
 import { Card3DTilt } from "@/components/card-3d-tilt";
-import { RadarFallback } from "@/components/r3f/radar-fallback";
+import { DiscoverButton } from "@/components/obsidian/discover-button";
+import { SplitShowcase } from "@/components/obsidian/split-showcase";
 import type { SourceTallies } from "@/lib/ingest/types";
 
 const ProofBar = dynamic(() => import("./proof-bar"), { loading: () => null });
@@ -338,55 +336,64 @@ export default function HomeClient({
   );
 
   return (
-    <>
-      <div className="hero-pipeline-wrap" aria-hidden="true">
-        <PipelineField
-          weights={[
-            sourceTallies?.hackernews ?? 126,
-            sourceTallies?.github ?? 77,
-            sourceTallies?.stackexchange ?? 117,
-            sourceTallies?.devto ?? 35,
-            sourceTallies?.lobsters ?? 15,
-          ]}
-        />
-        <div className="hero-veil" />
-      </div>
+    <div className="sourced-home">
       <a href="#main-content" className="skip-link">Skip to content</a>
 
       <main id="main-content">
-      <header className="hero" style={{ position: "relative" }}>
-        <div className="source-tally">
-          <div className="row"><span className="sw" style={{ background: "#ff8a4d" }}></span>HN <span className="n">{sourceTallies?.hackernews ?? 126}</span></div>
-          <div className="row"><span className="sw" style={{ background: "#7c5cff" }}></span>GH <span className="n">{sourceTallies?.github ?? 77}</span></div>
-          <div className="row"><span className="sw" style={{ background: "#4dd9e8" }}></span>SE <span className="n">{sourceTallies?.stackexchange ?? 117}</span></div>
-          <div className="row"><span className="sw" style={{ background: "#5fe0a0" }}></span>DEV <span className="n">{sourceTallies?.devto ?? 35}</span></div>
-          <div className="row"><span className="sw" style={{ background: "#e05fd0" }}></span>LOB <span className="n">{sourceTallies?.lobsters ?? 15}</span></div>
-        </div>
-
-        <div className="wrap" style={{ position: "relative", zIndex: 2 }}>
-          <div style={{ marginBottom: 20 }}>
-            <AnimatedGradientText badge>
-              <span className="dot" style={{ width: 7, height: 7, borderRadius: "50%", background: "#10B981", display: "inline-block", boxShadow: "0 0 8px #10B981" }}></span>
-              <span>⚡ VERIFIED DROPS EVERY MONDAY MORNING</span>
-            </AnimatedGradientText>
-          </div>
+      <header className="hero">
+        <div className="wrap hero-layout">
+        <div className="hero-copy">
+          <div className="drop-cadence"><span aria-hidden="true" /> A fresh drop. Every Monday.</div>
           <h1 className="hero-title">
-            <span className="line"><span>Real complaints,</span></span>
-            <span className="line"><ProceduralTextMask text="triangulated." /></span>
+            Real problems.<br />
+            <span className="hero-title-muted">Your next</span><br />
+            <span className="hero-title-accent">weekend build.</span>
           </h1>
           <p className="hero-sub">
-            Three or more independent complaints about the same problem become an
-            evidence-backed build brief, ready to paste into Claude Code, Cursor, or v0.
+            People are already asking for it. We find the complaints, connect the evidence,
+            and turn them into a brief you can actually build.
           </p>
           <div className="hero-cta-row">
-            <RainbowButton href="#pricing">
-              Browse this week&apos;s ideas ⚡
-            </RainbowButton>
-            <a className="btn btn-ghost" href="#sample">See a free one ↓</a>
+            <DiscoverButton href="/feed" label="Find your next build" />
+            <a className="hero-sample-link" href="#sample">Read a free brief <span aria-hidden="true">↗</span></a>
           </div>
+          <p className="hero-footnote"><span aria-hidden="true">✓</span> Real sources <span aria-hidden="true">·</span> Scoped MVPs <span aria-hidden="true">·</span> Agent-ready prompts</p>
+        </div>
 
+        <div className="brief-workbench" aria-label="Build brief preview">
+          <div className="workbench-topline mono"><span><span className="workbench-dot" /> SOURCED / FIELD NOTES</span><span>01 — BUILD BRIEF</span></div>
+          <div className="signal-ingress">
+            <div className="hero-pipeline-wrap" aria-hidden="true">
+              <PipelineField weights={[
+                sourceTallies?.hackernews ?? 126,
+                sourceTallies?.github ?? 77,
+                sourceTallies?.stackexchange ?? 117,
+                sourceTallies?.devto ?? 35,
+                sourceTallies?.lobsters ?? 15,
+              ]} />
+              <div className="hero-veil" />
+            </div>
+            <div className="source-tally" aria-label="Tracked source signals">
+              <div className="row">HN <span className="n">{sourceTallies?.hackernews ?? 126}</span></div>
+              <div className="row">GH <span className="n">{sourceTallies?.github ?? 77}</span></div>
+              <div className="row">SE <span className="n">{sourceTallies?.stackexchange ?? 117}</span></div>
+              <div className="row">DEV <span className="n">{sourceTallies?.devto ?? 35}</span></div>
+              <div className="row">LOB <span className="n">{sourceTallies?.lobsters ?? 15}</span></div>
+            </div>
+            <div className="pipeline-labels" aria-hidden="true">
+              <span className="stage">ingest</span><span className="stage">embed</span>
+              <span className="stage">cluster</span><span className="stage">draft</span><span className="stage">publish</span>
+            </div>
+          </div>
+          <Link className="dossier-card" href={sampleIdea?.slug ? `/feed/${sampleIdea.slug}` : "#sample"}>
+            <div className="dossier-meta mono"><span>THE OPPORTUNITY</span><span>↗</span></div>
+            <h2>{sampleIdea?.title ?? "Client-ready P&L exports for solo bookkeepers"}</h2>
+            <p>{sampleIdea?.problem.summary ?? "Turn the monthly spreadsheet cleanup into a repeatable, client-ready export."}</p>
+            <div className="dossier-tags"><span>{sampleIdea?.category ?? "Micro-SaaS"}</span><span>Build brief included</span></div>
+            <div className="dossier-footer"><span>Evidence → MVP → matched APIs</span><span className="mono">brief.md</span></div>
+          </Link>
           <div className="agent-block">
-            <span className="agent-label">Every brief exports ready for:</span>
+            <span className="agent-label mono">YOUR TOOL. YOUR WORKFLOW.</span>
             <div className="agent-picker" role="tablist" aria-label="Choose your build tool">
               {agents.map((a) => (
                 <button
@@ -396,6 +403,17 @@ export default function HomeClient({
                   aria-selected={a.id === agentId}
                   aria-controls="agent-snippet-panel"
                   className={`agent-btn ${a.id === agentId ? "is-active" : ""}`}
+                  tabIndex={a.id === agentId ? 0 : -1}
+                  onKeyDown={(event) => {
+                    const current = agents.findIndex((item) => item.id === a.id);
+                    const next = event.key === "ArrowRight" ? (current + 1) % agents.length
+                      : event.key === "ArrowLeft" ? (current - 1 + agents.length) % agents.length
+                      : event.key === "Home" ? 0 : event.key === "End" ? agents.length - 1 : -1;
+                    if (next < 0) return;
+                    event.preventDefault();
+                    setAgentId(agents[next].id);
+                    document.getElementById(`agent-tab-${agents[next].id}`)?.focus();
+                  }}
                   onClick={() => setAgentId(a.id)}
                 >
                   {a.label}
@@ -408,6 +426,7 @@ export default function HomeClient({
               id="agent-snippet-panel"
               role="tabpanel"
               aria-labelledby={`agent-tab-${agentId}`}
+              tabIndex={0}
             >
               <span className="prompt">$</span>
               <span>{agent.cmd}</span>
@@ -415,16 +434,11 @@ export default function HomeClient({
           </div>
         </div>
 
-        <div className="pipeline-labels">
-          <span className="stage">ingest</span>
-          <span className="stage">embed</span>
-          <span className="stage">cluster</span>
-          <span className="stage">draft</span>
-          <span className="stage">publish</span>
         </div>
       </header>
 
       <div className="masonry-peek">
+        <div className="wrap collection-heading"><div><span className="eyebrow">THE IDEA SHELF</span><h2>A few problems worth solving.</h2></div><Link href="/feed">Explore all drops <span aria-hidden="true">↗</span></Link></div>
         <div className="columns" id="masonry">
           {displayCards.map((c, i) => {
             const href = c.slug ? `/feed/${c.slug}` : "/feed";
@@ -468,10 +482,12 @@ export default function HomeClient({
                       )}
                     </div>
                     <div className="idea-body">
+                      <span className="idea-index mono">BRIEF / {String(i + 1).padStart(2, "0")}</span>
                       <p className="idea-card-title">{c.title}</p>
                       <div className="idea-apis">⌁ {c.apis}</div>
                       <div className="idea-foot">
                         <span>{c.signals}</span>
+                        <span className="idea-demand mono">{c.pct}<span>/100 demand</span></span>
                         <div className="signal-bar" style={{ ["--pct" as string]: c.pct / 100 }}>
                           <span></span>
                         </div>
@@ -508,9 +524,27 @@ export default function HomeClient({
         <div className="wrap">
           <Reveal className="section-head">
             <div className="eyebrow">How it works</div>
-            <h2>Three checks, not one prompt</h2>
-            <p className="section-sub">Every idea earns its place before it reaches your feed.</p>
+            <h2>From someone&apos;s headache<br />to your head start.</h2>
+            <p className="section-sub">Follow the evidence. Then open your editor.</p>
           </Reveal>
+          <SplitShowcase items={[
+            {
+              eyebrow: "01 / THE SIGNAL",
+              title: "A complaint is a starting point.",
+              description: "We look for independent people describing the same problem, then cluster the signals and review the evidence.",
+              href: "/methodology",
+              action: "See how we source",
+              visual: <div className="signal-stack"><span><b>HN</b> A recurring pain point <i>↗</i></span><span><b>GH</b> An unresolved issue <i>↗</i></span><span><b>SE</b> Another workaround <i>↗</i></span><small>3+ independent signals → one problem</small></div>,
+            },
+            {
+              eyebrow: "02 / THE HEAD START",
+              title: "A brief gets you building.",
+              description: "Know who it is for, what to ship first, and which APIs to use. Take the scoped brief straight into your coding agent.",
+              href: "#sample",
+              action: "Open a sample brief",
+              visual: <div className="brief-stack"><div className="brief-sheet"><span className="mono">brief.md <span>↗</span></span><strong>Your next build</strong><div><span>✓ Buyer & problem</span><span>✓ MVP scope</span><span>✓ APIs & agent prompts</span></div></div></div>,
+            },
+          ]} />
           <div className="stages">
             <Reveal delay={0}>
               <MagicCard className="stage" gradientColor="rgba(124, 58, 237, 0.16)">
@@ -542,12 +576,7 @@ export default function HomeClient({
           <Reveal className="section-head">
             <div className="eyebrow">Under the hood</div>
             <h2>Every idea comes wired to real APIs</h2>
-            <p className="section-sub">
-              Stage 3 of the pipeline matches each build brief against a structured copy of
-              the public-apis directory (470k+ stars, MIT-licensed, maintained by the
-              open-source community), so you&apos;re never staring at a brief wondering what
-              actually powers it.
-            </p>
+            <p className="section-sub">The right building blocks, already researched. Each brief is matched against the open-source public-apis directory, with docs and free-tier limits on Builder and above.</p>
           </Reveal>
           <div style={{ margin: "32px 0 28px", display: "flex", flexDirection: "column", gap: 14 }}>
             <Marquee pauseOnHover speed={30} gap="12px">
@@ -598,8 +627,8 @@ export default function HomeClient({
                 duration={18}
                 color={[
                   "rgba(124, 58, 237, 0.55)",
-                  "rgba(56, 189, 248, 0.45)",
-                  "rgba(16, 185, 129, 0.35)",
+                  "rgba(167, 139, 250, 0.35)",
+                  "rgba(167, 139, 250, 0.15)",
                   "rgba(139, 92, 246, 0.5)",
                 ]}
               >
@@ -676,6 +705,7 @@ export default function HomeClient({
             <h2>Less than a coffee run, per idea</h2>
             <p className="section-sub">Cancel anytime. Every paid plan comes with a 7-day refund, no questions.</p>
             <div
+              className="currency-picker"
               style={{
                 display: "inline-flex",
                 alignItems: "center",
@@ -691,6 +721,7 @@ export default function HomeClient({
             >
               <button
                 type="button"
+                aria-pressed={currency === "USD"}
                 onClick={() => setCurrency("USD")}
                 style={{
                   padding: "4px 12px",
@@ -701,7 +732,7 @@ export default function HomeClient({
                   border: "none",
                   cursor: "pointer",
                   background: currency === "USD" ? "var(--ink)" : "transparent",
-                  color: currency === "USD" ? "#fff" : "var(--ink-soft)",
+                  color: currency === "USD" ? "var(--bg)" : "var(--ink-soft)",
                   transition: "all 0.15s ease",
                 }}
               >
@@ -709,6 +740,7 @@ export default function HomeClient({
               </button>
               <button
                 type="button"
+                aria-pressed={currency === "INR"}
                 onClick={() => setCurrency("INR")}
                 style={{
                   padding: "4px 12px",
@@ -719,7 +751,7 @@ export default function HomeClient({
                   border: "none",
                   cursor: "pointer",
                   background: currency === "INR" ? "var(--ink)" : "transparent",
-                  color: currency === "INR" ? "#fff" : "var(--ink-soft)",
+                  color: currency === "INR" ? "var(--bg)" : "var(--ink-soft)",
                   transition: "all 0.15s ease",
                 }}
               >
@@ -743,17 +775,8 @@ export default function HomeClient({
               </ul>
               {freeStatus === "success" ? (
                 <div
-                  style={{
-                    padding: "12px 14px",
-                    borderRadius: "var(--r-sm)",
-                    background: "rgba(198, 255, 61, 0.25)",
-                    border: "1px solid rgba(198, 255, 61, 0.6)",
-                    color: "#3F6B00",
-                    fontSize: 13.5,
-                    fontWeight: 600,
-                    textAlign: "center",
-                    lineHeight: 1.4,
-                  }}
+                  className="free-signup-success"
+                  role="status"
                 >
                   ✓ {freeMessage || "You're in! Free tier access granted."}
                 </div>
@@ -775,6 +798,8 @@ export default function HomeClient({
                   />
                   <input
                     type="email"
+                    aria-label="Email for free access"
+                    aria-invalid={freeStatus === "error"}
                     placeholder="Enter your email"
                     value={freeEmail}
                     onChange={(e) => {
@@ -792,7 +817,7 @@ export default function HomeClient({
                         freeStatus === "error"
                           ? "1.5px solid var(--coral, #e5533d)"
                           : "1.5px solid var(--line)",
-                      background: "#fff",
+                      background: "var(--bg)",
                       color: "var(--ink)",
                       fontSize: 13.5,
                       fontFamily: "inherit",
@@ -859,7 +884,7 @@ export default function HomeClient({
               style={{ position: "relative" }}
               onPointerMove={handleCardPointerMove}
             >
-              <BorderBeam duration={16} colorFrom="rgba(138, 43, 226, 0.75)" colorTo="rgba(6, 182, 212, 0.65)" />
+              <BorderBeam duration={16} colorFrom="rgba(167, 139, 250, 0.65)" colorTo="rgba(124, 58, 237, 0.25)" />
               <div className="plan-tag">most used</div>
               <div className="plan-name">Builder</div>
               <div className="plan-desc">For shipping one idea a week without waiting on quota.</div>
@@ -1009,11 +1034,10 @@ export default function HomeClient({
       </section>
 
       <Reveal scale className="cta-band">
-        <h2>Your next build is already out there complaining on developer forums and issue trackers.</h2>
-        <p>Go find it, or let Sourced bring it to you every Monday.</p>
-        <RainbowButton href="#pricing">
-          Browse this week&apos;s ideas ⚡
-        </RainbowButton>
+        <span className="eyebrow">LESS GUESSING. MORE BUILDING.</span>
+        <h2>Start with a problem<br />someone already has.</h2>
+        <p>Your next build is waiting in the evidence.</p>
+        <DiscoverButton href="/feed" label="Explore the idea feed" />
       </Reveal>
 
       <section className="newsletter-section" aria-labelledby="newsletter-heading">
@@ -1047,6 +1071,6 @@ export default function HomeClient({
           </p>
         </div>
       </footer>
-    </>
+    </div>
   );
 }

@@ -13,7 +13,7 @@ describe("Homepage Visual Overhaul Integration", () => {
     nearMiss: [],
   };
 
-  it("renders with Magic UI elements and RGB layout", () => {
+  it("renders the brief preview and preserves pricing and source components", () => {
     const html = renderToString(
       React.createElement(HomeClient, {
         userEmail: null,
@@ -21,13 +21,14 @@ describe("Homepage Visual Overhaul Integration", () => {
       })
     );
 
-    // Checks that Magic UI components are rendered on the homepage
     expect(html).toContain("marquee-container");
     expect(html).toContain("rainbow-button");
-    expect(html).toContain("animated-gradient-text");
+    expect(html).toContain("obsidian-discover-button");
+    expect(html).toContain('href="/feed"');
+    expect(html).toContain("obsidian-split");
+    expect(html).toContain("brief-workbench");
     expect(html).toContain("border-beam");
     expect(html).toContain("shine-border");
-    expect(html).toContain("procedural-text-mask");
     expect(html).toContain("hero-pipeline-wrap");
     expect(html).toContain("pipeline-labels");
   });

@@ -1,257 +1,34 @@
 # Handoff Note
 
-> Overwrite this file at the end of every session — whoever picks up next
-> (human or agent) reads this before touching anything.
-
-**Last updated by:** Antigravity / Gemini
-**Date:** 2026-10-07
+**Last updated by:** Codex
+**Date:** 2026-10-14
 
 ## Current state
-- Animated Pipeline Flow in Admin Banner (`f7d1075`):
-  - Visual pipeline diagram component `app/admin/pipeline-flow.tsx` mounted directly in `app/admin/pipeline-banner.tsx` with styles in `app/globals.css`.
-  - Source chips pulse on active poll, display green `+N` counts on completion, and emit particle streams scaled logarithmically by signal volume (`Math.min(6, Math.ceil(Math.log2(inserted + 1)))`).
-  - Ingest node displays a circular progress ring filling as sources settle (`settled / total`).
-  - Draft job node group (Classify → Cluster → Draft) animates with sequential highlights during draft runs, hand-off packet tracks flow between stages, and Review sink node marks completion with `✓`.
-  - Responsive: collapses cleanly into vertical orientation on viewports ≤720px (including 375px mobile) with vertical packet animations and `prefers-reduced-motion` overrides.
-  - Scratch files `app/pflow-preview/` cleaned.
-  - Full suite verified: 61 test files (279 tests) passing in Vitest, `tsc --noEmit` clean, and `next build` passing.
-- "Run full pipeline" fix (committed in `beb66da`, deployed with next push). On prod (2026-10-06 run) three things failed:
-  1. **Discourse poll → 504**: the deployed route had `maxDuration = 120`; Discourse needs ~4 min. The working tree's bump to 280 (same as the discourse cron, which does complete on Vercel) fixes it once deployed.
-  2. **App Store poll → 502**: `raw_signals_source_check` never included `'appstore'`, so every insert was rejected (0 appstore rows ever). Fixed by `supabase/migrations/0033_add_appstore_source.sql` — **already applied to the live `supabase-sourced-db`**; verified with a real poll (224 inserted).
-  3. **Draft → "No classifier provider configured"**: Vercel has no OLLAMA_URL/OMNIROUTE_URL/OPENROUTER_API_KEY and can't reach falcon's LLMs (the `draft-ideas` cron has been failing the same way every day — no `pipeline_runs` row ever came from Vercel). OpenRouter isn't a fix: its embeddings are a different vector space from the stored nomic-embed-text vectors. Fix = job queue: new Sourced table `pipeline_jobs` (`supabase/migrations/0034_pipeline_jobs.sql`, **already applied live**). Where `OLLAMA_URL` is unset (Vercel), `POST /api/admin/pipeline/run {stage:"draft"}` and `/api/cron/draft-ideas` call `enqueueDraftJob()` (dedupes against an already queued/running job) instead of running the pass; `GET /api/admin/pipeline/run?job=<id|latest>` returns status. `scripts/pipeline-worker.ts` (`npm run worker`, must be running on falcon) claims queued jobs and runs `runDraftPass()` locally — no function timeout. Banner polls the job (queued → "running on falcon…" → result), hints after 45s queued that the worker may be down, and resumes a running job after navigating between admin pages. Locally (OLLAMA_URL set) the draft stage still runs inline as before.
-  - Banner poll pill now names the failed sources instead of just counting them.
-  - `CLASSIFICATION_RUN_CAP` default raised 25 → 200 (user decision): 10,266 undrafted signals were unclassified and ingest (~500/day) was outrunning 25/run.
-  - Tests: `app/api/admin/pipeline/run/route.test.ts` (7 tests). Full suite 61 files / 279 tests passing, `tsc --noEmit` clean, `next build` clean.
-  - Verified end-to-end on falcon: enqueued job (dedupe confirmed) → `npm run worker` claimed it → done in 733s (classified 197 new complaints, 9 clusters passed, 8 drafted = daily cap). That 12-min runtime is why this can't run inside a Vercel function.
-  - **OmniRoute now 401s (AUTH_002)**: the `omniroute` container was recreated 2026-10-01 from an image that requires an API key. Code now sends `OMNIROUTE_API_KEY` as a bearer token (`omniRouteHeaders()` in `lib/llm/providers/omniroute.ts`, also used by the competitive check) — **user must create a key in the OmniRoute dashboard and add `OMNIROUTE_API_KEY` to `.env.local`**. Until then drafts fall back to Ollama gemma3:4b: the 8 drafts from the verification run (2026-10-06, all `pending_review`, mostly App Store reviews of Stripe/Shopify/Asana) are gemma-quality and need review/rejection.
-  - OpenRouter account has no credits (402) — competitive check falls back to the free GitHub-search path, so it's degraded but not failing.
-  - `recoverOrphanedJobs()` in `scripts/pipeline-worker.ts` has a TODO(human): policy for jobs left `running` by a crashed worker (requeue vs fail). Until it's filled in, an orphaned job blocks new draft enqueues (they dedupe onto it) — clear it with `update pipeline_jobs set status='error' where status='running'`.
-  - **To ship:** commit + push to `main` (deploys), then keep `npm run worker` running on falcon (consider pm2 / Task Scheduler so it survives reboots). Bluesky still returns 0 on prod (no BLUESKY_HANDLE/APP_PASSWORD in Vercel) and YouTube has no YOUTUBE_API_KEY in Vercel — both skip silently, not failures.
-- Admin Pipeline Banner (committed in d8ff17a): `app/admin/pipeline-banner.tsx`, mounted in `AdminShell` so it shows on every `/admin/*` page. Buttons: Poll all sources, Run draft pass, Run full pipeline, plus a per-source list. Calls `POST /api/admin/pipeline/run` (`requireAdmin`-gated) one stage per request (`{stage:"poll", source}` or `{stage:"draft"}`); the browser chains them so no request outlives `maxDuration`. Poller ids live in `lib/ingest/poller-ids.ts` (client-safe) and `lib/ingest/poller-registry.ts` (server). Draft stage on Vercel goes through the falcon worker queue — see the entry above.
-- Tiered Clustering Upgrade (sourced-clustering-upgrade-spec.md) — migration applied, dry run executed, arbiter model bug found and fixed, re-verification in progress:
-  - `supabase/migrations/0032_tiered_clustering.sql` applied to the live `supabase-sourced-db` container (idempotent — `IF NOT EXISTS` — confirmed `candidate_pairs` table + `pipeline_runs.funnel` column exist).
-  - First live dry run (`ENABLE_TIERED_CLUSTERING=true` against the real backlog, 894 classified complaints): `candidatesFound: 35377` → `groupsAfterArbitration: 22` (21 high-conf, 1 medium-conf) → `groupsPassingGate: 15` (1 single-platform, 14 multi-platform), 6 new drafts landed in `pending_review`. But the LLM arbiter had a **74% JSON parse failure rate** (37/50 calls) — traced this down (see below) rather than trusting the funnel numbers as-is.
-  - **Root cause found:** the arbiter's model resolution (`lib/ingest/arbiter.ts`) is `OLLAMA_ARBITER_MODEL ?? OLLAMA_CLASSIFIER_MODEL ?? DEFAULT_ARBITER_MODEL` — `OLLAMA_ARBITER_MODEL` was never set in `.env.local`, so it silently fell through to `OLLAMA_CLASSIFIER_MODEL=gemma3:4b` instead of the arbiter's own intended default (`qwen2.5:7b-instruct`). Reproduced directly against local Ollama: `gemma3:4b` under `format:"json"` grammar-constrained decoding on the arbiter's raw-prompt `/api/generate` call deterministically emits a bare `{}` and stops (eval_count=2) — reproducible across every payload variant tried (degenerate and realistic text, 8-10 and 18-signal batches, always at temperature 0). The same model, prompted identically for `qwen2.5:7b-instruct` (already pulled locally), reliably returned valid, correctly-grouped JSON on every run.
-  - **Fix applied and confirmed:** added `OLLAMA_ARBITER_MODEL=qwen2.5:7b-instruct` to `.env.local` (no code change needed — this just reaches the fallback chain's already-coded default). Re-ran the dry run: arbiter parse failures dropped from 37/50 (74%) to 5/47 (~11%); `groupsAfterArbitration` went 22→84 (78 high-conf, 6 medium-conf), `groupsPassingGate` went 15→39 (16 single-platform, 23 multi-platform). Remaining 5 failures are the same truncation-shaped error ("Expected ',' or ']' after array element"), likely from the largest 18-signal groups still occasionally overflowing the arbiter's `num_predict: 1024` cap — not urgent, but worth raising that cap or shrinking `maxGroupSize` if it recurs. `OLLAMA_ARBITER_MODEL` is currently only set locally — needs to be added to Vercel/production env too before this path is ever enabled there.
-  - Everything below this point in this bullet is the original as-built description (still accurate — only the arbiter model config was wrong, not the code):
-  - **Note on the spec's premise:** the spec was written against a stale baseline (single 0.82 cosine cutoff, MIN_CLUSTER_PLATFORMS=2, 0 cross-platform clusters at 394 signals). That problem was already fixed by the earlier "Ingest & Clustering Yield Optimization" pass below (`EMBEDDING_SIMILARITY_THRESHOLD` lowered to 0.74, `MIN_CLUSTER_PLATFORMS` relaxed to 1) — see `lib/ingest/clustering.ts`. Built the spec exactly as written anyway (explicit user decision), as a **separate, flag-gated path** rather than modifying the existing 0.74/1-platform pipeline, so the two can be A/B'd rather than one silently overwriting the other.
-  - New three-stage funnel, active only when `ENABLE_TIERED_CLUSTERING=true` (default off — existing pipeline behavior is completely unchanged when unset):
-    1. **Candidate discovery** (`lib/ingest/tiered-clustering.ts`, `computeTieredPairs`): in-process pairwise cosine over the complaint-signal batch, banded into `AUTO_CONFIRM_THRESHOLD` (0.82, auto-cluster, no LLM call) / `CANDIDATE_FLOOR_THRESHOLD` (0.55, queued for arbitration) / below 0.55 discarded. These are new, separate constants from `clustering.ts`'s own 0.74 — intentionally not shared, so tuning one can't silently drift the other.
-    2. **Grouping** (`lib/ingest/group-candidates.ts`): union-find over candidate pairs, capped at 18 signals/group.
-    3. **LLM arbiter** (`lib/ingest/arbiter.ts`): one local-Ollama call per group (model: `OLLAMA_ARBITER_MODEL` env var, falls back to `OLLAMA_CLASSIFIER_MODEL`, then `qwen2.5:7b-instruct`), asking which signals in the group share the same root complaint. Confidence `low` groups are kept separate as "borderline" (counted in the funnel, not auto-passed) rather than merged into confirmed clusters. Untrusted signal text is run through `lib/ingest/sanitize-for-prompt.ts` before interpolation (strips chat-template control tokens, defuses literal `<signals>`/`<task>`/etc. fence markers) so a scraped post can't forge a prompt boundary.
-  - Confirmed groups (auto-confirmed ≥0.82 pairs + LLM-confirmed groups) are merged and handed to the **existing, unmodified** `MIN_CLUSTER_SIZE`/`MIN_CLUSTER_PLATFORMS` gate from `clustering.ts` — no new/duplicate gate logic.
-  - `candidate_pairs` table + `pipeline_runs.funnel` jsonb column added in `supabase/migrations/0032_tiered_clustering.sql` — **not yet applied to the live (shared) Supabase instance**, needs to be run manually before `ENABLE_TIERED_CLUSTERING=true` is ever set anywhere, since `run-draft-pass.ts` will try to write to both.
-  - Wired into `lib/ingest/run-draft-pass.ts`: behind the flag, `runTieredClustering()` replaces the normal `clusterSignals`/`clusterSignalsSQL` call; funnel stats are logged to `pipeline_runs.funnel` and candidate pairs to `candidate_pairs`. `/admin/analytics` pipeline table has a new "Funnel" column (shows "—" for any run where the flag was off).
-  - Tests: `group-candidates.test.ts`, `sanitize-for-prompt.test.ts`, `arbiter.test.ts`, `tiered-clustering.test.ts` (all pure-logic + mocked-fetch, no live Ollama/Supabase needed). Full suite: 59 files / 268 tests passing, `tsc --noEmit` clean, `next build` clean.
-  - **Not done yet** (next session should pick these up before flipping the flag on anywhere):
-    1. Rollout plan step 5: spot-check a handful of the 78 `groups_confirmed_high_conf` groups from the qwen2.5 re-run by hand for false positives before enabling for live cron runs.
-    2. Decide whether to keep both paths long-term or fully cut over — right now `CLUSTERING_ENGINE=sql` (pgvector) and `ENABLE_TIERED_CLUSTERING=true` are mutually exclusive branches in `run-draft-pass.ts`, tiered takes precedence if both are set.
-    3. Rollout plan step 5b (apply `sanitizeForPrompt` to the existing draft-generation prompt) — separate, smaller task, not done here.
-    4. Set `OLLAMA_ARBITER_MODEL=qwen2.5:7b-instruct` in the Vercel/production env too if this path is ever enabled there — it's currently only in local `.env.local`.
-    5. Optional: investigate the remaining ~11% arbiter truncation errors on the largest groups (raise `num_predict` past 1024 in `lib/ingest/arbiter.ts`, or lower `maxGroupSize` below 18 in `lib/ingest/group-candidates.ts`).
-- Ingestion & Pipeline Pass Executed (4 Fresh Drops Drafted to `/admin/pending`):
-  - Ingestion Pass: Ran keyless pollers (`scripts/poll-all.ts --poll-only`), inserting 290 fresh signals into Supabase `raw_signals` (YouTube: 127, Discourse: 77, Mastodon: 51, Codeberg: 16, GitLab: 12, HN: 6, Lobsters: 1).
-  - Draft Pass: Executed `runDraftPass()` (`scripts/run-draft-pass.ts`) using local Ollama (`gemma3:4b` + `nomic-embed-text`) and OmniRoute (`auto/coding`). Evaluated 916 complaints across 853 clusters (419,070 pair comparisons).
-  - 4 New Build Briefs Harvested & Drafted to Supabase:
-    1. **`CodeContext Guard`** (`pending_review`, Dev Tools, demand: 88, slug: `codecontext-guard`): Prevention of token blowups and context pollution in AI coding workflows.
-    2. **`OmniDeck: Unified VPS SSH, SFTP, and Multi-Database Client`** (`pending_review`, Dev Tools, demand: 88, slug: `omnideck-unified-vps-ssh-sftp-and-multi-database-client`): All-in-one lightweight developer terminal, SFTP sync, and database viewer for VPS fleets.
-    3. **`RankDiagnostics: SEO Index Auditor`** (`pending_review`, Content/Creator Tools, demand: 85, slug: `rankdiagnostics-seo-index-auditor`): Automated crawler & indexability diagnostic auditor detecting silent rendering and de-indexing penalties.
-    4. **`ORM Supercharger for Prisma`** (`needs_evidence`, Dev Tools, demand: 89, slug: `orm-supercharger-for-prisma`): High-speed query acceleration, type-safe pagination, and edge runtime connection enhancements.
-  - Script DX Enhancements: Added `--poll-only` to `scripts/poll-all.ts` for fast multi-source polling without triggering full in-process classification, and added `server-only` module cache bypass to `scripts/run-draft-pass.ts` for standalone tsx execution outside Next.js server runtime.
-- Pipeline Particle Hero & Pricing Glass Restyle (Merged to `main` and Deployed Live):
-  - Deployed to production on `main` ([www.getsourced.dev](https://www.getsourced.dev)).
-  - Three.js `PipelineField` client component (`components/hero/pipeline-field.tsx`) mounted in hero with code-splitting (`{ ssr: false }`).
-  - Real database counts (`pipeline_runs` / `raw_signals`) displayed in `.source-tally` on the hero for HN, GH, SE, DEV, and LOB.
-  - Pricing cards restyled to dark glass (`.plan-card`) with cursor-tracked radial glow (`--mx`/`--my`) and `"most used"` badge on the Builder tier.
-  - Verification: 55 Vitest test files (252 tests) passing, `tsc --noEmit` clean, production build verified.
-- React Three Fiber (R3F) 3D Visual Architecture Prototype (`prototype/r3f-3d-visuals` branch):
-  - Branch created and isolated per user review request. Zero pushes to `origin/main`.
-  - Architecture: Lightweight, modular Three.js (`three@^0.160.1`) and React Three Fiber (`@react-three/fiber@^8.18.0`, `@react-three/drei@^9.122.0`) integration on React 18.3.1.
-  - Three Core 3D Surfaces:
-    1. **Hero 3D Radar Signal Sphere** (`components/r3f/radar-signal-sphere.tsx`, `components/r3f/radar-fallback.tsx`):
-       - A dark wireframe geosphere with glowing orbital rings, rotating equator radar scan cone, and real ingested source telemetry nodes (GitHub `#818cf8`, Hacker News `#f59e0b`, App Store `#38bdf8`, Discourse `#10b981`).
-       - Damped cursor parallax decoupled from continuous ambient spin via nested Three.js groups.
-       - Zero-GPU idle gating: `frameloop={isInView ? "always" : "never"}` via persistent `IntersectionObserver` consumes 0% GPU when scrolled off-screen.
-       - Pure SVG fallback (`radar-fallback.tsx`) with zero Three.js dependencies ensures clean asynchronous code-splitting with no bundle leakage on initial HTML load (`/` page First Load JS remains at 142 kB).
-    2. **Drop Detail 3D Solution Graph** (`components/r3f/brief-solution-graph.tsx`, `components/r3f/brief-graph-fallback.tsx`):
-       - Interactive 3D node network on `/feed/[slug]` showing incoming multi-platform complaint signal nodes converging along curved quadratic bezier lines with flowing particle streams into a central rotating solution crystal.
-       - Viewport observer pauses WebGL execution when out of view. Pure SVG schematic fallback handles SSR and `prefers-reduced-motion: reduce`.
-    3. **Hardware-Accelerated 3D Card Tilt & Sheen** (`components/card-3d-tilt.tsx`):
-       - Applied across the homepage masonry grid and sample card.
-       - Uses composite-only CSS 3D transforms (`perspective`, `rotateX`, `rotateY`, `scale3d`) and dynamic radial specular glare tracking pointer coordinates.
-       - Mobile touch gesture cancellation via `onPointerCancel` and instant reset for `prefers-reduced-motion: reduce`.
-       - Eliminates the need to instantiate dozens of WebGL contexts, avoiding mobile browser context loss limits.
-  - Verification: 51 Vitest test files (244 tests) passing with 0 errors. TypeScript `tsc --noEmit` passing with 0 errors. Next.js production build (`next build`) generated all 22 static and dynamic routes cleanly.
-- Procedural Signal Text Mask on Hero Wordmark (`components/procedural-text-mask.tsx`, `app/home-client.tsx`, `app/globals.css`):
-  - Created zero-download procedural signal canvas text mask on `triangulated.` in the hero title, inspired by Framer's `TextVideoMask` but adapted for Sourced's aesthetic and zero-latency performance.
-  - Architecture: Uses HTML5 Canvas 2D with `ctx.globalCompositeOperation = 'destination-in'` to mask high-DPI streaming telemetry particles (violet, sky cyan, emerald glyphs) and radar sweep line into the exact letterforms of `triangulated.` (`Space Grotesk`).
-  - Accessibility & SEO: Semantic text remains in the DOM with `opacity: 0` for screen readers and search engines.
-  - Performance & A11y: Automatically detects `prefers-reduced-motion: reduce` and falls back to static iridescent CSS gradient without launching the canvas loop. `IntersectionObserver` halts animation when scrolled out of viewport.
-  - Test coverage: Added `tests/procedural-text-mask.test.ts` and updated `tests/home-client-visuals.test.ts`. All 47 test suites (228 tests) passing in Vitest, 0 TypeScript errors (`tsc --noEmit`), and full production build (`next build`) compiling cleanly.
-- Full 7-Pillar Platform Security Hardening Shipped & Verified:
-  1. **HTTP Security Headers** (`next.config.mjs`): Enforced `Strict-Transport-Security: max-age=63072000; includeSubDomains; preload`, `Cross-Origin-Opener-Policy: same-origin-allow-popups`, `Cross-Origin-Resource-Policy: same-origin`, and `X-DNS-Prefetch-Control: on`.
-  2. **Framework Vulnerability Patching** (`package.json`): Upgraded `next` to `14.2.35`, eliminating critical SSRF and cache poisoning CVEs without breaking App Router compatibility.
-  3. **Constant-Time Secret Auth** (`lib/ingest/require-cron.ts`): Replaced string equality with constant-time `timingSafeEqual()` over SHA-256 digests to eliminate token timing side-channel attacks.
-  4. **Multi-Tenant Schema Guardrails** (`supabase/migrations/0031_tenant_schema_guardrails.sql`, `docs/database-tenant-isolation.md`): Created isolated `sourced` PostgreSQL schema definitions and migration runbook for decoupling Sourced from Mettel's shared database.
-  5. **Distributed Edge Rate Limiting** (`lib/security/rate-limit.ts`, `middleware.ts`): Added `checkRateLimitAsync()` with native Upstash Redis REST pipeline support for multi-instance serverless rate limiting, with automatic in-memory sliding window fallback.
-  6. **CSRF & Origin Defense** (`lib/security/csrf.ts`): Guarded `/api/newsletter`, `/api/signup`, and `/api/account/topics` against cross-site request forgery and foreign form submissions using `Sec-Fetch-Site` and `Origin` validation.
-  7. **Real-Time Security Alerts** (`lib/security/alerts.ts`): Hooked into `notify()` to trigger instant priority-4 ntfy push alerts on 403 admin attempts, forged Razorpay webhook signatures, and security tamper events.
-  - Test suites: 46 test files (225 tests) passing in Vitest (`npm run test`). Full TypeScript check (`npm run typecheck`) and Next.js production build (`npm run build`) passing with 0 errors.
-- Supabase Row-Level Security (RLS) Audit Executed & Verified:
-  - Executed all 5 steps of `RLS-AUDIT-CHECKLIST.md` against live Supabase (`https://sourced-db.getsourced.dev`) using both the public anon key and service role key.
-  - Verification results:
-    - `idea_drops` (14 rows): RLS fully active. Anon `SELECT` returns 0 rows; anon `INSERT` blocked with code 42501 (insufficient_privilege).
-    - `raw_signals` (2,788 rows): RLS fully active. Anon read and write completely blocked.
-    - `admins` (2 rows): RLS fully active. Anon read and write completely blocked.
-    - `sourced_subscribers` (3 rows) & `subscriber_topics` (8 rows): RLS fully active. Anon read and write blocked.
-    - `events` (1,766 rows) & `pipeline_runs` (16 rows): RLS fully active. Anon read and write blocked.
-    - `sourced_newsletter_signups`: RLS fully active. Live test with dummy inserted row verified that anon `SELECT` cannot read any rows and anon `INSERT` is rejected (42501).
-    - `subscribers` (legacy cross-tenant table): RLS active with insert rejected (42501).
-    - `settings`: Table does not exist in schema (`PGRST205`).
-  - Added reusable CLI audit suite `scripts/audit-rls.ts` executable via `npm run audit:rls`.
-- 8 Fresh High-Demand Drops Harvested & Drafted to `/admin/pending`:
-  - Executed `runDraftPass()` over the newly unlocked 0.74 clusters using local Ollama (`gemma3:4b`) and OmniRoute (`big-pickle`). Drafted 8 complete build briefs now sitting in `pending_review`:
-    1. **`TokenGuard: AI Agent Cost Control & Observability`** (Dev Tools, demand: 85): AI agent runaway token burn & subagent recursion protection.
-    2. **`Anthropic API & Account Proxy Router`** (Dev Tools, demand: 85): Multi-key quota pooling and account rotation for Claude Code / Claude Max limits.
-    3. **`FlexMigrate: Programmable Migration Layer for TypeScript ORMs`** (Dev Tools, demand: 85): Programmatic migration execution for Prisma and Drizzle in serverless/VPC environments.
-    4. **`PostGIS DX Bridge`** (Dev Tools, demand: 92): First-class geospatial spatial query integration for TypeScript ORMs.
-    5. **`Verification Flow Guardrails`** (Dev Tools, demand: 78): Drop-in passwordless/OTP delivery fallback and rate-limit guardrails.
-    6. **`Autonomous Agent Status Dashboard`** (Dev Tools, demand: 70): Centralized status, cycles, and spend dashboard for autonomous agents.
-    7. **`Multi-Cursor & Column-Selection Enhancement Toolkit`** (Dev Tools, demand: 65): Keyboard-first multi-cursor manipulation.
-    8. **`Universal Deep-Link Bridge for Self-Hosted Tools`** (Dev Tools, demand: 65): Server-side assetlinks/apple-app-site-association generator for custom domains.
-- Ingest & Clustering Yield Optimization (Phase 1 Shipped):
-  - Clustering Math Tuning (`lib/ingest/clustering.ts`): Lowered `EMBEDDING_SIMILARITY_THRESHOLD` baseline from 0.82 to 0.74. Empirical dry-run analysis on 943 classified signals demonstrated that 0.82 produced 0 passing clusters (97.4% singletons), whereas 0.74 cleanly formed 12 high-cohesion multi-signal clusters (9 multi-platform, 3 single-platform) around real pain points (AI model quota limits, token burn, auth/OTP failures, spatial GIS support).
-  - Apple App Store Review RSS Poller (`lib/ingest/pollers/app-store.ts`, `app/api/cron/ingest-appstore/route.ts`): Created keyless customer review RSS poller pulling 1★ and 2★ concentrated negative reviews for 12 curated B2B/freelance SaaS products (QuickBooks, Shopify, Expensify, Notion, Stripe Dashboard, Asana, Linear, Trello, FreshBooks, Airtable, Slack, HubSpot). Live dry-run verified: pulled 232 customer complaints in 9 seconds with zero API spend and zero auth.
-  - Discourse Expansion (`lib/ingest/poller-sources.ts`): Added 11 verified live developer and SaaS Discourse instances (`community.retool.com`, `forum.bubble.io`, `community.auth0.com`, `discourse.getdbt.com`, `forum.ghost.org`, `forums.docker.com`, `discourse.gohugo.io`, `discourse.nixos.org`, `discourse.julialang.org`, `discuss.kotlinlang.org`, `discuss.pytorch.org`), expanding from 14 to 25 instances.
-  - Types & Model Mapping (`lib/ingest/types.ts`, `types/idea-drop.ts`, `lib/ingest/draft-model.ts`): Added `"appstore"` to `SignalSource`, `Evidence["platform"]`, and draft model mappings with full TypeScript exhaustiveness.
-  - Test Suites: 42 test files (209 tests) passing in Vitest (`npm run test`). Full TypeScript check (`npm run typecheck`) and Next.js production build (`npm run build`) passing with 0 errors.
-- Magic UI & Subtle Dynamic RGB Visual Refinements & Layout Fixes:
-  - Fixed `#apis` Marquee Layout Bug (`components/magicui/marquee.tsx`, `app/globals.css`): Resolved 16 vertically stacked block items by providing complete vanilla CSS flex rules (`.marquee-container`, `.marquee-content`, `white-space: nowrap`) and inline fallbacks, eliminating Tailwind class reliance in vanilla Next.js setup.
-  - Fixed Tag Contrast Bug (`app/globals.css`): Changed category tag text color on card covers (`.idea-cover .tag`, `.feed-card-cover .tag`) from `var(--ink)` (white) to `#0A0C14` (dark ink) for crystal-clear readability against pastel badge backgrounds.
-  - Fixed Hero Clearance (`app/globals.css`): Increased `.hero` top padding to `clamp(116px, 13vw, 140px)` so the fixed floating navbar never cuts off or crowds the eyebrow badge.
-  - Subtle, Sophisticated RGB Palette (`components/magicui/*`, `app/globals.css`, `app/home-client.tsx`):
-    - Replaced garish 7-color neon candy cycling on `RainbowButton` with an elegant violet-indigo-cyan shimmer (`linear-gradient(135deg, rgba(124, 58, 237, 0.85), rgba(99, 102, 241, 0.8), rgba(56, 189, 248, 0.7))` at 8s).
-    - Refined `ShineBorder` on sample card and `BorderBeam` on Builder plan to atmospheric violet-sky tones at 16s-18s rotations.
-    - Removed forceful `BorderBeam` from masonry card #1 to let native card covers and `MagicCard` hover spotlight speak naturally.
-    - Calmed `AnimatedGradientText` and hero `.accent` text to high-end iridescent violet-sky-slate at 12s transitions.
-    - Toned down `Meteors` and pointer spotlights to subtle celestial ambient accents.
-  - Test suites: 41 test files (207 tests) passing in Vitest (`npm run test`). Full TypeScript check (`npm run typecheck`) and Next.js production build (`npm run build`) passing with 0 errors.
-- Native CSS Scroll-Driven Animations & Lenis Momentum Scrolling:
-  - Skill added: `.agents/skills/scroll-driven-animations/SKILL.md` (and `~/.gemini/skills/scroll-driven-animations/SKILL.md`) incorporating Josh W. Comeau's Animation Timeline patterns, animation ranges, linked timelines, Lenis integration, and progressive enhancement.
-  - Native Compositor Animations (`app/globals.css`): Gated behind `@supports (animation-timeline: view())` and `@media (prefers-reduced-motion: no-preference)`. Hardware-accelerated 120fps entrance for `.reveal` (`entry 8% cover 28%`), `.reveal-scale` (`entry 5% cover 32%`), and `#masonry .idea-card` (`entry 5% cover 25%`). Uses CSS individual transform properties (`translate` and `scale`) to avoid conflicts with card hover physics.
-  - Zero-JS Reading/Scroll Progress Bar (`components/scroll-progress-bar.tsx`): Pinned 2.5px violet-to-lime hairline progress bar driven natively via `animation-timeline: scroll()`, with smooth rAF fallback for older browser engines.
-  - Floating Pill Nav Elevation: Smoothly deepens shadow and pill tint over `0px 140px` scroll distance via `animation-timeline: scroll()`.
-  - Inertial Momentum Scrolling (`components/smooth-scroll-provider.tsx`): Mounted Lenis at root layout with `smoothWheel: true`, `touchMultiplier: 1.5`, preserving native mobile touch scrolling and strictly respecting `prefers-reduced-motion: reduce`.
-  - Progressive Enhancement: Existing `IntersectionObserver` in `app/home-client.tsx` remains active for older browsers (e.g. Firefox stable) with zero layout shifts.
-- Dynamic International Currency & Conversion UX:
-  - Geo-Detection via `x-vercel-ip-country` (`lib/currency.ts`): Server Components (`app/page.tsx`, `app/feed/[slug]/page.tsx`) inspect visitor country and resolve default currency to `USD` for international visitors and `INR` for India.
-  - Interactive Currency Toggle: Embedded `[USD ($) | INR (₹)]` toggle in `#pricing` header in `app/home-client.tsx`, allowing visitors to switch currencies instantly.
-  - Localized Pricing: Displays $4.80/mo (founding $3.70/mo) and $42/yr for Builder, $12/mo for Studio, with transparent disclosure that Razorpay bills in equivalent INR with automatic card bank conversion.
-  - Feed CTA Localization: Unlock button in `app/feed/[slug]/page.tsx` dynamically displays `"Unlock with Builder ($4.80/mo)"` or `"Unlock with Builder (₹399/mo)"`.
-- Automated Weekly Drop Dispatcher:
-  - Broadcast Engine (`lib/email/dispatcher.ts`): Deduplicates recipients across `sourced_subscribers` and `sourced_newsletter_signups`.
-  - Responsive Email Templates: Generates branded HTML and plain-text emails with drop title, demand signal badge, core problem, matched APIs preview, and direct link to `/feed/[slug]`.
-  - Transport & Fallback: Uses `RESEND_API_KEY` when configured; logs previews and dispatches phone push notifications via `lib/notify.ts` (ntfy) in dry-run/unconfigured environments.
-  - Admin & Cron Triggers: Added `POST /api/admin/ideas/[id]/dispatch` with dry-run support, a `"📢 Broadcast to Subscribers"` button in `app/admin/ideas/[id]/idea-edit-form.tsx`, and a weekly cron job at `0 8 * * 1` in `vercel.json` (`/api/cron/dispatch-weekly-drop`).
-- Off-Page Distribution Runbook (Tier 1 SEO):
-  - Updated all assets in `seo-drafts/` (`show-hn-post.md`, `devto-article.md`, `directory-listings.md`, `twitter-thread.md`) reflecting 12 active sources, `nomic-embed-text` embeddings, and the 0.82 cosine similarity clustering threshold.
-- Test suites: 37 test files (194 tests) passing in Vitest (`npm run test`). Full TypeScript check (`npm run typecheck`) and Next.js production build verified clean.
-- CRO, Security, SEO & Performance Tri-Pillar Hardening:
-  - Fulfill Free-Drop Promise (`lib/idea-drops/resolve-access.ts`): Anonymous visitors now receive full un-gated access to free-tier idea drops (`tier === 'free'`), fulfilling the homepage promise without forcing a login/password barrier.
-  - High-Converting Newsletter Social Proof (`app/newsletter-form.tsx`): Replaced self-sabotaging copy with social proof ("Join 1,200+ vibe coders getting the verified drop every Monday morning. Zero spam.").
-  - Security Secret Hardening (`lib/slatebase/server.ts`): Enforced `import "server-only";` and removed hardcoded live secret API key fallback.
-  - XSS Protection (`app/api/track/opt-out/route.ts`): Sanitized and validated client IP to eliminate reflected HTML injection.
-  - Open Redirect Protection (`app/auth/callback/route.ts`, `app/login/page.tsx`): Restricted redirect target `next` to safe relative paths starting with a single `/`.
-  - Native Font Optimization (`app/globals.css`, `app/layout.tsx`): Removed blocking CSS `@import url('https://fonts.googleapis.com/css2...')` and migrated to zero-layout-shift `next/font/google` (`Space_Grotesk`, `Inter`, `JetBrains_Mono`).
-  - Dynamic Per-Drop OpenGraph Images (`app/feed/[slug]/opengraph-image.tsx`): Added 1200x630 dynamic OpenGraph image generator using `@vercel/og` with title, category, and demand score badge.
-  - Interactive Feed Filter & Search (`components/feed-browser.tsx`, `app/feed/page.tsx`): Added client-side real-time search, category filter pills with drop counts, and "Solo Weekend Only" toggle.
-  - Frosted Glass Teaser on Gated Briefs (`app/feed/[slug]/page.tsx`): Replaced abrupt cutoff box with blurred preview of architecture and DDL schema + clear upgrade CTA.
-  - 1-Click Launchers in Prompt Exporter (`app/feed/[slug]/copy-prompt-button.tsx`): Added "Open in v0 ↗" direct launch button and "Share on X" tweet button.
-  - DotField Canvas Viewport Throttling (`components/DotField.jsx`): Attached `IntersectionObserver` to pause animation frame ticks when canvas is off-screen.
-  - Write Protection & Rate Limiting on Analytics (`app/api/track/route.ts`): Added 60 req/min IP rate limiting, allowlist of valid `eventType`s, and 2KB payload cap on metadata.
-  - Webhook Idempotency (`app/api/webhooks/razorpay/route.ts`): Deduplicated Razorpay payment IDs to prevent duplicate event tracking and alerts.
-  - Watermark HMAC Salt Separation (`lib/security/watermark.ts`): Enforced `import "server-only";` and decoupled watermark salt from database superuser key using `WATERMARK_SIGNING_SECRET`.
-  - Verification: 34 test suites (178 tests) passing in Vitest, 0 TypeScript errors (`tsc --noEmit`), and full production build (`next build`) compiling cleanly.
-- Security & IP Protection Hardening:
-  - Gated API Export Endpoints (`/api/ideas/[id]/schema`, `/spec`, `/cursorrules`, `/database`): Enforced authentication, tier checks, and quota unlocks via `verifyExportAccess()`. Anonymous/under-tier callers receive 401/403 responses rather than dumping raw code.
-  - Forensic Digital Watermarking (`lib/security/watermark.ts`): Injected deterministic cryptographic fingerprints and invisible zero-width Unicode steganography into all exported DDL schemas (`schema.sql`, `schema.prisma`), agent specs (`CLAUDE.md`), and `.cursorrules`. Leaked files can be forensically traced back to the exact subscriber account.
-  - AI Scraper & Bot Blocking (`app/robots.ts`): Explicitly disallowed major AI harvesting crawlers (`GPTBot`, `ChatGPT-User`, `ClaudeBot`, `Claude-Web`, `Bytespider`, `CCBot`, `PerplexityBot`, `Diffbot`, `FacebookBot`, `Amazonbot`) from indexing idea drops and feed content.
-  - Edge Anti-Scraping Rate Limiting (`middleware.ts` + `lib/security/rate-limit.ts`): Added sliding window IP/session rate limiter (60 req/min) for `/api/*` routes returning HTTP 429 Too Many Requests to prevent mass scraping.
-  - Legal & Anti-Scraping Notice: Added copyright protection and anti-scraping notice to `app/home-client.tsx` footer and `FullBrief` license badge.
-  - Unit & Integration Test Coverage: Added `lib/security/watermark.test.ts`, `lib/security/rate-limit.test.ts`, and `app/api/ideas/[id]/export-security.test.ts` (33 total test suites, 170 tests passing).
-- Customer Account & Admin Suite Overhaul:
-  - Account Dashboard (`/account`): Redesigned with user avatar HUD, tier badge (`Free Plan`, `Builder Tier`, `Studio Tier`), active status pill, visual monthly quota meter (`used / quota`), topic preferences chip preview, and an **Unlocked Briefs Vault** allowing subscribers to jump back directly to their unlocked briefs.
-  - Topic Preferences (`/account/topics`): Added selected counter badge (`X of 6 topics selected`), "Select all" and "Clear" batch buttons, and interactive checkmarks.
-  - Admin Chrome (`AdminShell`): Added pulsing live emerald indicator to the `Analytics` tab and `"View Site ↗"` shortcut to preview the live customer site.
-  - Admin Dashboard (`/admin`): Added 4 Executive KPI cards (Total Ideas, Published Drops, Pending Review, Drafts/Backlog) and interactive search & filter toolbar (search by title/category/tag + status filter tabs with counts).
-  - Admin Pending Review (`/admin/pending`): Enhanced queue metrics with cross-platform indicators and high-contrast empty state.
-  - Admin Analytics (`/admin/analytics`): Maintained and preserved the 3D Live Visitor Globe canvas, rotation, and arc telemetry while elevating the telemetry header.
-- Global Floating Expandable Icon Pill Navbar (Dynamic Island style):
-  - Extracted navigation into reusable `components/floating-navbar.tsx` mounted globally in `app/layout.tsx`.
-  - Context-aware active tab: smooth scroll-spy on `/` for `#how`, `#apis`, `#sample`, `#pricing`; route-aware active indicator on interior views (`/feed`, `/methodology`, `/account`, etc.).
-  - Excluded automatically from `/admin/*` routes to avoid overlapping the admin topband.
-  - Added brand logo and back-to-home navigation link to `/login`.
-- Real Published Idea Drops on Homepage:
-  - `app/page.tsx` now dynamically queries `listFeaturedIdeas()` and `listPublishedIdeas()`, passing real published ideas into `HomeClient`.
-  - The 6 hero masonry cards are now clickable `<Link href="/feed/[slug]">` elements displaying real category, demand score, signal count, matched API count, and tier badge (`🔒 Builder+` or `Free`).
-  - The `#sample` section now pulls dynamically from the live free drop (`Client-ready P&L exports for solo bookkeepers`) with a direct link to the full free build brief.
-- Instant Dev Database Bundle for Vibe Coders:
-  - Added a 4th tab ("⚡ Instant Dev Database") to `BuilderExportPanel` on `/feed/[slug]`.
-  - Provides a pre-configured `DATABASE_URL` with SSL enabled for `.env`, a 1-click copy button, a `.env.local` download action, and 1-command migration snippets (`npx prisma db push` and `psql $DATABASE_URL < schema.sql`).
-  - Created `/api/ideas/[id]/database` route returning database connection specifications.
-- Pipeline Transparency & Pricing Polish:
-  - Replaced outdated "Reddit" copy across hero, how-it-works, and CTA banner with real sources (Hacker News, GitHub Issues, GitLab Issues, Developer forums, YouTube).
-  - Updated `/methodology` to list all 12 live ingestion sources (HN, GitHub, GitLab, StackExchange, YouTube, Dev.to, Lobsters, Codeberg, Discourse, Mastodon, DevRant, Bluesky).
-  - Added USD dual-pricing indicators (`(~$4.80 USD)` on Builder, `(~$12 USD)` on Studio) and clear international card acceptance notice.
-- Homepage Layout Alignment & React Bits <DotField /> Integration:
-  - Replaced legacy particle background with the interactive `<DotField />` component from React Bits (`components/DotField.jsx` + `DotField.css` + `DotField.d.ts`), creating the responsive dot grid motion with cursor bulging, dynamic engagement speed, and subtle violet radial glow.
-  - Re-architected `.columns` from a CSS multi-column flow (`columns: 4 220px`) into a structured 3-column CSS Grid (`grid-template-columns: repeat(3, 1fr)` with 2-col and 1-col responsive breakpoints).
-  - Fixed uneven card heights and staggered bottom edges: standardized card banner cover height to 58px across all 6 cards, enforced `min-height: 40px` on titles, and pinned card footers (`.idea-foot`) to the bottom with `margin-top: auto` for aligned baselines across rows.
-  - Centered and balanced the CLI agent snippet panel (`.agent-snippet`) under the builder tabs.
-- Live Visitor Globe UI Overhaul (`/admin/analytics`):
-  - Fixed visual text and button collisions from overlapping absolute containers.
-  - Relocated the live telemetry source tag (`source: live · getLiveAnalytics()`) into the header crumb bar.
-  - Grouped rotation and arc controls with the drag/scroll hint into a unified flex footer (`.stageFooter`), eliminating collision on smaller viewports.
-  - Converted the 4 KPI stat cards into a clean 2x2 HUD overlay with glassmorphism, backdrop-blur, and monospace micro-labels.
-  - Converted sidebar tabs into a uniform 4-column CSS grid so all tabs (`Countries`, `Pages`, `Referrers`, `Devices`) fit neatly on a single line.
-  - Unified color theme to Sourced's violet design language (`--arc: 124, 58, 237`) in both light and dark modes.
-- 1-Click Database Schema Exporter (`schema.sql` & Prisma) shipped and live:
-  - Generates production-ready PostgreSQL DDL (`lib/idea-drops/sql-schema-generator.ts`) from `buildBrief.dataModel` with UUID extension, foreign key constraints, indexes, Supabase Row-Level Security (RLS), auto-updated timestamp triggers, and realistic development seed records.
-  - Also generates clean Prisma schema format (`schema.prisma`).
-  - Added public API endpoint at `/api/ideas/[id]/schema` (`curl -s https://www.getsourced.dev/api/ideas/[slug]/schema > schema.sql` and `?format=prisma`).
-  - Added 3rd tab, download button, and copy button in `BuilderExportPanel` on `/feed/[slug]`.
-  - Covered by comprehensive unit tests (`lib/idea-drops/sql-schema-generator.test.ts`).
-- 6 Live Published Drops on `getsourced.dev`:
-  - `SentinelFlow AI` (cross-platform validated across YouTube, GitLab, HN), `Curated Developer News Digest Automator`, `AI Model Limit Tracker & Cost Monitor`, `VT-Fuzz`, `Client-ready P&L exports for solo bookkeepers`, and `Personal Social Read-Only Viewer (Post-Nitter)`.
-- 1-Click Builder Export Suite live on `/feed/[slug]`:
-  - Generates bespoke `CLAUDE.md`, `.cursorrules`, and `schema.sql` files for direct terminal consumption and 1-click downloads.
-- Ingestion, Classification, and Clustering Pass completed:
-  - Polled across 12 keyless sources (HN, GitHub, GitLab, YouTube, Codeberg, Discourse, Mastodon, DevRant), inserting 101 new raw signals into `raw_signals`.
-  - Paginated PostgREST query in `lib/ingest/raw-signals-repository.ts` (`listUndraftedSignals`) in chunks of 1,000 to load all 2,250+ signals without truncation.
-  - Batched `persistClusterKeys` into concurrent chunks of 10 requests, speeding up cluster key writes across the Cloudflare tunnel from minutes to seconds.
-- Local Ollama Draft Generation Fallback & OmniRoute Resilience:
-  - Native JSON draft generation via local Ollama (`lib/llm/providers/ollama.ts`) supporting `gemma3:4b` and `qwen2.5:7b-instruct` with grammar-constrained decoding.
-  - Strict JSON extraction validation in `lib/llm/providers/omniroute.ts` with fallback to local Ollama.
-- Admin panel, analytics, and auth fully stable:
-  - Admin sign-in, session synchronization, `/admin/analytics` maxDuration=60, and parallel queries operational.
-- Test suites: 30 test files (162 tests) passing in Vitest. Full Next.js production build (`npm run build`) and typecheck verified clean.
+- Homepage redesigned locally from the user's request to take inspiration/components from obsidianui.dev. Prepared for a Vercel preview deployment from `codex/obsidian-homepage`; production `main` is unchanged.
+  - `app/home-client.tsx`: split editorial hero, real sample-drop dossier, pipeline animation contained inside that preview, direct `/feed` CTA, numbered idea shelf, signal-to-brief showcase, refined sample/pricing/FAQ/newsletter sections.
+  - `components/obsidian/`: adapted Discover Button and Split Showcase, with upstream MIT `LICENSE`. Uses existing Framer Motion, Next Link and vanilla CSS; no dependency changes.
+  - `app/globals.css`: homepage styles scoped under `.sourced-home`. Uses the existing next/font variables correctly (literal font-family names previously fell back to serif), retains Space Grotesk / JetBrains Mono and violet. Other routes and global navigation retain their current styling.
+  - Agent tabs support ArrowLeft/ArrowRight/Home/End, currency buttons expose selected state, signup input is labeled and readable on dark surfaces, focus/reduced-motion styles included.
+  - Updated existing homepage integration assertion for the new components. Verification: 61 files / 279 tests pass; `npm run typecheck` passes; `npm run build` passes. Browser checked desktop, 390px and 320px mobile; tool tab clicks/keys, INR switching, signup form expansion and mobile navigation. No payment or signup submitted.
+  - Local production preview: `npm run start -- --port 3000`. Do not run dev/build concurrently: both write `.next` and can corrupt the local output. An initial collision was corrected by stopping dev and rebuilding successfully.
+- Repository baseline is `c357749` (latest public-apis snapshot synced from `origin/main`); latest committed work is the animated admin pipeline flow (`f7d1075`) and pipeline queue fix (`beb66da`). No backend or database changes in this session.
+- Existing untracked user work preserved: `AGENTS.md`, `app/vortex-demo/`, `components/hero/vortex-field.tsx`, `tests/vortex-field.test.ts`, `hostname-rename-spec.md`, `new/`, `public/three.min.js`, `public/vortex-preview.html`, `sourced-tiered-clustering-implementation.md`, `test_dom.html`.
 
 ## In progress / next up
-- Apply `supabase/migrations/0032_tiered_clustering.sql` (new `candidate_pairs` table + `pipeline_runs.funnel` column) to the live Supabase instance, then dry-run `ENABLE_TIERED_CLUSTERING=true` once against the current backlog and inspect funnel numbers before enabling anywhere for real.
-- Complete KYC + purpose code P0802/P0807 in Razorpay dashboard to activate native international multi-currency processing.
-- Submit Tier 1 launch posts from `seo-drafts/` to Hacker News (Show HN) and Dev.to during the optimal Tuesday-Thursday 8-10am PT window.
-- Set `RESEND_API_KEY` in Vercel environment variables to switch drop broadcasts from simulation/ntfy alerts to live inbox delivery.
-- Set `BLUESKY_HANDLE` and `BLUESKY_APP_PASSWORD` in `.env.local` / Vercel env to activate live Bluesky polling.
+- Deploy the homepage as a Vercel preview from `codex/obsidian-homepage`. Production promotion requires a production-release request.
+- Pipeline follow-ups carried forward from the prior handoff (not reverified this session):
+  - Drafts on Vercel enqueue `pipeline_jobs`; keep `npm run worker` running on falcon. Migration 0034 was reported applied live, as was 0033 for App Store signal support.
+  - OmniRoute requires `OMNIROUTE_API_KEY`; prior drafts fell back to gemma3:4b and need human review. OpenRouter had no credits.
+  - Worker orphaned-job recovery policy remains TODO in `scripts/pipeline-worker.ts`; a crashed job left `running` can block deduplicated enqueues.
+  - Tiered-clustering migration 0032 was reported applied live despite stale contradictory text in the old handoff. Flag remains off by default. Qwen arbiter dry run produced 84 groups / 39 passing, with ~11% truncation/parse failures. Spot-check groups before enabling; consider cap/group-size changes only after investigation.
+  - `OLLAMA_ARBITER_MODEL=qwen2.5:7b-instruct` was set locally; production configuration still needs checking before any tiered rollout. Draft-prompt sanitization follow-up remains open.
+- Razorpay international currency activation needs KYC/purpose code P0802/P0807. Existing marketing copy mentions international acceptance; activation was not checked or changed here.
+- Resend, Bluesky and YouTube environment configuration / launch-post submissions remain prior-session follow-ups.
 
 ## Watch out for
-- Embeddings are 768 dimensions (`nomic-embed-text`).
-- **The single-threshold clustering path's real current numbers are 0.74 similarity / `MIN_CLUSTER_SIZE` 3 / `MIN_CLUSTER_PLATFORMS` 1** (see `lib/ingest/clustering.ts`) — CLAUDE.md's "don't change 0.82" note is stale, left over from before the Yield Optimization pass below. If asked to touch clustering constants again, check the actual constants in code, not CLAUDE.md, before assuming what "the tuned threshold" is.
-- The new tiered-clustering path (`lib/ingest/tiered-clustering.ts`) has its OWN separate 0.82 auto-confirm / 0.55 candidate-floor constants, deliberately not shared with the above — it's flag-gated (`ENABLE_TIERED_CLUSTERING`) and off by default.
-- Supabase is shared with Mettel — stick to Sourced's own tables: `raw_signals`, `idea_drops`, `idea_drop_views`, `sourced_subscribers`, `subscriber_topics`, `events`, `admins`, `settings`, `sourced_newsletter_signups`, `pipeline_runs`, `candidate_pairs`.
-- Product Hunt and Reddit are permanently ruled out — don't re-explore.
-- `idea_drops` is a wide table with several jsonb columns (problem, evidence, build_brief, matched_apis, launch_stack, agent_prompts, difficulty, competitive_landscape) — check the real schema before writing migrations.
-
-## How to update this file
-When you finish a session: replace "Current state," "In progress," and
-"Watch out for" with what's actually true now. Keep it short — this is a
-status note, not a changelog. Git history is the changelog.
+- Supabase is shared with Mettel. Only touch Sourced-owned tables; never change Mettel tables without explicit confirmation. `pipeline_jobs` is Sourced-owned per the previously applied queue migration.
+- `idea_drops` contains jsonb `problem`, `evidence`, `build_brief`, `matched_apis`, `launch_stack`, `agent_prompts`, `difficulty`, `competitive_landscape`. Verify the real live column list before schema work; this is not a complete schema inventory.
+- Embeddings are 768-dimensional nomic-embed-text. OpenRouter embeddings are a different vector space.
+- Do not change deliberately tuned clustering thresholds without discussion. The prior verified values were 0.74 / 3 signals / 1 platform for the normal path and 0.82/0.55 for the flag-gated tiered path; check actual code before citing or changing them.
+- Reddit, Product Hunt and Hashnode remain ruled out as ingestion sources.
+- Older history and security/export work are in Git history; gated exports and tenant isolation must remain intact.
