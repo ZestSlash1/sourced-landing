@@ -96,6 +96,7 @@ export default function FloatingNavbar({
   const [userEmail, setUserEmail] = useState<string | null>(initialUserEmail ?? null);
   const [activeTab, setActiveTab] = useState<string>("How it works");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const navRef = useRef<HTMLElement>(null);
 
   // Sync auth state on client
@@ -120,6 +121,37 @@ export default function FloatingNavbar({
       subscription.unsubscribe();
     };
   }, [initialUserEmail]);
+
+  // Window scroll state for elevation styling
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 15);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Keyboard accessibility (Escape key) and click-outside for mobile drawer
+  useEffect(() => {
+    if (!mobileNavOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setMobileNavOpen(false);
+      }
+    };
+    const handleClickOutside = (e: MouseEvent) => {
+      if (navRef.current && !navRef.current.contains(e.target as Node)) {
+        setMobileNavOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [mobileNavOpen]);
 
   const isHome = pathname === "/";
 
@@ -205,7 +237,11 @@ export default function FloatingNavbar({
   }
 
   return (
-    <nav ref={navRef} className="floating-nav" aria-label="Main navigation">
+    <nav
+      ref={navRef}
+      className={`floating-nav ${isScrolled ? "scrolled" : ""}`}
+      aria-label="Main navigation"
+    >
       <div className="floating-nav-pill">
         <Link href="/" className="nav-brand" aria-label="Sourced home">
           <div className="brand-mark">
@@ -220,6 +256,7 @@ export default function FloatingNavbar({
           {navItems.map((item) => {
             const targetHref = resolveHref(item.href);
             const isCurrent = activeTab === item.label;
+            const isFeed = item.label === "Feed";
             return (
               <Link
                 key={item.label}
@@ -236,7 +273,10 @@ export default function FloatingNavbar({
                   }
                 }}
               >
-                <span className="dock-icon">{item.icon}</span>
+                <span className="dock-icon">
+                  {item.icon}
+                  {isFeed && <span className="dock-live-dot" aria-label="Live feed updates" />}
+                </span>
                 <span className="dock-label">{item.label}</span>
               </Link>
             );
@@ -263,9 +303,15 @@ export default function FloatingNavbar({
       </div>
 
       {mobileNavOpen && (
-        <div className="mobile-floating-drawer">
+        <div
+          className="mobile-floating-drawer"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Mobile navigation"
+        >
           {navItems.map((item) => {
             const targetHref = resolveHref(item.href);
+            const isFeed = item.label === "Feed";
             return (
               <Link
                 key={item.label}
@@ -275,8 +321,29 @@ export default function FloatingNavbar({
                   setMobileNavOpen(false);
                 }}
               >
-                <span className="dock-icon">{item.icon}</span>
+                <span className="dock-icon" style={{ position: "relative" }}>
+                  {item.icon}
+                  {isFeed && <span className="dock-live-dot" aria-hidden="true" />}
+                </span>
                 <span>{item.label}</span>
+                {isFeed && (
+                  <span
+                    style={{
+                      marginLeft: "auto",
+                      fontSize: "10px",
+                      fontFamily: "var(--font-jetbrains-mono), monospace",
+                      fontWeight: 700,
+                      padding: "2px 7px",
+                      borderRadius: "999px",
+                      background: "rgba(16, 185, 129, 0.16)",
+                      color: "#10B981",
+                      border: "1px solid rgba(16, 185, 129, 0.3)",
+                      letterSpacing: "0.04em",
+                    }}
+                  >
+                    LIVE
+                  </span>
+                )}
               </Link>
             );
           })}

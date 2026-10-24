@@ -1,28 +1,29 @@
 /* Scoped port of the Claude Design "live-globe" mock — every rule is nested
-   under .page so nothing leaks into the rest of the (light-themed) app. */
+   under .page so nothing leaks into the rest of the (light-themed) app.
+   Harmonized with Sourced Dark Obsidian telemetry palette (#08090E / #10121A / #161824). */
 
 .page {
-  --bg: #09071c;
-  --bgGrad1: rgba(124, 58, 237, 0.22);
-  --bgGrad2: rgba(168, 85, 247, 0.12);
-  --ink: #eae7ff;
-  --muted: #9a94c4;
-  --line: rgba(160, 150, 255, 0.14);
-  --panel: rgba(18, 14, 45, 0.6);
-  --card: rgba(22, 17, 54, 0.7);
-  --chip: rgba(255, 255, 255, 0.05);
+  --bg: #08090E;
+  --bgGrad1: rgba(124, 58, 237, 0.16);
+  --bgGrad2: rgba(56, 189, 248, 0.08);
+  --ink: #F4F4F6;
+  --muted: #9496A6;
+  --line: rgba(255, 255, 255, 0.08);
+  --panel: rgba(16, 18, 26, 0.85);
+  --card: rgba(22, 24, 36, 0.88);
+  --chip: rgba(255, 255, 255, 0.04);
   --chipOn: rgba(124, 58, 237, 0.22);
-  --track: rgba(255, 255, 255, 0.07);
-  --tipBg: rgba(14, 10, 38, 0.94);
-  --tipLine: rgba(180, 160, 255, 0.3);
-  --sphere0: rgba(78, 72, 196, 0.95);
-  --sphere1: rgba(44, 38, 132, 0.92);
-  --sphere2: rgba(16, 12, 56, 0.96);
-  --atmo: 140, 120, 255;
-  --dot: 170, 150, 255;
-  --dotA: 0.62;
-  --arc: 168, 85, 247;
-  --marker: 245, 228, 255;
+  --track: rgba(255, 255, 255, 0.06);
+  --tipBg: rgba(16, 18, 26, 0.96);
+  --tipLine: rgba(124, 58, 237, 0.35);
+  --sphere0: rgba(26, 30, 44, 0.96);
+  --sphere1: rgba(16, 18, 26, 0.98);
+  --sphere2: rgba(8, 9, 14, 1);
+  --atmo: 124, 58, 237;
+  --dot: 167, 139, 250;
+  --dotA: 0.65;
+  --arc: 124, 58, 237;
+  --marker: 244, 244, 246;
 
   position: relative;
   height: 680px;
@@ -30,14 +31,28 @@
   overflow: hidden;
   border-radius: var(--r-xl, 20px);
   border: 1px solid var(--line);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2), 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 28px rgba(124, 58, 237, 0.07);
   color: var(--ink);
-  font-family: "Space Grotesk", Helvetica, Arial, sans-serif;
+  font-family: var(--font-space-grotesk), "Space Grotesk", Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   background:
-    radial-gradient(1100px 700px at 22% 18%, var(--bgGrad1), transparent 60%),
-    radial-gradient(900px 600px at 88% 90%, var(--bgGrad2), transparent 65%), var(--bg);
+    radial-gradient(1100px 700px at 20% 15%, var(--bgGrad1), transparent 60%),
+    radial-gradient(900px 600px at 85% 85%, var(--bgGrad2), transparent 65%),
+    var(--bg);
   transition: background-color 0.25s, color 0.25s;
+}
+
+.page::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, #7C3AED 35%, #38BDF8 65%, transparent 100%);
+  opacity: 0.85;
+  pointer-events: none;
+  z-index: 10;
 }
 
 .page[data-theme="light"] {
@@ -86,8 +101,8 @@
   padding: 14px 22px;
   border-bottom: 1px solid var(--line);
   background: var(--panel);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
 }
 .hdrLeft {
   display: flex;
@@ -96,14 +111,14 @@
   flex-wrap: wrap;
 }
 .crumb {
-  font-family: "Space Grotesk", sans-serif;
+  font-family: var(--font-space-grotesk), "Space Grotesk", sans-serif;
   font-weight: 600;
   font-size: 15px;
   letter-spacing: -0.01em;
   color: var(--ink);
 }
 .sourceTag {
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-jetbrains-mono), "JetBrains Mono", monospace;
   font-size: 11px;
   color: var(--muted);
   background: var(--chip);
@@ -122,22 +137,22 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-jetbrains-mono), "JetBrains Mono", monospace;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.05em;
-  color: rgb(var(--arc));
-  background: var(--chipOn);
-  border: 1px solid rgba(var(--arc), 0.35);
-  padding: 6px 11px;
+  color: #10B981;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  padding: 5px 11px;
   border-radius: 999px;
 }
 .liveDot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: rgb(var(--arc));
-  box-shadow: 0 0 10px rgb(var(--arc));
+  background: #10B981;
+  box-shadow: 0 0 10px #10B981;
   animation: blink 1.8s infinite;
 }
 @keyframes blink {
@@ -147,7 +162,7 @@
 }
 
 .page button {
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-jetbrains-mono), "JetBrains Mono", monospace;
   font-size: 11.5px;
   color: var(--ink);
   background: var(--card);
@@ -211,11 +226,11 @@
   padding: 10px 14px;
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
   pointer-events: auto;
 }
 .kpiLabel {
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-jetbrains-mono), "JetBrains Mono", monospace;
   font-size: 9.5px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -224,10 +239,11 @@
 }
 .kpiValue {
   font-size: 22px;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: -0.02em;
   margin-top: 3px;
   font-variant-numeric: tabular-nums;
+  font-family: var(--font-jetbrains-mono), "JetBrains Mono", monospace;
   color: var(--ink);
 }
 .kpiValue small {
@@ -260,7 +276,7 @@
   padding: 6px 14px;
 }
 .hint {
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-jetbrains-mono), "JetBrains Mono", monospace;
   font-size: 11px;
   color: var(--muted);
   opacity: 0.85;
@@ -286,6 +302,7 @@
   white-space: nowrap;
   transition: opacity 0.14s;
   z-index: 5;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
 }
 .tip.visible {
   opacity: 1;
@@ -293,10 +310,12 @@
 .tipTitle {
   display: block;
   font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink);
   margin-bottom: 3px;
 }
 .tipSub {
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-jetbrains-mono), "JetBrains Mono", monospace;
   font-size: 11px;
   color: var(--muted);
 }
@@ -308,8 +327,8 @@
   min-height: 0;
   height: 100%;
   background: var(--panel);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 
 /* Tabs - 4-column uniform segmented control */
@@ -349,12 +368,12 @@
 }
 .sec h3 {
   margin: 0 0 10px;
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-jetbrains-mono), "JetBrains Mono", monospace;
   font-size: 10px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--muted);
-  font-weight: 500;
+  font-weight: 600;
 }
 .row {
   display: grid;
@@ -370,7 +389,7 @@
   white-space: nowrap;
 }
 .rowNum {
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-jetbrains-mono), "JetBrains Mono", monospace;
   font-size: 12px;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
@@ -386,7 +405,7 @@
   display: block;
   height: 100%;
   border-radius: 2px;
-  background: linear-gradient(90deg, #7c3aed, #a855f7);
+  background: linear-gradient(90deg, #7C3AED, #A78BFA);
 }
 
 /* Live Feed Section */
@@ -400,12 +419,12 @@
 }
 .feed h3 {
   margin: 0 0 10px;
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-jetbrains-mono), "JetBrains Mono", monospace;
   font-size: 10px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--muted);
-  font-weight: 500;
+  font-weight: 600;
 }
 .feedList {
   list-style: none;
@@ -433,24 +452,25 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: rgb(var(--arc));
-  box-shadow: 0 0 8px rgb(var(--arc));
+  background: #10B981;
+  box-shadow: 0 0 8px #10B981;
   transform: translateY(-2px);
 }
 .feedWho {
   font-size: 13px;
   line-height: 1.35;
+  color: var(--ink);
 }
 .feedPath {
   display: block;
   font-style: normal;
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-jetbrains-mono), "JetBrains Mono", monospace;
   font-size: 11px;
   color: var(--muted);
   margin-top: 2px;
 }
 .feedTime {
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-jetbrains-mono), "JetBrains Mono", monospace;
   font-size: 11px;
   color: var(--muted);
   opacity: 0.85;

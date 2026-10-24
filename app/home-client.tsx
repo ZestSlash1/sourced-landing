@@ -12,6 +12,7 @@ import type { IdeaDrop } from "@/types/idea-drop";
 import { trackEvent } from "@/lib/track-client";
 import { resolveCurrency, formatPlanPrice, type Currency } from "@/lib/currency";
 import { BorderBeam } from "@/components/magicui/border-beam";
+import { ShineBorder } from "@/components/magicui/shine-border";
 import { MagicCard } from "@/components/magicui/magic-card";
 import { RainbowButton } from "@/components/magicui/rainbow-button";
 import { Marquee } from "@/components/magicui/marquee";
@@ -112,7 +113,7 @@ interface HomeClientProps {
   userEmail: string | null;
   proofBar: ProofBarData;
   featuredIdeas?: Array<Pick<IdeaDrop, "slug" | "title" | "category" | "tier" | "demandScore"> & { apiCount: number; evidenceCount: number }>;
-
+  
   country?: string | null;
   sourceTallies?: SourceTallies;
 }
@@ -134,6 +135,56 @@ export default function HomeClient({
   const [foundingRemaining, setFoundingRemaining] = useState<number | null>(null);
   const [currency, setCurrency] = useState<Currency>(() => resolveCurrency(country));
 
+  // Slatebase Free Tier Signup Flow (Phase 1)
+  const [freeEmail, setFreeEmail] = useState(userEmail || "");
+  const [freeHoneypot, setFreeHoneypot] = useState("");
+  const [freeStatus, setFreeStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [freeMessage, setFreeMessage] = useState<string | null>(null);
+  const [isFreeFormOpen, setIsFreeFormOpen] = useState(false);
+
+  async function handleFreeSignup(e?: React.FormEvent) {
+    if (e) e.preventDefault();
+    if (!isFreeFormOpen && !userEmail) {
+      setIsFreeFormOpen(true);
+      return;
+    }
+
+    const emailToSubmit = (userEmail || freeEmail).trim();
+    if (!emailToSubmit) {
+      setFreeStatus("error");
+      setFreeMessage("Please enter your email to get started.");
+      return;
+    }
+
+    setFreeStatus("loading");
+    setFreeMessage(null);
+
+    try {
+      const res = await fetch("/api/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: emailToSubmit,
+          tier: "free",
+          source: "pricing-card",
+          hp: freeHoneypot,
+        }),
+      });
+
+      const data = (await res.json()) as { ok?: boolean; error?: string; message?: string };
+      if (!res.ok) {
+        throw new Error(data.error || "We couldn't save your signup. Please try again.");
+      }
+
+      setFreeStatus("success");
+      setFreeMessage(data.message || "You're on the list! Free tier access granted.");
+      trackEvent("free_tier_signup", { source: "pricing-card" });
+    } catch (err: unknown) {
+      setFreeStatus("error");
+      setFreeMessage(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+    }
+  }
+
   const displayCards =
     featuredIdeas && featuredIdeas.length > 0
       ? featuredIdeas.slice(0, 6).map((idea, i) => ({
@@ -153,8 +204,8 @@ export default function HomeClient({
   useEffect(() => {
     fetch("/api/founding-status")
       .then((res) => (res.ok ? res.json() : null))
-      .then((data: { remaining: number | null; total: number; available: boolean } | null) => {
-        setFoundingRemaining(data?.available ? data.remaining : null);
+      .then((data: { remaining: number; total: number } | null) => {
+        if (data) setFoundingRemaining(data.remaining);
       })
       .catch(() => {});
   }, []);
@@ -277,6 +328,60 @@ export default function HomeClient({
 
   return (
     <div className="sourced-home">
+      <style>{`
+        .sourced-home .brief-workbench {
+          background: linear-gradient(165deg, rgba(28, 28, 38, 0.95) 0%, rgba(18, 18, 24, 0.98) 40%, rgba(13, 13, 18, 1) 100%);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+        }
+        .sourced-home .dossier-card {
+          transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .sourced-home .dossier-card:hover {
+          transform: translateY(-2px);
+          border-color: rgba(167, 139, 250, 0.4);
+          box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(124, 58, 237, 0.12);
+        }
+        .sourced-home .agent-btn {
+          transition: all 0.18s ease;
+        }
+        .sourced-home .agent-btn.is-active {
+          background: rgba(124, 58, 237, 0.25);
+          border-color: rgba(167, 139, 250, 0.45);
+          color: #fff;
+          box-shadow: 0 0 12px rgba(124, 58, 237, 0.2);
+        }
+        .sourced-home .api-chip {
+          transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+        }
+        .sourced-home .api-chip:hover {
+          transform: translateY(-1px);
+          border-color: rgba(167, 139, 250, 0.4);
+          background: rgba(25, 27, 38, 0.9);
+          box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+        }
+        .sourced-home .faq-item {
+          background: #0d0f16;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: var(--r-md);
+          padding: 24px 28px;
+          transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .sourced-home .faq-item:hover {
+          border-color: rgba(255, 255, 255, 0.16);
+          transform: translateY(-1px);
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+        }
+        .sourced-home .plan-card {
+          transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .sourced-home .plan-card:hover {
+          border-color: rgba(167, 139, 250, 0.3);
+        }
+        .sourced-home .plan-card.featured:hover {
+          border-color: var(--violet);
+        }
+      `}</style>
       <a href="#main-content" className="skip-link">Skip to content</a>
 
       <main id="main-content">
@@ -427,7 +532,7 @@ export default function HomeClient({
                       <div className="idea-apis">⌁ {c.apis}</div>
                       <div className="idea-foot">
                         <span>{c.signals}</span>
-                        <span className="idea-demand mono">{c.pct}<span>/100 research</span></span>
+                        <span className="idea-demand mono">{c.pct}<span>/100 demand</span></span>
                         <div className="signal-bar" style={{ ["--pct" as string]: c.pct / 100 }}>
                           <span></span>
                         </div>
@@ -573,7 +678,7 @@ export default function HomeClient({
                 display: "inline-flex",
                 alignItems: "center",
                 gap: 4,
-                background: "var(--surface-sunken, #edeae3)",
+                background: "rgba(255, 255, 255, 0.05)",
                 padding: "3px 4px",
                 borderRadius: "999px",
                 marginTop: 14,
@@ -637,7 +742,110 @@ export default function HomeClient({
                 <li>API match: name only, no docs</li>
                 <li>No card required</li>
               </ul>
-              <Link href="/login?next=%2Faccount" className="plan-btn">Create a free account</Link>
+              {freeStatus === "success" ? (
+                <div
+                  className="free-signup-success"
+                  role="status"
+                >
+                  ✓ {freeMessage || "You're in! Free tier access granted."}
+                </div>
+              ) : isFreeFormOpen && !userEmail ? (
+                <form
+                  onSubmit={handleFreeSignup}
+                  noValidate
+                  style={{ display: "flex", flexDirection: "column", gap: 8 }}
+                >
+                  <input
+                    type="text"
+                    name="company_hp"
+                    value={freeHoneypot}
+                    onChange={(e) => setFreeHoneypot(e.target.value)}
+                    style={{ display: "none" }}
+                    tabIndex={-1}
+                    autoComplete="off"
+                    aria-hidden="true"
+                  />
+                  <input
+                    type="email"
+                    aria-label="Email for free access"
+                    aria-invalid={freeStatus === "error"}
+                    placeholder="Enter your email"
+                    value={freeEmail}
+                    onChange={(e) => {
+                      setFreeEmail(e.target.value);
+                      if (freeStatus === "error") setFreeStatus("idle");
+                    }}
+                    required
+                    disabled={freeStatus === "loading"}
+                    autoFocus
+                    style={{
+                      width: "100%",
+                      padding: "10px 12px",
+                      borderRadius: "var(--r-sm)",
+                      border:
+                        freeStatus === "error"
+                          ? "1.5px solid var(--coral, #e5533d)"
+                          : "1.5px solid var(--line)",
+                      background: "var(--bg)",
+                      color: "var(--ink)",
+                      fontSize: 13.5,
+                      fontFamily: "inherit",
+                      outline: "none",
+                      boxSizing: "border-box",
+                    }}
+                  />
+                  <button
+                    type="submit"
+                    className="plan-btn"
+                    disabled={freeStatus === "loading"}
+                    style={{
+                      background: "var(--violet)",
+                      borderColor: "var(--violet)",
+                      color: "#fff",
+                    }}
+                  >
+                    {freeStatus === "loading" ? "Claiming access…" : "Claim free access"}
+                  </button>
+                  {freeStatus === "error" && freeMessage && (
+                    <div
+                      style={{
+                        color: "var(--coral, #e5533d)",
+                        fontSize: 12,
+                        textAlign: "center",
+                      }}
+                    >
+                      {freeMessage}
+                    </div>
+                  )}
+                </form>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    className="plan-btn"
+                    onClick={() => handleFreeSignup()}
+                    disabled={freeStatus === "loading"}
+                  >
+                    {freeStatus === "loading"
+                      ? "Claiming access…"
+                      : userEmail
+                      ? `Claim free tier (${userEmail})`
+                      : "Start free"}
+                  </button>
+                  {freeStatus === "error" && freeMessage && (
+                    <div
+                      style={{
+                        color: "var(--coral, #e5533d)",
+                        fontSize: 12,
+                        textAlign: "center",
+                        marginTop: 6,
+                      }}
+                    >
+                      {freeMessage}
+                    </div>
+                  )}
+                </>
+              )}
             </Reveal>
             <Reveal
               delay={0.08}

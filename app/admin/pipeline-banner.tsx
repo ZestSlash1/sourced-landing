@@ -82,16 +82,27 @@ function summarizeDraft(r: Record<string, unknown>): string {
  * calls POST /api/admin/pipeline/run one stage at a time; "Run full pipeline"
  * chains poll-all -> draft from the browser so no single request has to
  * outlive the function timeout. On Vercel the draft stage comes back queued
- * for the falcon worker, and the banner polls the job until it finishes —
- * including after navigating between admin pages, since each page remounts it.
+ * for the falcon worker, and the banner polls the job until it finishes.
+ *
+ * Vertical clutter is solved by collapsing the ~220px flow visualizer into a
+ * sleek Command Bar when idle, while keeping it 1-click accessible and auto-opening
+ * whenever the pipeline is active.
  */
 export default function PipelineBanner() {
   const [steps, setSteps] = useState<Record<string, Step>>({});
   const [busy, setBusy] = useState(false);
   const [open, setOpen] = useState(false);
+  const [showFlow, setShowFlow] = useState(false);
   const unmounted = useRef(false);
 
   const set = (key: string, step: Step) => setSteps((prev) => ({ ...prev, [key]: step }));
+
+  /** Automatically open the flow visualizer when the pipeline becomes active */
+  useEffect(() => {
+    if (busy) {
+      setShowFlow(true);
+    }
+  }, [busy]);
 
   /** Polls a queued/running draft job until it settles. Resolves true on success. */
   async function followJob(initial: DraftJob): Promise<boolean> {
@@ -130,6 +141,7 @@ export default function PipelineBanner() {
     fetchJob("latest")
       .then(async (job) => {
         if (unmounted.current || !job || (job.status !== "queued" && job.status !== "running")) return;
+        setShowFlow(true);
         setBusy(true);
         try {
           await followJob(job);
@@ -195,26 +207,158 @@ export default function PipelineBanner() {
   const pollAll = steps[POLL_ALL];
   const draft = steps[DRAFT];
 
+  const isRunning = busy || pollAll?.state === "running" || draft?.state === "running";
+  const hasError = pollAll?.state === "error" || draft?.state === "error";
+
   return (
-    <section className="pipeline-banner" aria-label="Ingest pipeline controls">
-      <div className="pipeline-banner-row">
-        <div>
-          <div className="pipeline-banner-title display">Ingest pipeline</div>
-          <div className="mono pipeline-banner-sub">poll sources → classify → cluster → draft for review</div>
+    <section
+      className="pipeline-banner"
+      aria-label="Ingest pipeline controls"
+      style={{
+        background: "linear-gradient(180deg, rgba(22, 24, 36, 0.95) 0%, rgba(16, 18, 26, 0.98) 100%)",
+        border: "1px solid rgba(255, 255, 255, 0.08)",
+        borderLeft: "3px solid var(--violet)",
+        borderRadius: "var(--r-xl)",
+        boxShadow: "0 8px 30px rgba(0, 0, 0, 0.4)",
+        padding: "16px 20px",
+        marginBottom: 24,
+      }}
+    >
+      {/* Sleek, compact single-row Pipeline Command Bar */}
+      <div className="pipeline-banner-row" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+        {/* Left: Status dot + Title + Inline Status Pills */}
+        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: "50%",
+                flexShrink: 0,
+                background: isRunning
+                  ? "var(--violet-deep)"
+                  : hasError
+                  ? "var(--coral-deep)"
+                  : "var(--lime)",
+                boxShadow: isRunning
+                  ? "0 0 10px rgba(167, 139, 250, 0.9)"
+                  : hasError
+                  ? "0 0 8px rgba(255, 51, 102, 0.7)"
+                  : "0 0 8px rgba(16, 185, 129, 0.7)",
+                animation: isRunning ? "livePulse 1.2s cubic-bezier(0.4, 0, 0.6, 1) infinite" : "none",
+              }}
+            />
+            <span className="pipeline-banner-title display" style={{ fontSize: 15, fontWeight: 700, letterSpacing: "-0.01em", margin: 0 }}>
+              Ingest Pipeline
+            </span>
+          </div>
+
+          <span className="mono" style={{ fontSize: 11, color: "var(--ink-soft)" }}>
+            poll → classify → cluster → draft
+          </span>
+
+          {/* Compact inline status pills */}
+          {(pollAll || draft) && (
+            <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+              {pollAll && (
+                <span
+                  className="mono"
+                  style={{
+                    fontSize: 10.5,
+                    padding: "2px 8px",
+                    borderRadius: "var(--r-chip)",
+                    background:
+                      pollAll.state === "error"
+                        ? "rgba(255, 51, 102, 0.12)"
+                        : pollAll.state === "running"
+                        ? "rgba(124, 58, 237, 0.16)"
+                        : "rgba(16, 185, 129, 0.12)",
+                    color:
+                      pollAll.state === "error"
+                        ? "var(--coral-deep)"
+                        : pollAll.state === "running"
+                        ? "var(--violet-deep)"
+                        : "var(--lime)",
+                    border: `1px solid ${
+                      pollAll.state === "error"
+                        ? "rgba(255, 51, 102, 0.3)"
+                        : pollAll.state === "running"
+                        ? "rgba(124, 58, 237, 0.3)"
+                        : "rgba(16, 185, 129, 0.25)"
+                    }`,
+                  }}
+                >
+                  poll: {pollAll.state === "running" ? "running…" : pollAll.detail}
+                </span>
+              )}
+              {draft && (
+                <span
+                  className="mono"
+                  style={{
+                    fontSize: 10.5,
+                    padding: "2px 8px",
+                    borderRadius: "var(--r-chip)",
+                    background:
+                      draft.state === "error"
+                        ? "rgba(255, 51, 102, 0.12)"
+                        : draft.state === "running"
+                        ? "rgba(124, 58, 237, 0.16)"
+                        : "rgba(16, 185, 129, 0.12)",
+                    color:
+                      draft.state === "error"
+                        ? "var(--coral-deep)"
+                        : draft.state === "running"
+                        ? "var(--violet-deep)"
+                        : "var(--lime)",
+                    border: `1px solid ${
+                      draft.state === "error"
+                        ? "rgba(255, 51, 102, 0.3)"
+                        : draft.state === "running"
+                        ? "rgba(124, 58, 237, 0.3)"
+                        : "rgba(16, 185, 129, 0.25)"
+                    }`,
+                  }}
+                >
+                  draft: {draft.state === "running" ? draft.detail ?? "running…" : draft.detail}
+                </span>
+              )}
+            </div>
+          )}
         </div>
-        <div className="pipeline-banner-actions">
+
+        {/* Right: Action Buttons */}
+        <div className="pipeline-banner-actions" style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
           <button
+            type="button"
             className="admin-btn admin-btn-ghost"
+            style={{ fontSize: 12, padding: "6px 13px" }}
             disabled={busy}
             onClick={() => guard(runPollAll)}
           >
-            {pollAll?.state === "running" ? "Polling…" : "Poll all sources"}
+            {pollAll?.state === "running" ? "Polling…" : "Poll All"}
           </button>
-          <button className="admin-btn admin-btn-ghost" disabled={busy} onClick={() => guard(runDraft)}>
-            {draft?.state === "running" ? "Drafting…" : "Run draft pass"}
-          </button>
+
           <button
+            type="button"
+            className="admin-btn admin-btn-ghost"
+            style={{ fontSize: 12, padding: "6px 13px" }}
+            disabled={busy}
+            onClick={() => guard(runDraft)}
+          >
+            {draft?.state === "running" ? "Drafting…" : "Draft Pass"}
+          </button>
+
+          <button
+            type="button"
             className="admin-btn admin-btn-primary"
+            style={{
+              fontSize: 12,
+              padding: "6px 15px",
+              background: "linear-gradient(135deg, var(--violet) 0%, #6D28D9 100%)",
+              boxShadow: "0 0 16px rgba(124, 58, 237, 0.4)",
+              border: "1px solid rgba(167, 139, 250, 0.3)",
+              fontWeight: 700,
+            }}
             disabled={busy}
             onClick={() =>
               guard(async () => {
@@ -223,49 +367,72 @@ export default function PipelineBanner() {
               })
             }
           >
-            {busy ? "Running…" : "Run full pipeline"}
+            {busy ? "Running Pipeline…" : "Run Full Pipeline"}
           </button>
+
           <button
+            type="button"
             className="admin-btn admin-btn-ghost"
+            style={{
+              fontSize: 12,
+              padding: "6px 12px",
+              borderColor: showFlow ? "rgba(124, 58, 237, 0.4)" : undefined,
+              color: showFlow ? "var(--violet-deep)" : undefined,
+              background: showFlow ? "rgba(124, 58, 237, 0.1)" : undefined,
+            }}
+            aria-expanded={showFlow}
+            onClick={() => setShowFlow((v) => !v)}
+          >
+            {showFlow ? "Flow Visualizer ▴" : "Flow Visualizer ▾"}
+          </button>
+
+          <button
+            type="button"
+            className="admin-btn admin-btn-ghost"
+            style={{
+              fontSize: 12,
+              padding: "6px 12px",
+              borderColor: open ? "rgba(124, 58, 237, 0.4)" : undefined,
+              color: open ? "var(--violet-deep)" : undefined,
+              background: open ? "rgba(124, 58, 237, 0.1)" : undefined,
+            }}
             aria-expanded={open}
             onClick={() => setOpen((v) => !v)}
           >
-            {open ? "Hide sources" : "Sources"}
+            {open ? "Hide Sources ▴" : `${POLLER_LIST.length} Sources ▾`}
           </button>
         </div>
       </div>
 
-      <PipelineFlow steps={steps} pollAllKey={POLL_ALL} draftKey={DRAFT} />
-
-      {(pollAll || draft) && (
-        <div className="pipeline-status mono" role="status">
-          {pollAll && (
-            <span className={`pipeline-pill is-${pollAll.state}`}>
-              poll: {pollAll.state === "running" ? "running…" : pollAll.detail}
-            </span>
-          )}
-          {draft && (
-            <span className={`pipeline-pill is-${draft.state}`}>
-              draft: {draft.state === "running" ? draft.detail ?? "running… (can take a few minutes)" : draft.detail}
-            </span>
-          )}
+      {/* Collapsible Pipeline Flow: Only render when showFlow || busy is true! Saves ~220px vertical space */}
+      {(showFlow || busy) && (
+        <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid rgba(255, 255, 255, 0.06)" }}>
+          <PipelineFlow steps={steps} pollAllKey={POLL_ALL} draftKey={DRAFT} />
         </div>
       )}
 
+      {/* Expandable 13 Sources Grid */}
       {open && (
-        <div className="pipeline-sources">
+        <div className="pipeline-sources" style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid rgba(255, 255, 255, 0.06)" }}>
           {POLLER_LIST.map(({ id, label }) => {
             const s = steps[id];
             return (
               <button
                 key={id}
+                type="button"
                 className={`pipeline-source is-${s?.state ?? "idle"}`}
                 disabled={busy}
                 title={s?.detail}
                 onClick={() => guard(() => runPoll(id))}
+                style={{
+                  background: "rgba(16, 18, 26, 0.6)",
+                  border: "1px solid rgba(255, 255, 255, 0.08)",
+                  borderRadius: "var(--r-sm)",
+                  padding: "8px 11px",
+                }}
               >
                 <span>{label}</span>
-                <span className="mono pipeline-source-detail">
+                <span className="mono pipeline-source-detail" style={{ fontSize: 10.5 }}>
                   {s?.state === "running" ? "…" : s?.detail ?? "run"}
                 </span>
               </button>
